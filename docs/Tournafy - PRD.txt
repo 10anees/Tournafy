@@ -1,0 +1,195 @@
+﻿Tournafy Product Requirement Document
+1. Product Overview
+Product Name: Tournafy
+Category: Sports Match,Series and Tournament Hosting App
+Prepared By: Anees Hamid – 23L-0671
+Instructor: Mr. Rana Waqas Ali
+Institution: FAST NUCES, Lahore
+1.1 Summary
+Tournafy is a sports match, series and tournament hosting app primarily focusing on cricket and football/futsal. A basic overview of the features is:
+* Offline match, series and tournament hosting using firestore
+* Online match, series and tournament hosting using firebase
+* Match, Series and Tournament can be configured according to requirements
+The product takes inspiration from espncricinfo and sofascore and aims to provide that experience to casual players, athletes without much facilities and people who host tournaments.
+The product aims to provide a combined way to host matches, series and tournaments offline and online with seamless integration.
+2. Goals and Objectives
+
+
+Goal
+	Description
+	Deliverable
+	G1: Cricket and Futsal/Football Matches.
+	Provide an interface to host cricket and futsal/football matches.
+	For Cricket custom number of over or regular formats such as t20, odi, custom number of overs, wide on/off etc.
+For Futsal/Football custom number of players, total time, offside on/off etc.
+	G2: Hosting Tournaments
+	Provide an interface to host Tournaments for cricket and futsal/football.
+	Tournaments can be round robin, table and knockout or only knockout. Knockouts can have customized brackets as well. Any number of teams allowed but must be managed by host. Provide Randomization button at start of tournament.
+Multiple Hosts can host the tournament.
+	G3: Hosting Series
+	Provide an interface to host Series for cricket and futsal/football.
+	Series can have any number of matches.
+	G4: Offline and online integration
+	Matches, Series and Tournaments can be hosted offline.
+Online Integration also available but to host matches, series or tournaments user must login.
+	Offline Storage using firestore and online integration using firebase. Previously offline stuff can also be uploaded online. Online matches, Series and Tournaments can be seen in real time similar to espncricinfo and sofascore using link provided by host.
+Online matches can be seen by any user (logged in or not) but hosting can only be done after logging in.
+	G5: Authentication
+	Authentication required for hosting stuff online but not viewing online or hosting stuff offline.
+	Authentication done via google, facebook etc. or by signup/login. Cannot be done via phone number.
+	
+
+3. Target Users
+* Athletes who play cricket and futsal/football locally and without much facilities.
+* People who play cricket or fustal/football casually.
+* People who host tournaments for cricket and futsal on a smaller scale.
+* Schools, Colleges and Universities etc. management when inter/intra sports tournaments happen.
+5. System Architecture
+3.1 Frontend
+* XML (using material-you designing)
+3.2 Backend
+* Java
+3.3 Database
+* Firestore (Offline)
+* Firebase (Online)
+3.4 IDE
+* Android Studio
+6. UX/UI Overview
+Navigation bar at bottom.
+Fragments on the rest of the page.
+6.1 Main Screens
+These are screens initially seen on each fragment.
+Name
+	Description
+	Home
+	Shows the user online and offline stuff hosted by them. Has a floating action button that can host offline.
+Has filtering options for matches, tournaments and series.
+Long Click to upload the match, series, tournament online but requires auth.
+	Search
+	Searches for current online matches, tournaments and series via link provided by host.
+	Host Online
+	Requires Authentication. After Authentication allows user to host matches online and has new match, tournament and series button.
+	Settings
+	Provides various configurable setting for user profile (if authenticated) and other settings such as dark/light mode etc.
+	
+
+6.2 Other Screens
+
+
+Name
+	Cricket Match Details
+	Football Match Details
+	Tournament Details
+	Series Details
+	Host new Match
+	Host new Series
+	Host new Tournament
+	
+
+6.3 Cricket Match Details Fragments
+
+
+Name
+	Description
+	Live Score
+	Only viewable to host. Host adds the match updates going on by using the interface here.
+	Details
+	Current Batsmen, bowler, current run rate, required run rate, list of overs. Basically similar to cricinfo match details.
+	Scorecard
+	The scorecard of the match
+	Lineups
+	lineups
+	Table/Knockout/Series (if any)
+	If a match is part of any tournament/series show, else dont show.
+	
+
+6.4 Football Match Details Fragments
+
+
+Name
+	Description
+	Live Score
+	Only viewable to host. Host adds the match updates going on by using the interface here.
+	Details
+	Timeline for goals scored, yellow, red cards and events etc.
+	Statistics
+	The statistics for the football match, similar to sofasore.
+	Lineups
+	lineups
+	Table/Knockout (if any)
+	If match is part of any tournament/series show, else dont show.
+	
+
+6.5 Tournament Details Fragments
+
+
+Name
+	Description
+	Knockout
+	Show Floating action button to add teams (host only). Can remove teams as well (host only). Show brackets for matches and swipe right or left to go to next (eg quarter final to semi final)
+	Table(if any)
+	If table is there it means no knockout can happen before completing group stage. After group stage is completed automatically add teams to knockout
+	Top Players
+	Shows Top Players such as most runs, wickets or most goals, assists, save etc
+	
+
+
+
+6.6 Series Details Fragments
+
+
+Name
+	Description
+	Details
+	Show Series Details such as which team has won how many. Can increase the number of matches(host only). Only 2 team in a series.
+	Top Players
+	Shows Top Players such as most runs, wickets or most goals, assists, save etc
+	
+
+
+
+6.7 Host new Match
+
+
+Name
+	Description
+	Add Details
+	Add details such as match type, number of overs or time etc
+	Add Teams
+	Add players on each side (can be unequal)
+	
+
+
+
+6.8 Host new Series
+
+
+Name
+	Description
+	Add Details
+	Add details such as series type, number of overs or time etc
+	Add Teams
+	Add players on each side
+	
+
+6.9 Host new Tournament
+
+
+Name
+	Description
+	Add Details
+	Add details such as series type, number of overs or time etc
+	Add Teams
+	Add players of the participating team
+	Set Matches/Randomize
+	Can view the teams added in bracket format or table format. Can modify who goes where before tournament begins. Can randomize as well.
+	Co-Host
+	User adds link to autherize as co host
+	
+
+7. Future Enhancements
+* Adding support for e-sports.
+* Adding new sports such as padel, hockey, basketball etc
+
+
+8. EERD

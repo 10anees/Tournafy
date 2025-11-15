@@ -1,0 +1,369 @@
+erDiagram
+    USER ||--o{ HOSTED_ENTITY : hosts
+    USER ||--o{ CO_HOST : "co-hosts"
+    USER {
+        string user_id PK
+        string email
+        string name
+        string profile_picture
+        string auth_provider
+        datetime created_at
+    }
+
+    SPORT_TYPE ||--o{ MATCH : defines
+    SPORT_TYPE ||--o{ TOURNAMENT : defines
+    SPORT_TYPE ||--o{ SERIES : defines
+    SPORT_TYPE {
+        string sport_id PK
+        string sport_name
+        json default_config
+        string category
+        boolean is_active
+    }
+
+    HOSTED_ENTITY {
+        string entity_id PK
+        string entity_type
+        string name
+        boolean is_online
+        datetime created_at
+        string host_user_id FK
+        string status
+        string visibility_link
+    }
+
+    MATCH ||--|| HOSTED_ENTITY : inherits
+    MATCH ||--o{ MATCH_TEAM : has
+    MATCH ||--o{ MATCH_EVENT : records
+    MATCH ||--o| TOURNAMENT_MATCH : "part-of"
+    MATCH ||--o| SERIES_MATCH : "part-of"
+    MATCH ||--o| MATCH_RESULT : produces
+    MATCH ||--o{ INNINGS : "has-innings"
+    MATCH {
+        string match_id PK
+        string sport_id FK
+        string match_format
+        json match_config
+        datetime match_date
+        string venue
+        string winner_team_id FK
+        string match_status
+        string tournament_id FK
+        string series_id FK
+    }
+
+    CRICKET_MATCH_CONFIG ||--|| MATCH : extends
+    CRICKET_MATCH_CONFIG {
+        string match_id PK
+        int number_of_overs
+        boolean wide_on
+        int no_of_bouncers_in_one_over
+        string format_type
+    }
+
+    FOOTBALL_MATCH_CONFIG ||--|| MATCH : extends
+    FOOTBALL_MATCH_CONFIG {
+        string match_id PK
+        int match_duration
+        int players_per_side
+        boolean offside_on
+    }
+
+    INNINGS ||--o{ OVER : contains
+    INNINGS {
+        string innings_id PK
+        string match_id FK
+        int innings_number
+        string batting_team_id FK
+        string bowling_team_id FK
+        int total_runs
+        int wickets_fallen
+        int overs_completed
+        boolean is_completed
+    }
+
+    OVER ||--o{ BALL : contains
+    OVER {
+        string over_id PK
+        string innings_id FK
+        int over_number
+        string bowler_id FK
+        int runs_in_over
+        int wickets_in_over
+        boolean is_completed
+    }
+
+    BALL {
+        string ball_id PK
+        string over_id FK
+        int ball_number
+        string batsman_id FK
+        string bowler_id FK
+        int runs_scored
+        boolean is_wicket
+        string extras_type
+        string wicket_type
+    }
+
+    MATCH_RESULT {
+        string result_id PK
+        string match_id FK
+        string winner_team_id FK
+        string loser_team_id FK
+        int winner_score
+        int loser_score
+        string result_type
+        string win_margin
+    }
+
+    TOURNAMENT ||--|| HOSTED_ENTITY : inherits
+    TOURNAMENT ||--o{ TOURNAMENT_TEAM : participates
+    TOURNAMENT ||--o{ TOURNAMENT_MATCH : contains
+    TOURNAMENT ||--o{ TOURNAMENT_STAGE : has
+    TOURNAMENT {
+        string tournament_id PK
+        string sport_id FK
+        string tournament_type
+        json tournament_config
+        datetime start_date
+        string winner_team_id FK
+    }
+
+    TOURNAMENT_STAGE ||--o{ TOURNAMENT_MATCH : organizes
+    TOURNAMENT_STAGE {
+        string stage_id PK
+        string tournament_id FK
+        string stage_name
+        string stage_type
+        int stage_order
+        boolean is_completed
+    }
+
+    TOURNAMENT_TEAM {
+        string tournament_team_id PK
+        string tournament_id FK
+        string team_id FK
+        int points
+        int matches_played
+        int matches_won
+        int matches_lost
+        int matches_drawn
+        int goals_for
+        int goals_against
+        float net_run_rate
+    }
+
+    TOURNAMENT_MATCH {
+        string tournament_match_id PK
+        string tournament_id FK
+        string stage_id FK
+        string match_id FK
+        int match_order
+    }
+
+    SERIES ||--|| HOSTED_ENTITY : inherits
+    SERIES ||--o{ SERIES_MATCH : contains
+    SERIES {
+        string series_id PK
+        string sport_id FK
+        string team_a_id FK
+        string team_b_id FK
+        int total_matches
+        int team_a_wins
+        int team_b_wins
+    }
+
+    SERIES_MATCH {
+        string series_match_id PK
+        string series_id FK
+        string match_id FK
+        int match_number
+    }
+
+    TEAM ||--o{ MATCH_TEAM : plays
+    TEAM ||--o{ TOURNAMENT_TEAM : participates
+    TEAM ||--o{ PLAYER : has
+    TEAM {
+        string team_id PK
+        string team_name
+        string created_by FK
+        datetime created_at
+    }
+
+    PLAYER {
+        string player_id PK
+        string team_id FK
+        string player_name
+        string role
+        int jersey_number
+    }
+
+    MATCH_TEAM {
+        string match_team_id PK
+        string match_id FK
+        string team_id FK
+        boolean is_home_team
+        int score
+    }
+
+    MATCH_EVENT ||--o| CRICKET_EVENT : specializes
+    MATCH_EVENT ||--o| FOOTBALL_EVENT : specializes
+    MATCH_EVENT {
+        string event_id PK
+        string match_id FK
+        string event_type
+        datetime event_time
+        string team_id FK
+        string player_id FK
+        string description
+    }
+
+    CRICKET_EVENT ||--o| CRICKET_WICKET_DETAIL : "has-detail"
+    CRICKET_EVENT ||--o| CRICKET_EXTRAS_DETAIL : "has-detail"
+    CRICKET_EVENT {
+        string event_id PK
+        int over_number
+        int ball_number
+        string batsman_striker_id FK
+        string batsman_non_striker_id FK
+        string bowler_id FK
+        int runs_scored_bat "runs off bat"
+        int runs_scored_extras "extras"
+        int total_runs "bat + extras"
+        boolean is_wicket
+        boolean is_legal_delivery "false for wide/noball"
+        string extras_type "NONE, WIDE, NO_BALL, BYE, LEG_BYE, PENALTY"
+        boolean is_boundary "4 or 6"
+        int boundary_type "0=none, 4=four, 6=six"
+        boolean is_free_hit
+        string ball_outcome "DOT, SINGLE, DOUBLE, TRIPLE, FOUR, SIX, WICKET, WIDE, NO_BALL"
+    }
+
+    CRICKET_WICKET_DETAIL {
+        string wicket_detail_id PK
+        string event_id FK
+        string dismissed_batsman_id FK
+        string bowler_id FK
+        string fielder_id FK "null if not applicable"
+        string wicket_type "BOWLED, CAUGHT, LBW, RUN_OUT, STUMPED, HIT_WICKET, HIT_BALL_TWICE, OBSTRUCTING, TIMED_OUT, RETIRED_OUT"
+        string wicket_description
+        int team_score_at_wicket
+        int team_wickets_fallen
+    }
+
+    CRICKET_EXTRAS_DETAIL {
+        string extras_detail_id PK
+        string event_id FK
+        string extras_category "WIDE, NO_BALL, BYE, LEG_BYE, PENALTY"
+        int extras_runs
+        boolean runs_also_scored "e.g., 4 byes"
+    }
+
+    FOOTBALL_EVENT ||--o| FOOTBALL_GOAL_DETAIL : "has-detail"
+    FOOTBALL_EVENT ||--o| FOOTBALL_CARD_DETAIL : "has-detail"
+    FOOTBALL_EVENT ||--o| FOOTBALL_SUBSTITUTION_DETAIL : "has-detail"
+    FOOTBALL_EVENT {
+        string event_id PK
+        string event_category "GOAL, CARD, SUBSTITUTION, CORNER, FREE_KICK, PENALTY, SAVE, SHOT, FOUL, OFFSIDE, VAR_REVIEW"
+        int match_minute
+        int added_time_minute "null if not added time"
+        string match_period "FIRST_HALF, SECOND_HALF, EXTRA_TIME_1, EXTRA_TIME_2, PENALTY_SHOOTOUT"
+        string player_id FK "primary player involved"
+        string team_id FK
+        int home_score_at_event
+        int away_score_at_event
+        string location_on_pitch "PENALTY_BOX, OUTSIDE_BOX, MIDFIELD, etc."
+    }
+
+    FOOTBALL_GOAL_DETAIL {
+        string goal_detail_id PK
+        string event_id FK
+        string scorer_id FK
+        string assist_player_id FK "null if no assist"
+        string goal_type "OPEN_PLAY, PENALTY, FREE_KICK, CORNER, OWN_GOAL, HEADER"
+        string body_part "LEFT_FOOT, RIGHT_FOOT, HEAD, CHEST, OTHER"
+        boolean is_penalty
+        boolean is_own_goal
+        int minute_scored
+        string goal_description
+    }
+
+    FOOTBALL_CARD_DETAIL {
+        string card_detail_id PK
+        string event_id FK
+        string player_id FK
+        string card_type "YELLOW, RED, YELLOW_TO_RED"
+        string card_reason "FOUL, DISSENT, TIME_WASTING, DANGEROUS_PLAY, UNSPORTING_BEHAVIOR, VIOLENT_CONDUCT"
+        boolean is_second_yellow
+        int minute_issued
+        string card_description
+    }
+
+    FOOTBALL_SUBSTITUTION_DETAIL {
+        string substitution_detail_id PK
+        string event_id FK
+        string player_out_id FK
+        string player_in_id FK
+        string team_id FK
+        int minute_substituted
+        string substitution_reason "TACTICAL, INJURY, PERFORMANCE"
+        int substitution_number "1st, 2nd, 3rd sub"
+    }
+
+    %% Additional supporting entities for comprehensive tracking
+    FOOTBALL_SHOT_DETAIL {
+        string shot_detail_id PK
+        string event_id FK
+        string player_id FK
+        string shot_type "ON_TARGET, OFF_TARGET, BLOCKED, SAVED"
+        string shot_method "SHOT, HEADER, VOLLEY"
+        boolean is_big_chance
+        int xG_value "expected goals value"
+    }
+
+    FOOTBALL_SAVE_DETAIL {
+        string save_detail_id PK
+        string event_id FK
+        string goalkeeper_id FK
+        string save_type "REFLEX, DIVE, CATCH, PUNCH, PARRY"
+        boolean is_spectacular
+        string shot_origin_player_id FK
+    }
+
+    %% Link shot and save details to football events
+    FOOTBALL_EVENT ||--o| FOOTBALL_SHOT_DETAIL : "has-detail"
+    FOOTBALL_EVENT ||--o| FOOTBALL_SAVE_DETAIL : "has-detail"
+
+    CO_HOST {
+        string co_host_id PK
+        string entity_id FK
+        string user_id FK
+        datetime invited_at
+        string permission_level
+        string status
+        datetime accepted_at
+    }
+
+    PLAYER_STATISTICS ||--|| PLAYER : tracks
+    PLAYER_STATISTICS {
+        string stat_id PK
+        string player_id FK
+        string entity_id FK
+        string entity_type
+        json cricket_stats
+        json football_stats
+        datetime last_updated
+    }
+
+    SYNC_LOG {
+        string sync_id PK
+        string entity_id FK
+        string entity_type
+        boolean is_synced
+        datetime synced_at
+        string sync_direction
+        string error_message
+        int retry_count
+    }
+
+    HOSTED_ENTITY ||--o{ SYNC_LOG : tracks
