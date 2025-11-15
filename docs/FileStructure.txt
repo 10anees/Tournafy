@@ -116,12 +116,12 @@ Tournafy/
 │   │   │   │   │   │       │                                   # VIOLENT_CONDUCT
 │   │   │   │   │   │       ├── SubstitutionReason.java        # TACTICAL, INJURY, PERFORMANCE
 │   │   │   │   │   │       ├── ShotType.java                  # ON_TARGET, OFF_TARGET, BLOCKED, SAVED
+│   │   │   │   │   │       ├── ShotMethod.java                # SHOT, HEADER, VOLLEY
 │   │   │   │   │   │       ├── SaveType.java                  # REFLEX, DIVE, CATCH, PUNCH, PARRY
 │   │   │   │   │   │       └── PitchLocation.java             # PENALTY_BOX, OUTSIDE_BOX, MIDFIELD, etc.
 │   │   │   │   │   │
 │   │   │   │   │   └── interfaces/            # Core Domain Interfaces (OBSERVER)
-│   │   │   │   │       ├── MatchObserver.jav│   │   │   │   │   │       ├── ShotMethod.java                # SHOT, HEADER, VOLLEY
-a                 # OBSERVER PATTERN - for real-time updates
+│   │   │   │   │       ├── MatchObserver.java                 # OBSERVER PATTERN - for real-time updates
 │   │   │   │   │       ├── TournamentObserver.java            # OBSERVER PATTERN - tournament updates
 │   │   │   │   │       └── SeriesObserver.java                # OBSERVER PATTERN - series updates
 │   │   │   │   │
