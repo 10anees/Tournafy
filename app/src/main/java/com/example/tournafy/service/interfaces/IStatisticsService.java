@@ -1,8 +1,11 @@
-package com.tournafy.service.interfaces;
+package com.example.tournafy.service.interfaces;
 
 // Note: Imports will be valid once domain models are created.
-// import com.tournafy.domain.models.base.Match;
-// import com.tournafy.domain.models.team.Player;
+import com.example.tournafy.domain.models.base.Match;
+import com.example.tournafy.domain.models.statistics.AggregatedStat;
+import com.example.tournafy.domain.models.statistics.PlayerStatistics;
+import java.util.List;
+import com.example.tournafy.domain.models.team.Player;
 
 /**
  * Defines the contract for calculating and updating player

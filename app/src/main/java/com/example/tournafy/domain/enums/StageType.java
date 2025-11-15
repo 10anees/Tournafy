@@ -1,4 +1,4 @@
-package com.example.tournafy.data.model.enums;
+package com.example.tournafy.domain.enums;
 
 // Tournament stage type covering group/table and knockout phases.
 public enum StageType {

@@ -1,4 +1,4 @@
-package com.example.tournafy.data.model.enums;
+package com.example.tournafy.domain.enums;
 
 // Defines permission levels for co-hosts
 public enum PermissionLevel {

@@ -1,9 +1,9 @@
-package com.tournafy.service.interfaces;
+package com.example.tournafy.service.interfaces;
 
 import android.content.Context;
 import android.content.Intent;
 import androidx.lifecycle.LiveData;
-//import com.tournafy.domain.models.user.User;
+import com.example.tournafy.domain.models.user.User;
 
 /**
  * Defines the contract for all authentication operations,

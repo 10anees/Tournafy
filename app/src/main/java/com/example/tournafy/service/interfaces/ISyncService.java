@@ -1,7 +1,7 @@
-package com.tournafy.service.interfaces;
+package com.example.tournafy.service.interfaces;
 
 // Note: Imports will be valid once domain models are created.
-//import com.tournafy.domain.models.base.HostedEntity;
+import com.example.tournafy.domain.models.base.HostedEntity;
 
 /**
  * Defines the contract for syncing offline data (from Firestore)
@@ -14,7 +14,7 @@ public interface ISyncService {
      * Enqueues a specific entity (Match, Tournament, Series) for synchronization.
      * @param entity The HostedEntity to sync.
      */
-    void syncEntity(HostedEntity entity);
+    void syncEntity(com.example.tournafy.domain.models.base.HostedEntity entity);
 
     /**
      * Attempts to sync all entities that are marked as pending.

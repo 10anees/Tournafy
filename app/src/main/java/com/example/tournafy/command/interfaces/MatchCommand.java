@@ -1,4 +1,4 @@
-package com.tournafy.command.interfaces;
+package com.example.tournafy.command.interfaces;
 
 /**
  * Defines the contract for all executable actions during a match

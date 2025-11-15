@@ -1,9 +1,8 @@
-package com.tournafy.service.interfaces;
+package com.example.tournafy.service.interfaces;
 
-// Note: Imports will be valid once domain models are created.
-// import com.tournafy.domain.models.base.Match;
-// import com.tournafy.domain.models.series.Series;
-// import com.tournafy.domain.models.tournament.Tournament;
+import com.example.tournafy.domain.models.base.Match;
+import com.example.tournafy.domain.models.series.Series;
+import com.example.tournafy.domain.models.tournament.Tournament;
 
 /**
  * Defines the contract for creating and managing new

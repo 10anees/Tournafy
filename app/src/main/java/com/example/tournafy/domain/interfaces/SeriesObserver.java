@@ -1,5 +1,5 @@
-package com.tournafy.domain.interfaces;
-//import com.tournafy.domain.models.series.Series;
+package com.example.tournafy.domain.interfaces;
+import com.example.tournafy.domain.models.series.Series;
 
 /**
  * Notifies listeners of changes to the series score (e.g., Team A wins).

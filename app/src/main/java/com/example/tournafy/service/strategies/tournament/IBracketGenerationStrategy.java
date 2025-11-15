@@ -1,8 +1,7 @@
-package com.tournafy.service.strategies.tournament;
+package com.example.tournafy.service.strategies.tournament;
 
-// Note: Imports will be valid once domain models are created.
-// import com.tournafy.domain.models.tournament.Tournament;
-// import com.tournafy.domain.models.team.Team;
+import com.example.tournafy.domain.models.tournament.Tournament;
+import com.example.tournafy.domain.models.team.Team;
 import java.util.List;
 
 /**
@@ -17,5 +16,5 @@ public interface IBracketGenerationStrategy {
      * @param tournament The tournament to generate matches for.
      * @param teams      The list of teams in that stage.
      */
-    void generateMatches(Tournament tournament, List<Team> teams);
+    void generateMatches(Tournament tournament, List<com.example.tournafy.domain.models.team.Team> teams);
 }

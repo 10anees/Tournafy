@@ -1,4 +1,4 @@
-package com.example.tournafy.data.model.enums;
+package com.example.tournafy.domain.enums;
 
 //EntityStatus represents lifecycle state of domain entities (Match, Series, Tournament).
 public enum EntityStatus {

@@ -1,4 +1,4 @@
-package com.tournafy.service.strategies.sync;
+package com.example.tournafy.service.strategies.sync;
 
 /**
  * Defines the contract for different conflict resolution strategies

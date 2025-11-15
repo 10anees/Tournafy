@@ -1,36 +1,42 @@
-package com.tournafy.data.repository.interfaces;
+// Path: app/src/main/java/com/tournafy/data/repository/interfaces/IRepository.java
+package com.example.tournafy.data.repository.interfaces;
 
+import androidx.lifecycle.LiveData;
+import com.google.android.gms.tasks.Task;
 import java.util.List;
 
 /**
- * @param <T>  The domain model class (e.g., Match, Tournament, User)
- * @param <ID> The data type of the entity's Primary Key (usually String)
+ * @param <T>  The domain model type (e.g., User, Match, Tournament)
+ * @param <ID> The type of the model's primary key (e.g., String)
  */
 public interface IRepository<T, ID> {
 
     /**
-     * @param id The unique ID of the entity.
-     * @return The entity object, or null if not found. (Implementation may vary)
+     * @param entity The entity to add.
+     * @return A Task that completes when the operation is finished.
      */
-    T getById(ID id);
+    Task<Void> add(T entity);
 
     /**
-     * @return A List of all entities. (Implementation may vary)
+     * @param entity The entity with updated data.
+     * @return A Task that completes when the operation is finished.
      */
-    List<T> getAll();
+    Task<Void> update(T entity);
 
     /**
-     * @param entity The entity object to add.
+     * @param id The ID of the entity to delete.
+     * @return A Task that completes when the operation is finished.
      */
-    void add(T entity);
+    Task<Void> delete(ID id);
 
     /**
-     * @param entity The entity object to update.
+     * @param id The ID of the entity to retrieve.
+     * @return LiveData holding the entity.
      */
-    void update(T entity);
+    LiveData<T> getById(ID id);
 
     /**
-     * @param entity The entity object to delete.
+     * @return LiveData holding a list of all entities.
      */
-    void delete(T entity);
+    LiveData<List<T>> getAll();
 }

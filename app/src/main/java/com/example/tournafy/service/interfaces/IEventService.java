@@ -1,8 +1,8 @@
-package com.tournafy.service.interfaces;
+package com.example.tournafy.service.interfaces;
 
 // Note: Imports will be valid once domain models are created.
-// import com.tournafy.domain.models.base.Match;
-// import com.tournafy.domain.models.base.MatchEvent;
+import com.example.tournafy.domain.models.base.Match;
+import com.example.tournafy.domain.models.base.MatchEvent;
 
 /**
  * Defines the contract for recording, deleting, and managing

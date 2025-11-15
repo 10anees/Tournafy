@@ -1,8 +1,8 @@
-package com.tournafy.service.interfaces;
+package com.example.tournafy.service.interfaces;
 
 // Note: Imports will be valid once domain models are created.
-// import com.tournafy.domain.models.tournament.Tournament;
-// import com.tournafy.domain.models.team.Team;
+import com.example.tournafy.domain.models.tournament.Tournament;
+import com.example.tournafy.domain.models.team.Team;
 import java.util.List;
 
 /**

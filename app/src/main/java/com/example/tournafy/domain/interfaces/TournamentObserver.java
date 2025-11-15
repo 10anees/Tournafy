@@ -1,5 +1,5 @@
-package com.tournafy.domain.interfaces;
-//import com.tournafy.domain.models.tournament.Tournament;
+package com.example.tournafy.domain.interfaces;
+import com.example.tournafy.domain.models.tournament.Tournament;
 
 /**
  * Notifies listeners of changes to tournament standings, brackets, or match results.

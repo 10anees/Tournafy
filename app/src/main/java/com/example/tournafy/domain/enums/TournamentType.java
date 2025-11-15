@@ -1,4 +1,4 @@
-package com.example.tournafy.data.model.enums;
+package com.example.tournafy.domain.enums;
 
 // Tournament format types per PRD G2.
 public enum TournamentType {

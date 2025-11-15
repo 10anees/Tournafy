@@ -1,7 +1,7 @@
-package com.tournafy.domain.interfaces;
+package com.example.tournafy.domain.interfaces;
 
-//import com.tournafy.domain.models.base.Match;
-//import com.tournafy.domain.models.base.MatchEvent;
+import com.example.tournafy.domain.models.base.Match;
+import com.example.tournafy.domain.models.base.MatchEvent;
 
 /**
  * Used to notify listeners (like UI, StatisticsService, FirebaseSync)
