@@ -1,0 +1,125 @@
+res/
+│
+├── anim/               # Property and view animations
+│
+├── color/              # Color state lists (e.g., button_tint.xml)
+│
+├── drawable/           # Vector icons (ic_home.xml) and custom shapes
+│
+├── layout/
+│   │
+│   │   # --- Activities ---
+│   │   activity_auth.xml                 [cite: 90]
+│   │   activity_main.xml                 [cite: 89, 90]
+│   │   activity_splash.xml               [cite: 90]
+│   │
+│   │   # --- Fragments: Main Navigation ---
+│   │   fragment_home.xml                 [cite: 91]
+│   │   fragment_host_online.xml          [cite: 94]
+│   │   fragment_search.xml               [cite: 93]
+│   │   fragment_settings.xml             [cite: 99]
+│   │
+│   │   # --- Fragments: Host Flow ---
+│   │   fragment_add_match_details.xml    [cite: 95]
+│   │   fragment_add_match_teams.xml      [cite: 95]
+│   │   fragment_add_series_details.xml   [cite: 98]
+│   │   fragment_add_series_teams.xml     [cite: 98]
+│   │   fragment_add_tournament_details.xml [cite: 96]
+│   │   fragment_add_tournament_teams.xml [cite: 96]
+│   │   fragment_host_new_match.xml       [cite: 95]
+│   │   fragment_host_new_series.xml      [cite: 98]
+│   │   fragment_host_new_tournament.xml  [cite: 96]
+│   │   fragment_set_matches.xml          [cite: 97]
+│   │
+│   │   # --- Fragments: Match Details (Cricket) ---
+│   │   fragment_cricket_details.xml          [cite: 101]
+│   │   fragment_cricket_lineups.xml          [cite: 102]
+│   │   fragment_cricket_live_score.xml       [cite: 101]
+│   │   fragment_cricket_scorecard.xml        [cite: 101]
+│   │   fragment_cricket_tournament_series.xml [cite: 102]
+│   │
+│   │   # --- Fragments: Match Details (Football) ---
+│   │   fragment_football_details.xml         [cite: 103]
+│   │   fragment_football_lineups.xml         [cite: 104]
+│   │   fragment_football_live_score.xml      [cite: 103]
+│   │   fragment_football_statistics.xml      [cite: 103]
+│   │   fragment_football_tournament.xml      [cite: 104]
+│   │
+│   │   # --- Fragments: Tournament Details ---
+│   │   fragment_tournament_knockout.xml      [cite: 105]
+│   │   fragment_tournament_table.xml         [cite: 105]
+│   │   fragment_tournament_top_players.xml   [cite: 105]
+│   │
+│   │   # --- Fragments: Series Details ---
+│   │   fragment_series_details.xml           [cite: 106]
+│   │   fragment_series_top_players.xml       [cite: 107]
+│   │
+│   │   # --- Dialogs ---
+│   │   dialog_add_player.xml                 [cite: 108]
+│   │   dialog_confirm_action.xml             [cite: 108]
+│   │   dialog_edit_team.xml                  [cite: 108]
+│   │   dialog_event_input.xml                [cite: 109]
+│   │   dialog_theme_selector.xml             [cite: 99]
+│   │
+│   │   # --- RecyclerView List Items (Adapters) ---
+│   │   item_event_timeline.xml               [cite: 111]
+│   │   item_home_hosted_entity.xml           [cite: 92]
+│   │   item_match_list.xml                   [cite: 110]
+│   │   item_player_list.xml                  [cite: 109]
+│   │   item_scorecard_row.xml                [cite: 111]
+│   │   item_search_result.xml                [cite: 93]
+│   │   item_team_list.xml                    [cite: 110]
+│   │   item_tournament_stage.xml             [cite: 110]
+│   │
+│   │   # --- Custom Views & Components ---
+│   │   component_player_card.xml             [cite: 117]
+│   │   component_scoreboard.xml              [cite: 118]
+│   │   component_stat_item.xml               [cite: 116]
+│   │   component_team_badge.xml              [cite: 117]
+│   │   view_bracket.xml                      [cite: 114]
+│   │   view_over_progress.xml                [cite: 115]
+│   │   view_pitch_map.xml                    [cite: 115]
+│   │   view_score_wheel.xml                  [cite: 115]
+│
+├── menu/
+│   └── bottom_nav_menu.xml
+│
+├── mipmap-anydpi-v26/      # Adaptive launcher icons
+│   │   ic_launcher.xml
+│   └── ic_launcher_round.xml
+│
+├── mipmap-hdpi/            # Launcher icons for different densities
+│   │   ic_launcher.png
+│   └── ic_launcher_round.png
+│
+├── mipmap-mdpi/
+│   │   ic_launcher.png
+│   └── ic_launcher_round.png
+│
+├── mipmap-xhdpi/
+│   │   ic_launcher.png
+│   └── ic_launcher_round.png
+│
+├── mipmap-xxhdpi/
+│   │   ic_launcher.png
+│   └── ic_launcher_round.png
+│
+├── mipmap-xxxhdpi/
+│   │   ic_launcher.png
+│   └── ic_launcher_round.png
+│
+├── navigation/
+│   └── main_nav_graph.xml  # Navigation Component graph
+│
+├── values/                 # Default (Day) values
+│   │   colors.xml          # App color palette
+│   │   dimens.xml          # Standardized dimensions (padding, text size)
+│   │   strings.xml         # All user-facing strings
+│   │   styles.xml          # Custom view styles (e.g., Button.Tournafy)
+│   └── themes.xml          # Base Material 3 theme (Day/Night)
+│
+├── values-night/           # Night mode overrides
+│   └── themes.xml
+│
+└── xml/
+    └── # Preference screens, network security config, etc.

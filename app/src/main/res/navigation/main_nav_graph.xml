@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.tournafy.ui.fragments.home.HomeFragment"
+        android:label="fragment_home"
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_homeFragment_to_hostNewMatchFragment"
+            app:destination="@id/hostNewMatchFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/searchFragment"
+        android:name="com.example.tournafy.ui.fragments.search.SearchFragment"
+        android:label="fragment_search"
+        tools:layout="@layout/fragment_search" />
+
+    <fragment
+        android:id="@+id/hostOnlineFragment"
+        android:name="com.example.tournafy.ui.fragments.host.HostOnlineFragment"
+        android:label="fragment_host_online"
+        tools:layout="@layout/fragment_host_online" />
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.example.tournafy.ui.fragments.settings.SettingsFragment"
+        android:label="fragment_settings"
+        tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/hostNewMatchFragment"
+        android:name="com.example.tournafy.ui.fragments.host.match.HostNewMatchFragment"
+        android:label="fragment_host_new_match"
+        tools:layout="@layout/fragment_host_new_match" />
+
+</navigation>
