@@ -40,6 +40,7 @@ public class HostNewTournamentFragment extends Fragment {
     private ProgressBar progressBar;
 
     private String currentUserId;
+    private static final String GUEST_HOST_ID = "GUEST_HOST";
 
     public HostNewTournamentFragment() {
         // Required empty public constructor
@@ -74,45 +75,37 @@ public class HostNewTournamentFragment extends Fragment {
     }
 
     private void setupDropdowns() {
-        // Setup Sport Dropdown
         String[] sports = new String[]{"Cricket", "Football"};
         ArrayAdapter<String> sportAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, sports);
         actvSport.setAdapter(sportAdapter);
 
-        // Setup Format Dropdown
         String[] formats = new String[]{"Knockout", "Round Robin"};
         ArrayAdapter<String> formatAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, formats);
         actvFormat.setAdapter(formatAdapter);
     }
 
     private void setupObservers() {
-        // 1. Get Current User ID (Required for Builder)
         authViewModel.user.observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
                 currentUserId = user.getUserId();
-            } else {
-                Toast.makeText(getContext(), "Error: Not logged in", Toast.LENGTH_SHORT).show();
-                Navigation.findNavController(requireView()).navigateUp();
             }
+            // FIX: Removed "navigateUp" here. We allow staying on this screen as a guest.
         });
 
-        // 2. Observe Loading State
         hostViewModel.isLoading.observe(getViewLifecycleOwner(), isLoading -> {
             progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
             btnCreate.setEnabled(!isLoading);
         });
 
-        // 3. Observe Creation Success
         hostViewModel.creationSuccess.observe(getViewLifecycleOwner(), entity -> {
             if (entity != null && entity instanceof Tournament) {
                 Toast.makeText(getContext(), "Tournament Created!", Toast.LENGTH_SHORT).show();
                 hostViewModel.clearSuccessEvent();
                 NavController navController = Navigation.findNavController(requireView());
-                navController.navigateUp(); // Go back to Host Online
+                navController.navigateUp();
             }
         });
 
-        // 4. Observe Errors
         hostViewModel.errorMessage.observe(getViewLifecycleOwner(), error -> {
             if (error != null) {
                 Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
@@ -131,12 +124,10 @@ public class HostNewTournamentFragment extends Fragment {
             return;
         }
 
-        if (currentUserId == null) {
-            Toast.makeText(getContext(), "User not identified", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // FIX: Use GUEST_HOST_ID if currentUserId is null
+        String hostId = (currentUserId != null) ? currentUserId : GUEST_HOST_ID;
 
-        Tournament.Builder builder = new Tournament.Builder(name, currentUserId, sport.toUpperCase(), format.toUpperCase())
+        Tournament.Builder builder = new Tournament.Builder(name, hostId, sport.toUpperCase(), format.toUpperCase())
                 .withStartDate(new Date());
 
         hostViewModel.createTournament(builder);

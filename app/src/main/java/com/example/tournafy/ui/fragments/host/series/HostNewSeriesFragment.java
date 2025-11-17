@@ -38,6 +38,7 @@ public class HostNewSeriesFragment extends Fragment {
     private ProgressBar progressBar;
 
     private String currentUserId;
+    private static final String GUEST_HOST_ID = "GUEST_HOST";
 
     public HostNewSeriesFragment() {
         // Required empty public constructor
@@ -81,10 +82,8 @@ public class HostNewSeriesFragment extends Fragment {
         authViewModel.user.observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
                 currentUserId = user.getUserId();
-            } else {
-                Toast.makeText(getContext(), "Error: Not logged in", Toast.LENGTH_SHORT).show();
-                Navigation.findNavController(requireView()).navigateUp();
             }
+            // FIX: Removed "navigateUp" here to allow guest access
         });
 
         hostViewModel.isLoading.observe(getViewLifecycleOwner(), isLoading -> {
@@ -127,14 +126,11 @@ public class HostNewSeriesFragment extends Fragment {
             return;
         }
 
-        if (currentUserId == null) {
-            Toast.makeText(getContext(), "User not identified", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // FIX: Use GUEST_HOST_ID if currentUserId is null
+        String hostId = (currentUserId != null) ? currentUserId : GUEST_HOST_ID;
 
-        // FIX: Updated to match Series.Builder(name, hostUserId, sportId, teamAId, teamBId)
-        // Passing null for team IDs as they might be added later or in a subsequent step
-        Series.Builder builder = new Series.Builder(name, currentUserId, sport.toUpperCase(), null, null)
+        // Passing null for team IDs as they might be added later
+        Series.Builder builder = new Series.Builder(name, hostId, sport.toUpperCase(), null, null)
                 .withTotalMatches(totalMatches);
 
         hostViewModel.createSeries(builder);

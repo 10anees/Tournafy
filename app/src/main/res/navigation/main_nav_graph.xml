@@ -18,6 +18,21 @@
         <action
             android:id="@+id/action_homeFragment_to_hostNewMatchFragment"
             app:destination="@id/hostNewMatchFragment" />
+
+        <action
+            android:id="@+id/action_home_to_hostNewTournamentFragment"
+            app:destination="@id/hostNewTournamentFragment" />
+
+        <action
+            android:id="@+id/action_home_to_hostNewSeriesFragment"
+            app:destination="@id/hostNewSeriesFragment" />
+
+        <action
+            android:id="@+id/action_home_to_cricketLiveScore"
+            app:destination="@id/cricketLiveScoreFragment" />
+        <action
+            android:id="@+id/action_home_to_footballLiveScore"
+            app:destination="@id/footballLiveScoreFragment" />
     </fragment>
 
     <fragment
@@ -31,7 +46,6 @@
         android:name="com.example.tournafy.ui.fragments.host.HostOnlineFragment"
         android:label="Host Online"
         tools:layout="@layout/fragment_host_online">
-
         <action
             android:id="@+id/action_hostOnline_to_hostNewMatchFragment"
             app:destination="@id/hostNewMatchFragment" />
@@ -57,7 +71,15 @@
         android:id="@+id/hostNewMatchFragment"
         android:name="com.example.tournafy.ui.fragments.host.match.HostNewMatchFragment"
         android:label="New Match"
-        tools:layout="@layout/fragment_host_new_match" />
+        tools:layout="@layout/fragment_host_new_match">
+
+        <action
+            android:id="@+id/action_hostNewMatch_to_cricketLiveScore"
+            app:destination="@id/cricketLiveScoreFragment" />
+        <action
+            android:id="@+id/action_hostNewMatch_to_footballLiveScore"
+            app:destination="@id/footballLiveScoreFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/hostNewTournamentFragment"
@@ -70,5 +92,25 @@
         android:name="com.example.tournafy.ui.fragments.host.series.HostNewSeriesFragment"
         android:label="New Series"
         tools:layout="@layout/fragment_host_new_series" />
+
+    <fragment
+        android:id="@+id/cricketLiveScoreFragment"
+        android:name="com.example.tournafy.ui.fragments.match.cricket.CricketLiveScoreFragment"
+        android:label="Cricket Live Score"
+        tools:layout="@layout/fragment_cricket_live_score">
+        <argument
+            android:name="match_id"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/footballLiveScoreFragment"
+        android:name="com.example.tournafy.ui.fragments.match.football.FootballLiveScoreFragment"
+        android:label="Football Live Score"
+        tools:layout="@layout/fragment_football_live_score">
+        <argument
+            android:name="match_id"
+            app:argType="string" />
+    </fragment>
 
 </navigation>

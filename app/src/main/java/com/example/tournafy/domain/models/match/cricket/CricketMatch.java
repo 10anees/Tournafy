@@ -46,7 +46,6 @@ public class CricketMatch extends Match {
         this.sportId = SportTypeEnum.CRICKET.name();
         this.matchStatus = MatchStatus.SCHEDULED.name();
 
-        // Initialize lists
         this.innings = new ArrayList<>();
         this.cricketEvents = new ArrayList<>();
         this.teams = new ArrayList<>();
@@ -554,86 +553,52 @@ public class CricketMatch extends Match {
      * This extends the abstract Match.Builder to provide a fluent API.
      */
     public static class Builder extends Match.Builder<Builder> {
-
         private CricketMatchConfig config;
         private List<MatchTeam> teams;
 
-        /**
-         * Required constructor for the Builder.
-         *
-         * @param name       The name of the match (e.g., "Team A vs Team B").
-         * @param hostUserId The ID of the user hosting this match.
-         */
         public Builder(String name, String hostUserId) {
             super(name, hostUserId);
             this.teams = new ArrayList<>();
         }
 
-        /**
-         * Sets the cricket-specific configuration for this match.
-         *
-         * @param config A CricketMatchConfig object.
-         * @return The builder instance for chaining.
-         */
         public Builder withConfig(CricketMatchConfig config) {
             this.config = config;
             return this;
         }
 
-        /**
-         * Adds a team to the match.
-         *
-         * @param team A MatchTeam object.
-         * @return The builder instance for chaining.
-         */
         public Builder addTeam(MatchTeam team) {
             this.teams.add(team);
             return this;
         }
 
-        /**
-         * Sets the list of teams for this match.
-         *
-         * @param teams A List of MatchTeam objects.
-         * @return The builder instance for chaining.
-         */
         public Builder withTeams(List<MatchTeam> teams) {
             this.teams = teams;
             return this;
         }
 
-        /**
-         * This is required by the abstract builder to return the
-         * concrete builder instance.
-         */
         @Override
         protected Builder self() {
             return this;
         }
 
-        /**
-         * Constructs the final CricketMatch object.
-         *
-         * @return A new instance of CricketMatch.
-         */
         @Override
         public CricketMatch build() {
             CricketMatch match = new CricketMatch();
             
-            // Set fields from HostedEntity (via Match)
-            match.entityId = UUID.randomUUID().toString();
-            match.name = this.name;
-            match.hostUserId = this.hostUserId;
-            match.createdAt = new Date();
-            match.isOnline = false; // Default to offline
+            match.setEntityId(UUID.randomUUID().toString());
+            match.setName(this.name);
+            match.setHostUserId(this.hostUserId);
+            match.setCreatedAt(new Date());
+            match.setOnline(false);
             
-            // Set fields from Match
-            match.matchDate = this.matchDate;
-            match.venue = this.venue;
-            match.matchStatus = MatchStatus.SCHEDULED.name();
-            match.status = "DRAFT"; // Set initial entity status
+            // CRITICAL FIX: Explicitly set Sport ID
+            match.setSportId(SportTypeEnum.CRICKET.name());
+            
+            match.setMatchDate(this.matchDate);
+            match.setVenue(this.venue);
+            match.setMatchStatus(MatchStatus.SCHEDULED.name());
+            match.setStatus("DRAFT");
 
-            // Set fields from CricketMatch
             match.setMatchConfig(this.config != null ? this.config : new CricketMatchConfig());
             match.setTeams(this.teams);
 

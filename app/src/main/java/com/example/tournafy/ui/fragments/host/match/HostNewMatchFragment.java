@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
@@ -30,7 +31,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class HostNewMatchFragment extends Fragment {
 
     private HostViewModel hostViewModel;
-    private AuthViewModel authViewModel; // Need this for User ID
+    private AuthViewModel authViewModel;
 
     private ViewPager2 viewPager;
     private MaterialButton btnBack, btnNext;
@@ -39,6 +40,9 @@ public class HostNewMatchFragment extends Fragment {
 
     private SportTypeEnum selectedSport = SportTypeEnum.CRICKET;
     private String currentUserId;
+    
+    // Constant for offline/guest user
+    private static final String GUEST_HOST_ID = "GUEST_HOST";
 
     public HostNewMatchFragment() {
         // Required empty public constructor
@@ -74,7 +78,7 @@ public class HostNewMatchFragment extends Fragment {
     private void setupViewPager() {
         viewPager.setUserInputEnabled(false);
         viewPager.setAdapter(new MatchWizardAdapter(this));
-
+        
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
@@ -113,38 +117,44 @@ public class HostNewMatchFragment extends Fragment {
     }
 
     private void finalizeCreation() {
-        if (currentUserId == null) {
-            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // FIX: Allow Guest Hosting by defaulting to GUEST_HOST_ID
+        String hostId = (currentUserId != null) ? currentUserId : GUEST_HOST_ID;
 
         // In a real app, we would get the 'name' from the ViewModel shared with child fragments.
-        // For now, we use a placeholder name to satisfy the Builder constructor.
-        String matchName = "New Match";
-
+        String matchName = "New " + selectedSport.name() + " Match"; 
+        
         if (selectedSport == SportTypeEnum.CRICKET) {
-            // FIX: Pass required arguments (Name, HostUserId)
-            hostViewModel.createCricketMatch(new CricketMatch.Builder(matchName, currentUserId));
+            hostViewModel.createCricketMatch(new CricketMatch.Builder(matchName, hostId));
         } else {
-            // FIX: Pass required arguments (Name, HostUserId)
-            hostViewModel.createFootballMatch(new FootballMatch.Builder(matchName, currentUserId));
+            hostViewModel.createFootballMatch(new FootballMatch.Builder(matchName, hostId));
         }
     }
 
     private void observeViewModel() {
-        // Get User ID
         authViewModel.user.observe(getViewLifecycleOwner(), user -> {
             if (user != null) currentUserId = user.getUserId();
         });
 
-        hostViewModel.isLoading.observe(getViewLifecycleOwner(), isLoading ->
-                loadingOverlay.setVisibility(isLoading ? View.VISIBLE : View.GONE));
+        hostViewModel.isLoading.observe(getViewLifecycleOwner(), isLoading -> 
+            loadingOverlay.setVisibility(isLoading ? View.VISIBLE : View.GONE));
 
         hostViewModel.creationSuccess.observe(getViewLifecycleOwner(), entity -> {
             if (entity != null) {
                 Toast.makeText(getContext(), "Match Created!", Toast.LENGTH_SHORT).show();
+                
+                // FIX: Navigate to Host Mode (Live Score) instead of Home
+                Bundle args = new Bundle();
+                args.putString("match_id", entity.getEntityId());
+
+                NavController navController = Navigation.findNavController(requireView());
+                
+                if (selectedSport == SportTypeEnum.CRICKET) {
+                    navController.navigate(R.id.action_hostNewMatch_to_cricketLiveScore, args);
+                } else {
+                    navController.navigate(R.id.action_hostNewMatch_to_footballLiveScore, args);
+                }
+                
                 hostViewModel.clearSuccessEvent();
-                Navigation.findNavController(requireView()).navigateUp();
             }
         });
 
@@ -155,7 +165,7 @@ public class HostNewMatchFragment extends Fragment {
             }
         });
     }
-
+    
     public void setSelectedSport(SportTypeEnum sport) {
         this.selectedSport = sport;
     }

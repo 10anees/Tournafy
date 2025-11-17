@@ -10,6 +10,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
@@ -33,16 +34,12 @@ public class HomeFragment extends Fragment implements HomeAdapter.OnEntityClickL
 
     private HomeViewModel homeViewModel;
     private HomeAdapter adapter;
-
-    // UI Components
     private RecyclerView recyclerView;
     private TextView tvEmptyState;
     private ChipGroup chipGroupFilter;
     private ExtendedFloatingActionButton fabCreate;
 
-    public HomeFragment() {
-        // Required empty public constructor
-    }
+    public HomeFragment() { }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -54,10 +51,8 @@ public class HomeFragment extends Fragment implements HomeAdapter.OnEntityClickL
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Initialize ViewModel
         homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
 
-        // Initialize Views
         recyclerView = view.findViewById(R.id.rvHostedEntities);
         tvEmptyState = view.findViewById(R.id.tvEmptyState);
         chipGroupFilter = view.findViewById(R.id.chipGroupFilter);
@@ -78,25 +73,35 @@ public class HomeFragment extends Fragment implements HomeAdapter.OnEntityClickL
     private void setupFilters() {
         chipGroupFilter.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (checkedIds.isEmpty()) return;
-
             int id = checkedIds.get(0);
-            if (id == R.id.chipAll) {
-                homeViewModel.setFilter(HomeViewModel.EntityTypeFilter.ALL);
-            } else if (id == R.id.chipMatches) {
-                homeViewModel.setFilter(HomeViewModel.EntityTypeFilter.MATCH);
-            } else if (id == R.id.chipTournaments) {
-                homeViewModel.setFilter(HomeViewModel.EntityTypeFilter.TOURNAMENT);
-            } else if (id == R.id.chipSeries) {
-                homeViewModel.setFilter(HomeViewModel.EntityTypeFilter.SERIES);
-            }
+            if (id == R.id.chipAll) homeViewModel.setFilter(HomeViewModel.EntityTypeFilter.ALL);
+            else if (id == R.id.chipMatches) homeViewModel.setFilter(HomeViewModel.EntityTypeFilter.MATCH);
+            else if (id == R.id.chipTournaments) homeViewModel.setFilter(HomeViewModel.EntityTypeFilter.TOURNAMENT);
+            else if (id == R.id.chipSeries) homeViewModel.setFilter(HomeViewModel.EntityTypeFilter.SERIES);
         });
     }
 
     private void setupFab() {
         fabCreate.setOnClickListener(v -> {
-            NavController navController = Navigation.findNavController(v);
-            // Navigate to Host Online screen where user can choose what to create
-            navController.navigate(R.id.action_home_to_hostOnline);
+            String[] options = {"Match", "Tournament", "Series"};
+            
+            new AlertDialog.Builder(requireContext())
+                .setTitle("Host New Event")
+                .setItems(options, (dialog, which) -> {
+                    NavController nav = Navigation.findNavController(v);
+                    switch(which) {
+                        case 0: // Match
+                            nav.navigate(R.id.action_homeFragment_to_hostNewMatchFragment);
+                            break;
+                        case 1: // Tournament
+                            nav.navigate(R.id.action_home_to_hostNewTournamentFragment);
+                            break;
+                        case 2: // Series
+                            nav.navigate(R.id.action_home_to_hostNewSeriesFragment);
+                            break;
+                    }
+                })
+                .show();
         });
     }
 
@@ -115,13 +120,24 @@ public class HomeFragment extends Fragment implements HomeAdapter.OnEntityClickL
 
     @Override
     public void onEntityClick(HostedEntity entity) {
-        // Navigation based on entity type will go here
+        NavController navController = Navigation.findNavController(requireView());
+        Bundle args = new Bundle();
+        args.putString("match_id", entity.getEntityId());
+        
         if (entity instanceof Match) {
-            Toast.makeText(getContext(), "Opening Match: " + entity.getName(), Toast.LENGTH_SHORT).show();
+            Match match = (Match) entity;
+            // Check specific sport ID strings ("CRICKET" / "FOOTBALL")
+            boolean isCricket = "CRICKET".equalsIgnoreCase(match.getSportId());
+            
+            if (isCricket) {
+                navController.navigate(R.id.action_home_to_cricketLiveScore, args);
+            } else {
+                navController.navigate(R.id.action_home_to_footballLiveScore, args);
+            }
         } else if (entity instanceof Tournament) {
-            Toast.makeText(getContext(), "Opening Tournament: " + entity.getName(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Tournament Details coming soon", Toast.LENGTH_SHORT).show();
         } else if (entity instanceof Series) {
-            Toast.makeText(getContext(), "Opening Series: " + entity.getName(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Series Details coming soon", Toast.LENGTH_SHORT).show();
         }
     }
 

@@ -65,8 +65,18 @@ public class AuthService implements IAuthService {
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        // Unchecked cast is necessary here due to generic interface
-                        callback.onSuccess((T) task.getResult());
+                        // Fetch User details immediately to return in callback
+                        FirebaseUser fUser = mAuth.getCurrentUser();
+                        if (fUser != null) {
+                            User user = new User();
+                            user.setUserId(fUser.getUid());
+                            user.setEmail(fUser.getEmail());
+                            user.setName(fUser.getDisplayName());
+                            // In a real scenario, we'd fetch full details from Firestore here too
+                            callback.onSuccess((T) user);
+                        } else {
+                            callback.onSuccess(null);
+                        }
                     } else {
                         Log.e(TAG, "signInWithEmail:failure", task.getException());
                         callback.onError(task.getException());
@@ -91,8 +101,8 @@ public class AuthService implements IAuthService {
                             newUser.setEmail(fUser.getEmail());
                             newUser.setName(username);
 
-                            // FIX: Pass the specific result type T
-                            saveUserToFirestore(newUser, callback, (T) task.getResult());
+                            // Save to Firestore and return USER object in callback
+                            saveUserToFirestore(newUser, callback);
                         } else {
                             callback.onError(new Exception("FirebaseUser is null after creation."));
                         }
@@ -124,9 +134,19 @@ public class AuthService implements IAuthService {
                             if (fUser.getPhotoUrl() != null) {
                                 newUser.setProfilePicture(fUser.getPhotoUrl().toString());
                             }
-                            saveUserToFirestore(newUser, callback, (T) task.getResult());
+                            // Save and return User object
+                            saveUserToFirestore(newUser, callback);
                         } else {
-                            callback.onSuccess((T) task.getResult());
+                            // Existing user. Create User object from Auth data to return immediately.
+                            User existingUser = new User();
+                            existingUser.setUserId(fUser.getUid());
+                            existingUser.setEmail(fUser.getEmail());
+                            existingUser.setName(fUser.getDisplayName());
+                            if (fUser.getPhotoUrl() != null) {
+                                existingUser.setProfilePicture(fUser.getPhotoUrl().toString());
+                            }
+
+                            callback.onSuccess((T) existingUser);
                         }
                     } else {
                         Log.e(TAG, "signInWithGoogle:failure", task.getException());
@@ -151,12 +171,13 @@ public class AuthService implements IAuthService {
         return (user != null) ? user.getUid() : null;
     }
 
-    // FIX: Updated signature to take <T> and return it via callback
-    private <T> void saveUserToFirestore(User user, AuthCallback<T> callback, T authResult) {
+    // FIX: Changed signature to accept AuthCallback<T> and call onSuccess with the User object (T)
+    private <T> void saveUserToFirestore(User user, AuthCallback<T> callback) {
         mStore.collection(USERS_COLLECTION).document(user.getUserId())
                 .set(user, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
-                    callback.onSuccess(authResult);
+                    // Pass the User object back, cast to T
+                    callback.onSuccess((T) user);
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "saveUserToFirestore:failure", e);
@@ -179,8 +200,18 @@ public class AuthService implements IAuthService {
                     currentUserCache = user;
                     currentUserLiveData.postValue(user);
                 } else {
-                    currentUserCache = null;
-                    currentUserLiveData.postValue(null);
+                    // Create basic user from Auth if Firestore is missing
+                    FirebaseUser fUser = mAuth.getCurrentUser();
+                    if (fUser != null) {
+                        User basicUser = new User();
+                        basicUser.setUserId(fUser.getUid());
+                        basicUser.setEmail(fUser.getEmail());
+                        currentUserCache = basicUser;
+                        currentUserLiveData.postValue(basicUser);
+                    } else {
+                        currentUserCache = null;
+                        currentUserLiveData.postValue(null);
+                    }
                 }
             } else {
                 currentUserCache = null;
