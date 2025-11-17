@@ -1,20 +1,18 @@
 package com.example.tournafy.service.strategies.tournament;
 
-import com.example.tournafy.domain.models.tournament.Tournament;
-import com.example.tournafy.domain.models.team.Team;
+import com.example.tournafy.domain.models.team.TournamentTeam;
+import com.example.tournafy.domain.models.tournament.TournamentMatch;
 import java.util.List;
 
 /**
- * Defines the contract for different algorithms used to
- * set up tournament matches (e.g., Random, Manual).
+ * Strategy Interface for generating tournament brackets.
+ * Implementations: RandomBracketStrategy, SeededBracketStrategy, ManualBracketStrategy.
  */
 public interface IBracketGenerationStrategy {
-
     /**
-     * Generates the match schedule for a given tournament stage.
-     *
-     * @param tournament The tournament to generate matches for.
-     * @param teams      The list of teams in that stage.
+     * Generates a list of matches based on the provided teams.
+     * @param teams The list of teams participating in the tournament.
+     * @return A list of generated TournamentMatch objects.
      */
-    void generateMatches(Tournament tournament, List<com.example.tournafy.domain.models.team.Team> teams);
+    List<TournamentMatch> generate(List<TournamentTeam> teams);
 }

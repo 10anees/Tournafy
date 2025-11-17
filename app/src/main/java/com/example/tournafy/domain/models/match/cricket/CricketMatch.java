@@ -326,7 +326,7 @@ public class CricketMatch extends Match {
     /**
      * Gets the current active innings.
      */
-    private Innings getCurrentInnings() {
+    public Innings getCurrentInnings() {
         if (currentInningsNumber == 0 || innings.isEmpty()) {
             return null;
         }
@@ -336,7 +336,7 @@ public class CricketMatch extends Match {
     /**
      * Gets the current active over.
      */
-    private Over getCurrentOver() {
+    public Over getCurrentOver() {
         if (currentOvers.isEmpty()) {
             return null;
         }
@@ -484,6 +484,65 @@ public class CricketMatch extends Match {
 
     public List<Over> getCurrentOvers() {
         return currentOvers;
+    }
+
+    // --- --- --- --- --- --- --- --- ---
+    //   COMMAND PATTERN SUPPORT METHODS
+    // --- --- --- --- --- --- --- --- ---
+
+    /**
+     * Starts a new over in the current innings.
+     * Used by EndOverCommand to transition to next over.
+     */
+    public void startNewOver() {
+        Innings currentInnings = getCurrentInnings();
+        if (currentInnings != null && !currentInnings.isCompleted()) {
+            createNewOver(currentInnings);
+        }
+    }
+
+    /**
+     * Removes the last over from the current innings.
+     * Used by EndOverCommand undo operation.
+     */
+    public void removeLastOver() {
+        if (!currentOvers.isEmpty()) {
+            Over lastOver = currentOvers.remove(currentOvers.size() - 1);
+            Innings currentInnings = getCurrentInnings();
+            if (currentInnings != null && lastOver.isCompleted()) {
+                currentInnings.setOversCompleted(currentInnings.getOversCompleted() - 1);
+            }
+        }
+    }
+
+    /**
+     * Sets the current over.
+     * Used by command pattern to restore state.
+     */
+    public void setCurrentOver(Over over) {
+        if (!currentOvers.isEmpty()) {
+            currentOvers.set(currentOvers.size() - 1, over);
+        } else {
+            currentOvers.add(over);
+        }
+    }
+
+    /**
+     * Adds a cricket event to the match timeline.
+     * Used by command pattern for undo/redo support.
+     */
+    public void addMatchEvent(CricketEvent event) {
+        if (!cricketEvents.contains(event)) {
+            cricketEvents.add(event);
+        }
+    }
+
+    /**
+     * Removes a cricket event from the match timeline.
+     * Used by command pattern undo operations.
+     */
+    public void removeMatchEvent(CricketEvent event) {
+        cricketEvents.remove(event);
     }
 
     // --- --- --- --- --- --- --- --- ---

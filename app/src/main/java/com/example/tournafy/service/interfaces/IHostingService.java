@@ -1,42 +1,81 @@
 package com.example.tournafy.service.interfaces;
 
-import com.example.tournafy.domain.models.base.Match;
+import com.example.tournafy.domain.models.match.cricket.CricketMatch;
+import com.example.tournafy.domain.models.match.football.FootballMatch;
 import com.example.tournafy.domain.models.series.Series;
 import com.example.tournafy.domain.models.tournament.Tournament;
 
 /**
- * Defines the contract for creating and managing new
- * matches, series, and tournaments. 
- * This service will coordinate with the Builder pattern. 
+ * Service interface for handling the creation and management of
+ * matches, tournaments, and series. 
+ * This service orchestrates the use of factories and builders
+ * to create new hosted entities. 
  */
 public interface IHostingService {
 
     /**
-     * Creates a new match.
-     * @param matchBuilder The builder object containing match details.
-     * @return The newly created Match.
+     * Creates a new Cricket Match using the Builder pattern.
+     *
+     * @param builder A pre-configured CricketMatch.Builder.
+     * @param callback Callback to return the created match or an error.
      */
-    Match createMatch(Match.Builder matchBuilder);
+    void createCricketMatch(CricketMatch.Builder builder, HostingCallback<CricketMatch> callback);
 
     /**
-     * Creates a new tournament.
-     * @param tournamentBuilder The builder object containing tournament details.
-     * @return The newly created Tournament.
+     * Creates a new Football Match using the Builder pattern.
+     *
+     * @param builder A pre-configured FootballMatch.Builder.
+     * @param callback Callback to return the created match or an error.
      */
-    Tournament createTournament(Tournament.Builder tournamentBuilder);
+    void createFootballMatch(FootballMatch.Builder builder, HostingCallback<FootballMatch> callback);
 
     /**
-     * Creates a new series.
-     * @param seriesBuilder The builder object containing series details.
-     * @return The newly created Series.
+     * Creates a new Tournament using the Builder pattern. 
+     *
+     * @param builder A pre-configured Tournament.Builder.
+     * @param callback Callback to return the created tournament or an error.
      */
-    Series createSeries(Series.Builder seriesBuilder);
+    void createTournament(Tournament.Builder builder, HostingCallback<Tournament> callback);
 
     /**
-     * Uploads an offline HostedEntity (Match, Tournament, Series) to
-     * make it online.
-     * @param entityId The ID of the entity to upload.
-     * @param entityType The type of entity (Match, Tournament, Series).
+     * Creates a new Series using the Builder pattern. 
+     *
+     * @param builder A pre-configured Series.Builder.
+     * @param callback Callback to return the created series or an error.
      */
-    void uploadOfflineEntity(String entityId, String entityType);
+    void createSeries(Series.Builder builder, HostingCallback<Series> callback);
+
+    /**
+     * Updates an existing match.
+     *
+     * @param match The match object with updated data.
+     * @param callback Callback to signal success or error.
+     */
+    <T> void updateMatch(T match, HostingCallback<Void> callback);
+
+    /**
+     * Updates an existing tournament.
+     *
+     * @param tournament The tournament object with updated data.
+     * @param callback Callback to signal success or error.
+     */
+    void updateTournament(Tournament tournament, HostingCallback<Void> callback);
+
+    /**
+     * Updates an existing series.
+     *
+     * @param series The series object with updated data.
+     * @param callback Callback to signal success or error.
+     */
+    void updateSeries(Series series, HostingCallback<Void> callback);
+
+    /**
+     * A generic callback interface for asynchronous hosting operations.
+     *
+     * @param <T> The type of the successful result.
+     */
+    interface HostingCallback<T> {
+        void onSuccess(T result);
+        void onError(Exception e);
+    }
 }

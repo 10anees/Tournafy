@@ -1,44 +1,77 @@
 package com.example.tournafy.service.interfaces;
 
-import android.content.Context;
-import android.content.Intent;
 import androidx.lifecycle.LiveData;
 import com.example.tournafy.domain.models.user.User;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.firebase.auth.AuthCredential;
 
 /**
- * Defines the contract for all authentication operations,
- * supporting Google, Facebook, and Email providers.
- * This will be implemented as a Singleton.
+ * Service interface for handling user authentication (Singleton Pattern).
+ * Defines the contract for all auth operations like login, signup, and
+ * session management.
  */
 public interface IAuthService {
 
     /**
-     * @return LiveData<User>
+     * Retrieves the currently authenticated user's data.
+     *
+     * @return LiveData wrapping the User object, or null if not logged in.
      */
     LiveData<User> getCurrentUser();
 
     /**
-     * @param context The activity or fragment context.
-     * @return An Intent to be launched with registerForActivityResult.
-     */
-    Intent getGoogleSignInIntent(Context context);
-
-    /**
-     * @param data The Intent data from onActivityResult.
-     */
-    void handleGoogleSignInResult(Intent data);
-
-    /**
+     * Signs a user in using their email and password.
+     *
      * @param email    The user's email.
      * @param password The user's password.
+     * @param <T>      A type parameter for the task result (e.g., AuthResult)
      */
-    void signInWithEmail(String email, String password);
+    <T> void signInWithEmail(String email, String password, AuthCallback<T> callback);
 
     /**
+     * Creates a new user account with email and password.
+     *
      * @param email    The new user's email.
      * @param password The new user's password.
-     * @param name     The new user's name.
+     * @param username The new user's display name.
+     * @param <T>      A type parameter for the task result
      */
-    void signUpWithEmail(String email, String password, String name);
+    <T> void signUpWithEmail(String email, String password, String username, AuthCallback<T> callback);
+
+    /**
+     * Handles sign-in using a Google account credential.
+     *
+     * @param credential The Google Auth credential.
+     * @param <T>        A type parameter for the task result
+     */
+    <T> void signInWithGoogle(AuthCredential credential, AuthCallback<T> callback);
+
+    /**
+     * Signs the current user out.
+     */
     void signOut();
+
+    /**
+     * Checks if a user is currently authenticated.
+     *
+     * @return true if a user is logged in, false otherwise.
+     */
+    boolean isUserAuthenticated();
+
+    /**
+     * Gets the ID of the currently logged-in user.
+     *
+     * @return String user ID, or null if not authenticated.
+     */
+    String getCurrentUserId();
+
+    /**
+     * A generic callback interface for asynchronous authentication operations.
+     *
+     * @param <T> The type of the successful result.
+     */
+    interface AuthCallback<T> {
+        void onSuccess(T result);
+        void onError(Exception e);
+    }
 }

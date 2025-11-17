@@ -3,6 +3,8 @@ package com.example.tournafy.data.repository.offline;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import com.google.android.gms.tasks.Task; // Import Task
+import com.google.firebase.firestore.FieldValue; // Import FieldValue
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.example.tournafy.domain.models.statistics.PlayerStatistics;
 import java.util.List;
@@ -21,7 +23,7 @@ public class PlayerStatisticsFirestoreRepository extends FirestoreRepository<Pla
 
     @Override
     protected String getEntityId(PlayerStatistics entity) {
-        return entity.getStatId();
+        return entity.getStatId(); // Assuming EERD 'stat_id' maps to 'statId'
     }
 
     @Override
@@ -53,5 +55,21 @@ public class PlayerStatisticsFirestoreRepository extends FirestoreRepository<Pla
             });
             
         return liveData;
+    }
+    
+    /**
+     * * @param statsId The ID of the PlayerStatistics document.
+     * @param fieldName The field to increment (e.g., "runs", "goals").
+     * @param incrementBy The amount to add.
+     * @return Task that completes when operation finishes.
+     */
+    public Task<Void> incrementStat(String statsId, String fieldName, long incrementBy) {
+        // This assumes your stats are in a map called "stats"
+        // e.g., { "runs": 10, "wickets": 2 }
+        String fieldPath = "stats." + fieldName;
+        
+        return collectionReference.document(statsId).update(
+            fieldPath, FieldValue.increment(incrementBy)
+        );
     }
 }

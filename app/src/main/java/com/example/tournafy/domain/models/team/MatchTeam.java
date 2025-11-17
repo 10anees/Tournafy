@@ -5,15 +5,19 @@ import java.util.UUID;
 /**
  * Represents the linking table between a Match and a Team.
  * It holds match-specific information for that team, like score.
- * Maps to the MATCH_TEAM entity in the EERD[cite: 8, 209].
+ * Maps to the MATCH_TEAM entity in the EERD.
  */
 public class MatchTeam {
 
     private String matchTeamId;
     private String matchId; // FK to Match
     private String teamId; // FK to Team
-    private boolean isHomeTeam; // 
-    private int score; // 
+
+    // Added to fix compilation error in FootballLiveScoreFragment
+    private String teamName;
+
+    private boolean isHomeTeam;
+    private int score;
 
     public MatchTeam() {
         this.matchTeamId = UUID.randomUUID().toString();
@@ -44,6 +48,15 @@ public class MatchTeam {
 
     public void setTeamId(String teamId) {
         this.teamId = teamId;
+    }
+
+    // FIX: Added this method required by FootballLiveScoreFragment
+    public String getTeamName() {
+        return teamName;
+    }
+
+    public void setTeamName(String teamName) {
+        this.teamName = teamName;
     }
 
     public boolean isHomeTeam() {

@@ -31,27 +31,27 @@ public class InningsFirestoreRepository extends FirestoreRepository<Innings> {
         }
         return addOrUpdateWithId(entity.getInningsId(), entity);
     }
-    
+
     /**
      * Custom method to get all innings for a specific match.
      * @param matchId The ID of the match.
      * @return LiveData holding a list of innings.
      */
-    public LiveData<List<Innings>> getInningsForMatch(String matchId) {
+    public LiveData<List<Innings>> getInningsByMatchId(String matchId) {
         MutableLiveData<List<Innings>> liveData = new MutableLiveData<>();
-        
+
         collectionReference.whereEqualTo("matchId", matchId)
-            .orderBy("inningsNumber") // Order by 1st innings, then 2nd
-            .addSnapshotListener((snapshots, e) -> {
-                if (e != null) {
-                    liveData.setValue(null);
-                    return;
-                }
-                if (snapshots != null) {
-                    liveData.setValue(snapshots.toObjects(Innings.class));
-                }
-            });
-            
+                .orderBy("inningsNumber") // Order by 1st innings, then 2nd
+                .addSnapshotListener((snapshots, e) -> {
+                    if (e != null) {
+                        liveData.setValue(null);
+                        return;
+                    }
+                    if (snapshots != null) {
+                        liveData.setValue(snapshots.toObjects(Innings.class));
+                    }
+                });
+
         return liveData;
     }
 }

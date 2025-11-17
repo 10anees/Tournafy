@@ -1,0 +1,8 @@
+package com.example.tournafy.di;
+
+import android.app.Application;
+import dagger.hilt.android.HiltAndroidApp;
+
+@HiltAndroidApp
+public class TournafyApplication extends Application {
+}

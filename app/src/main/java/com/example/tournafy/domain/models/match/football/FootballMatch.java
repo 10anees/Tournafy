@@ -457,6 +457,76 @@ public class FootballMatch extends Match {
         return null;
     }
 
+    /**
+     * Gets the home team ID.
+     */
+    public String getHomeTeamId() {
+        MatchTeam homeTeam = getHomeTeam();
+        return homeTeam != null ? homeTeam.getTeamId() : null;
+    }
+
+    /**
+     * Gets the away team ID.
+     */
+    public String getAwayTeamId() {
+        MatchTeam awayTeam = getAwayTeam();
+        return awayTeam != null ? awayTeam.getTeamId() : null;
+    }
+
+    // --- --- --- --- --- --- --- --- ---
+    //   COMMAND PATTERN SUPPORT METHODS
+    // --- --- --- --- --- --- --- --- ---
+
+    /**
+     * Adds a football event to the match timeline.
+     * Used by command pattern for undo/redo support.
+     */
+    public void addMatchEvent(FootballEvent event) {
+        if (!footballEvents.contains(event)) {
+            footballEvents.add(event);
+        }
+    }
+
+    /**
+     * Removes a football event from the match timeline.
+     * Used by command pattern undo operations.
+     */
+    public void removeMatchEvent(FootballEvent event) {
+        footballEvents.remove(event);
+    }
+
+    /**
+     * Sets the home team score directly.
+     * Used by command pattern operations.
+     */
+    public void setHomeScore(int score) {
+        this.homeScore = score;
+        updateTeamScores();
+    }
+
+    /**
+     * Sets the away team score directly.
+     * Used by command pattern operations.
+     */
+    public void setAwayScore(int score) {
+        this.awayScore = score;
+        updateTeamScores();
+    }
+
+    /**
+     * Performs a player substitution by swapping players in team lineup.
+     * Used by SubstitutePlayerCommand.
+     * 
+     * @param playerOutId The ID of the player being substituted out
+     * @param playerInId The ID of the player coming in
+     */
+    public void performSubstitution(String playerOutId, String playerInId) {
+        // This method would update the active lineup in MatchTeam
+        // For now, we just log the substitution via events
+        // The actual lineup management would be handled by the service layer
+        // This is a placeholder for future implementation
+    }
+
     // --- Abstract Method Implementations ---
 
     @Override

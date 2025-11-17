@@ -1,23 +1,19 @@
 package com.example.tournafy.command.interfaces;
 
 /**
- * Defines the contract for all executable actions during a match
- * that support undo/redo functionality (e.g., AddBall, AddGoal). 
+ * The Command Interface.
+ * All scoring actions (Goal, Ball, Wicket, Card) must implement this.
  */
 public interface MatchCommand {
-
     /**
-     * @return true if execution was successful, false otherwise.
+     * Executes the logic to update the match state.
+     * e.g., Adds runs to score, adds a goal to timeline.
      */
-    boolean execute();
+    void execute();
 
     /**
-     * Reverts the effects of the execute() method.
+     * Reverses the logic performed in execute().
+     * e.g., Removes the last ball, removes the goal.
      */
     void undo();
-
-    /**
-     * Re-applies the effects of the execute() method (for redo).
-     */
-    void redo();
 }

@@ -1,32 +1,48 @@
 package com.example.tournafy.service.interfaces;
 
-// Note: Imports will be valid once domain models are created.
-import com.example.tournafy.domain.models.base.Match;
-import com.example.tournafy.domain.models.base.MatchEvent;
+import com.example.tournafy.command.MatchCommandManager;
 
 /**
- * Defines the contract for recording, deleting, and managing
- * live match events (e.g., goals, wickets). 
- * This service will use the Command Pattern for undo/redo. 
+ * Service interface for recording match events. 
+ * This service will be responsible for creating and executing
+ * commands (AddBallCommand, AddGoalCommand, etc.) using the
+ * MatchCommandManager.
  */
 public interface IEventService {
 
     /**
-     * Records a new event for a specific match.
-     * @param match The match this event belongs to.
-     * @param event The new MatchEvent to add.
+     * Executes a match command (e.g., AddBall, AddGoal) and
+     * adds it to the command manager's stack.
+     *
+     * @param command The MatchCommand to be executed.
+     * @param manager The MatchCommandManager for the current match.
+     * @param callback Callback to signal success or error.
      */
-    void recordEvent(Match match, MatchEvent event);
+    void executeCommand(com.example.tournafy.command.interfaces.MatchCommand command, MatchCommandManager manager, EventCallback<Void> callback);
 
     /**
-     * Undoes the last recorded event for a specific match.
-     * @param match The match to undo an event for.
+     * Undoes the last executed command.
+     *
+     * @param manager The MatchCommandManager for the current match.
+     * @param callback Callback to signal success or error.
      */
-    void undoLastEvent(Match match);
+    void undoLastCommand(MatchCommandManager manager, EventCallback<Void> callback);
 
     /**
-     * Redoes the last undone event for a specific match.
-     * @param match The match to redo an event for.
+     * Redoes the last undone command.
+     *
+     * @param manager The MatchCommandManager for the current match.
+     * @param callback Callback to signal success or error.
      */
-    void redoLastEvent(Match match);
+    void redoLastCommand(MatchCommandManager manager, EventCallback<Void> callback);
+
+    /**
+     * A generic callback interface for event operations.
+     *
+     * @param <T> The type of the successful result.
+     */
+    interface EventCallback<T> {
+        void onSuccess(T result);
+        void onError(Exception e);
+    }
 }

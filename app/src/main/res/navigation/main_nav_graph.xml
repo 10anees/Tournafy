@@ -8,8 +8,13 @@
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.example.tournafy.ui.fragments.home.HomeFragment"
-        android:label="fragment_home"
-        tools:layout="@layout/fragment_home" >
+        android:label="Home"
+        tools:layout="@layout/fragment_home">
+
+        <action
+            android:id="@+id/action_home_to_hostOnline"
+            app:destination="@id/hostOnlineFragment" />
+
         <action
             android:id="@+id/action_homeFragment_to_hostNewMatchFragment"
             app:destination="@id/hostNewMatchFragment" />
@@ -18,25 +23,52 @@
     <fragment
         android:id="@+id/searchFragment"
         android:name="com.example.tournafy.ui.fragments.search.SearchFragment"
-        android:label="fragment_search"
+        android:label="Search"
         tools:layout="@layout/fragment_search" />
 
     <fragment
         android:id="@+id/hostOnlineFragment"
         android:name="com.example.tournafy.ui.fragments.host.HostOnlineFragment"
-        android:label="fragment_host_online"
-        tools:layout="@layout/fragment_host_online" />
+        android:label="Host Online"
+        tools:layout="@layout/fragment_host_online">
+
+        <action
+            android:id="@+id/action_hostOnline_to_hostNewMatchFragment"
+            app:destination="@id/hostNewMatchFragment" />
+        <action
+            android:id="@+id/action_hostOnline_to_hostNewTournamentFragment"
+            app:destination="@id/hostNewTournamentFragment" />
+        <action
+            android:id="@+id/action_hostOnline_to_hostNewSeriesFragment"
+            app:destination="@id/hostNewSeriesFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/settingsFragment"
         android:name="com.example.tournafy.ui.fragments.settings.SettingsFragment"
-        android:label="fragment_settings"
-        tools:layout="@layout/fragment_settings" />
+        android:label="Settings"
+        tools:layout="@layout/fragment_settings">
+        <action
+            android:id="@+id/action_settings_to_hostOnline"
+            app:destination="@id/hostOnlineFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/hostNewMatchFragment"
         android:name="com.example.tournafy.ui.fragments.host.match.HostNewMatchFragment"
-        android:label="fragment_host_new_match"
+        android:label="New Match"
         tools:layout="@layout/fragment_host_new_match" />
+
+    <fragment
+        android:id="@+id/hostNewTournamentFragment"
+        android:name="com.example.tournafy.ui.fragments.host.tournament.HostNewTournamentFragment"
+        android:label="New Tournament"
+        tools:layout="@layout/fragment_host_new_tournament" />
+
+    <fragment
+        android:id="@+id/hostNewSeriesFragment"
+        android:name="com.example.tournafy.ui.fragments.host.series.HostNewSeriesFragment"
+        android:label="New Series"
+        tools:layout="@layout/fragment_host_new_series" />
 
 </navigation>

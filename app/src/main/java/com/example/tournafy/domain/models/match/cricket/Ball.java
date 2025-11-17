@@ -3,84 +3,88 @@ package com.example.tournafy.domain.models.match.cricket;
 /**
  * Domain Model for a single Ball in an Over.
  * Corresponds to BALL in the EERD.
- * This will be stored as part of a list within an Over document.
  */
 public class Ball {
 
     private String ballId;
-    private int ballNumber; // 1-6 (or more for no-balls)
-    private String batsmanId; // FK to Player
-    private String bowlerId; // FK to Player
+
+    // --- Hierarchy Foreign Keys ---
+    private String matchId;      // Link to Match
+    private String inningsId;    // Link to Innings
+    private String overId;       // Link to Over
+
+    // --- Sequencing ---
+    private int inningsNumber;   // 1 or 2
+    private int overNumber;      // 0, 1, 2...
+    private int ballNumber;      // 1-6 (or more for extras)
+
+    // --- Players ---
+    private String batsmanId;    // FK to Player
+    private String bowlerId;     // FK to Player
+
+    // --- Outcome ---
     private int runsScored;
     private boolean isWicket;
-    private String extrasType; // e.g., "WIDE", "NO_BALL"
-    private String wicketType; // e.g., "BOWLED", "CAUGHT"
+    private boolean isBoundary;  // New field
+    private String extrasType;   // e.g., "WIDE", "NO_BALL", "NONE"
+    private String wicketType;   // e.g., "BOWLED", "CAUGHT"
 
     // No-arg constructor for Firestore
     public Ball() {}
 
-    // Getters and Setters
-    public String getBallId() {
-        return ballId;
-    }
+    // --- Getters and Setters ---
 
-    public void setBallId(String ballId) {
-        this.ballId = ballId;
-    }
+    public String getBallId() { return ballId; }
+    public void setBallId(String ballId) { this.ballId = ballId; }
 
-    public int getBallNumber() {
-        return ballNumber;
-    }
+    public String getMatchId() { return matchId; }
+    public void setMatchId(String matchId) { this.matchId = matchId; }
 
-    public void setBallNumber(int ballNumber) {
-        this.ballNumber = ballNumber;
-    }
+    public String getInningsId() { return inningsId; }
+    public void setInningsId(String inningsId) { this.inningsId = inningsId; }
 
-    public String getBatsmanId() {
-        return batsmanId;
-    }
+    public String getOverId() { return overId; }
+    public void setOverId(String overId) { this.overId = overId; }
 
-    public void setBatsmanId(String batsmanId) {
-        this.batsmanId = batsmanId;
-    }
+    public int getInningsNumber() { return inningsNumber; }
+    public void setInningsNumber(int inningsNumber) { this.inningsNumber = inningsNumber; }
 
-    public String getBowlerId() {
-        return bowlerId;
-    }
+    public int getOverNumber() { return overNumber; }
+    public void setOverNumber(int overNumber) { this.overNumber = overNumber; }
 
-    public void setBowlerId(String bowlerId) {
-        this.bowlerId = bowlerId;
-    }
+    public int getBallNumber() { return ballNumber; }
+    public void setBallNumber(int ballNumber) { this.ballNumber = ballNumber; }
 
-    public int getRunsScored() {
-        return runsScored;
-    }
+    public String getBatsmanId() { return batsmanId; }
+    public void setBatsmanId(String batsmanId) { this.batsmanId = batsmanId; }
 
-    public void setRunsScored(int runsScored) {
-        this.runsScored = runsScored;
-    }
+    public String getBowlerId() { return bowlerId; }
+    public void setBowlerId(String bowlerId) { this.bowlerId = bowlerId; }
 
-    public boolean isWicket() {
-        return isWicket;
-    }
+    public int getRunsScored() { return runsScored; }
+    public void setRunsScored(int runsScored) { this.runsScored = runsScored; }
 
-    public void setWicket(boolean wicket) {
-        isWicket = wicket;
-    }
+    public boolean isWicket() { return isWicket; }
+    public void setWicket(boolean wicket) { isWicket = wicket; }
 
-    public String getExtrasType() {
-        return extrasType;
-    }
+    public boolean isBoundary() { return isBoundary; }
+    public void setBoundary(boolean boundary) { isBoundary = boundary; }
 
-    public void setExtrasType(String extrasType) {
-        this.extrasType = extrasType;
-    }
+    public String getExtrasType() { return extrasType; }
+    public void setExtrasType(String extrasType) { this.extrasType = extrasType; }
 
-    public String getWicketType() {
-        return wicketType;
-    }
+    public String getWicketType() { return wicketType; }
+    public void setWicketType(String wicketType) { this.wicketType = wicketType; }
 
-    public void setWicketType(String wicketType) {
-        this.wicketType = wicketType;
+    // --- Helper Methods ---
+
+    /**
+     * Checks if this ball is a legal delivery (counts towards the 6-ball over).
+     * Legal deliveries are those without extras like WIDE or NO_BALL.
+     * 
+     * @return true if the ball is legal, false otherwise
+     */
+    public boolean isLegalDelivery() {
+        return extrasType == null || extrasType.equals("NONE") || extrasType.isEmpty();
     }
 }

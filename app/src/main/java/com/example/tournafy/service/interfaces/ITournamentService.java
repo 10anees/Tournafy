@@ -1,37 +1,61 @@
 package com.example.tournafy.service.interfaces;
 
-// Note: Imports will be valid once domain models are created.
 import com.example.tournafy.domain.models.tournament.Tournament;
-import com.example.tournafy.domain.models.team.Team;
+import com.example.tournafy.domain.models.team.TournamentTeam;
+import com.example.tournafy.service.strategies.tournament.IBracketGenerationStrategy;
 import java.util.List;
 
 /**
- * Defines the contract for tournament-specific operations,
- * such as bracket generation and advancing teams. 
+ * Service interface for tournament-specific operations. 
+ * This includes logic for bracket generation (using Strategy Pattern)
+ * and updating tournament tables/standings.
  */
 public interface ITournamentService {
 
     /**
-     * Generates the initial matches/brackets for a tournament.
-     * This will use a Strategy Pattern (Random, Seeded, Manual).
+     * Generates the initial match brackets for a tournament using a
+     * selected strategy. 
      *
-     * @param tournament The tournament to generate matches for.
-     * @param teams      The list of teams participating.
+     * @param tournament The tournament to generate brackets for.
+     * @param strategy   The IBracketGenerationStrategy to use (e.g., Random, Seeded).
+     * @param callback   Callback to return the updated tournament or an error.
      */
-    void generateBrackets(Tournament tournament, List<Team> teams);
+    void generateBrackets(Tournament tournament, IBracketGenerationStrategy strategy, TournamentCallback<Tournament> callback);
 
     /**
-     * Advances a team to the next stage after a win.
-     * @param tournament The tournament.
-     * @param winningTeam The team that won the match.
-     * @param matchId    The ID of the match that was completed.
+     * Updates the tournament standings (e.g., points table) after a match is completed.
+     *
+     * @param tournamentId The ID of the tournament to update.
+     * @param completedMatchId The ID of the match that was just completed.
+     * @param callback   Callback to signal success or error.
      */
-    void advanceTeam(Tournament tournament, Team winningTeam, String matchId);
+    void updateStandings(String tournamentId, String completedMatchId, TournamentCallback<Void> callback);
 
     /**
-     * Updates the tournament table (for Round Robin) after a match.
-     * @param tournament The tournament.
-     * @param matchId    The ID of the match that was completed.
+     * Gets the list of teams participating in the tournament, often with their stats.
+     *
+     * @param tournamentId The ID of the tournament.
+     * @param callback   Callback to return the list of TournamentTeams or an error.
      */
-    void updateTable(Tournament tournament, String matchId);
+    void getTournamentTeams(String tournamentId, TournamentCallback<List<TournamentTeam>> callback);
+
+    /**
+     * Advances winning teams to the next stage in a knockout tournament.
+     *
+     * @param tournamentId The ID of the tournament.
+     * @param stageId      The ID of the stage that was just completed.
+     * @param callback   Callback to signal success or error.
+     */
+    void advanceKnockoutTeams(String tournamentId, String stageId, TournamentCallback<Void> callback);
+
+
+    /**
+     * A generic callback interface for tournament operations.
+     *
+     * @param <T> The type of the successful result.
+     */
+    interface TournamentCallback<T> {
+        void onSuccess(T result);
+        void onError(Exception e);
+    }
 }

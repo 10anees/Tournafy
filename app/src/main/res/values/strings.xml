@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">Tournafy</string>
+
+    <string name="default_web_client_id">YOUR_WEB_CLIENT_ID_HERE</string>
+    <string-array name="sport_types">
+        <item>Cricket</item>
+        <item>Football</item>
+    </string-array>
+
+    <string-array name="tournament_formats">
+        <item>Knockout</item>
+        <item>Round Robin</item>
+        <item>Mixed</item>
+    </string-array>
 </resources>

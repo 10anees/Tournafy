@@ -2,9 +2,12 @@ package com.example.tournafy.domain.models.series;
 
 import com.example.tournafy.domain.models.base.HostedEntity;
 import com.example.tournafy.domain.enums.EntityStatus;
+import com.example.tournafy.domain.interfaces.SeriesObserver;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Date;
 import com.example.tournafy.domain.models.series.SeriesMatch;
-import java.util.List;
+
 
 /**
  * Inherits from HostedEntity.
@@ -22,6 +25,13 @@ public class Series extends HostedEntity {
 
     // Relationships
     // private List<SeriesMatch> matches;
+
+    // --- --- --- --- --- --- --- --- ---
+    //   OBSERVER PATTERN (SUBJECT)
+    // --- --- --- --- --- --- --- --- ---
+    // Added 'transient' to prevent serialization
+    private transient List<SeriesObserver> observers = new ArrayList<>();
+    // --- --- --- --- --- --- --- --- ---
 
     /**
      * Private constructor.
@@ -72,8 +82,8 @@ public class Series extends HostedEntity {
          * @param name       The name of the series.
          * @param hostUserId The ID of the user hosting the series.
          * @param sportId    The ID of the sport.
-         * @param teamAId    The ID of the first team[cite: 18].
-         * @param teamBId    The ID of the second team[cite: 18].
+         * @param teamAId    The ID of the first team.
+         * @param teamBId    The ID of the second team.
          */
         public Builder(String name, String hostUserId, String sportId, String teamAId, String teamBId) {
             this.name = name;
@@ -84,7 +94,7 @@ public class Series extends HostedEntity {
         }
 
         /**
-         * @param totalMatches The total number of matches[cite: 18].
+         * @param totalMatches The total number of matches.
          * @return The Builder instance for chaining.
          */
         public Builder withTotalMatches(int totalMatches) {
@@ -149,5 +159,36 @@ public class Series extends HostedEntity {
 
     public void setTeamBWins(int teamBWins) {
         this.teamBWins = teamBWins;
+    }
+    
+    // --- --- --- --- --- --- --- --- ---
+    //   OBSERVER PATTERN IMPLEMENTATION (ADDED)
+    // --- --- --- --- --- --- --- --- ---
+
+    public void addObserver(SeriesObserver observer) {
+        if (this.observers == null) {
+            this.observers = new ArrayList<>();
+        }
+        if (!this.observers.contains(observer)) {
+            this.observers.add(observer);
+        }
+    }
+
+    public void removeObserver(SeriesObserver observer) {
+        if (this.observers != null) {
+            this.observers.remove(observer);
+        }
+    }
+
+    /**
+     * Notify all observers that the series score/state has been updated.
+     * This will be called by the HostingService/SeriesService when a match completes.
+     */
+    public void notifySeriesScoreUpdated() {
+        if (this.observers == null) return;
+        // Create a copy to avoid ConcurrentModificationException
+        for (SeriesObserver observer : new ArrayList<>(this.observers)) {
+            observer.onSeriesScoreUpdated(this);
+        }
     }
 }

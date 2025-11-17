@@ -8,6 +8,9 @@ import androidx.navigation.ui.NavigationUI;
 import com.example.tournafy.R;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
+@AndroidEntryPoint // <--- CRITICAL: Required because Fragments use @AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
 
     @Override
@@ -27,7 +30,9 @@ public class MainActivity extends AppCompatActivity {
             BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation_view);
             
             // Set up the BottomNavigationView with the NavController
-            NavigationUI.setupWithNavController(bottomNav, navController);
+            if (bottomNav != null) {
+                NavigationUI.setupWithNavController(bottomNav, navController);
+            }
         }
     }
 }
