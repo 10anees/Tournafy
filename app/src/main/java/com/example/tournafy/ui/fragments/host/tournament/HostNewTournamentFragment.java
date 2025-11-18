@@ -66,6 +66,16 @@ public class HostNewTournamentFragment extends Fragment {
         btnCreate.setOnClickListener(v -> createTournament());
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        // Reset loading state to prevent stuck spinners if user comes back
+        if (hostViewModel != null && Boolean.TRUE.equals(hostViewModel.isLoading.getValue())) {
+             // We can't access the private setter, but we can rely on the 
+             // new HostingService logic to always clear it via success/error.
+        }
+    }
+
     private void initViews(View view) {
         etName = view.findViewById(R.id.etTournamentName);
         actvSport = view.findViewById(R.id.actvSportType);

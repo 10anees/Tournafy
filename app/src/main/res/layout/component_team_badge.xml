@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="@dimen/avatar_size_lg"
+    android:layout_height="@dimen/avatar_size_lg"
+    app:cardCornerRadius="32dp"
+    app:cardElevation="@dimen/elevation_sm"
+    app:cardBackgroundColor="?attr/colorSurfaceContainer">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Team Badge Image -->
+        <ImageView
+            android:id="@+id/ivTeamBadge"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_sports_cricket"
+            app:tint="?attr/colorPrimary"
+            android:padding="@dimen/spacing_md"/>
+
+        <!-- Team Initials (fallback) -->
+        <TextView
+            android:id="@+id/tvTeamInitials"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="IND"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

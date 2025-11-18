@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_md">
+
+        <!-- Category Filter -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/spacing_md"
+            app:singleSelection="true"
+            app:selectionRequired="true"
+            app:chipSpacingHorizontal="@dimen/spacing_sm">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipBatting"
+                style="@style/Widget.Tournafy.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Batting"
+                android:checked="true"/>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipBowling"
+                style="@style/Widget.Tournafy.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bowling"/>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipFielding"
+                style="@style/Widget.Tournafy.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Fielding"/>
+        </com.google.android.material.chip.ChipGroup>
+
+        <!-- Top Performers Card -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Tournafy.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="?attr/colorPrimaryContainer"
+                    android:padding="@dimen/spacing_md">
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size_md"
+                        android:layout_height="@dimen/icon_size_md"
+                        android:src="@android:drawable/btn_star_big_on"
+                        android:contentDescription="Top Players"
+                        app:tint="?attr/colorOnPrimaryContainer"/>
+
+                    <TextView
+                        android:id="@+id/tvCategoryTitle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Top Run Scorers"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold"
+                        android:layout_marginStart="@dimen/spacing_sm"/>
+                </LinearLayout>
+
+                <!-- Players List -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvTopPlayers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="@dimen/spacing_sm"
+                    android:nestedScrollingEnabled="false"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Series Highlights -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Tournafy.Card.Filled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/spacing_md">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Series Highlights"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="@dimen/spacing_sm"/>
+
+                <!-- Highest Score -->
+                <include
+                    layout="@layout/component_stat_item"
+                    android:id="@+id/statHighestScore"/>
+
+                <!-- Best Bowling -->
+                <include
+                    layout="@layout/component_stat_item"
+                    android:id="@+id/statBestBowling"/>
+
+                <!-- Best Partnership -->
+                <include
+                    layout="@layout/component_stat_item"
+                    android:id="@+id/statBestPartnership"/>
+
+                <!-- Most Runs in Match -->
+                <include
+                    layout="@layout/component_stat_item"
+                    android:id="@+id/statMostRuns"/>
+
+                <!-- Most Wickets in Match -->
+                <include
+                    layout="@layout/component_stat_item"
+                    android:id="@+id/statMostWickets"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

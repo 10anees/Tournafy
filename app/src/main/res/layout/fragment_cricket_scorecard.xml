@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_md">
+
+        <!-- Innings Selector -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupInnings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/spacing_md"
+            app:singleSelection="true"
+            app:selectionRequired="true"
+            app:chipSpacingHorizontal="@dimen/spacing_sm">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipInnings1"
+                style="@style/Widget.Tournafy.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1st Innings"
+                android:checked="true"/>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipInnings2"
+                style="@style/Widget.Tournafy.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2nd Innings"/>
+        </com.google.android.material.chip.ChipGroup>
+
+        <!-- Batting Card -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Tournafy.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Batting Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="?attr/colorPrimaryContainer"
+                    android:padding="@dimen/spacing_md">
+
+                    <include
+                        layout="@layout/component_team_badge"
+                        android:layout_width="@dimen/avatar_size_sm"
+                        android:layout_height="@dimen/avatar_size_sm"/>
+
+                    <TextView
+                        android:id="@+id/tvBattingTeam"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="India Batting"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold"
+                        android:layout_marginStart="@dimen/spacing_sm"/>
+
+                    <TextView
+                        android:id="@+id/tvBattingScore"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="245/6"
+                        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <!-- Batting Table Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="?attr/colorSurfaceVariant"
+                    android:padding="@dimen/spacing_sm">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:text="Batsman"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="R"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="B"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="4s"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="6s"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="SR"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <!-- Batting List -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvBatting"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"/>
+
+                <!-- Extras -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/divider_thickness"
+                    android:background="?attr/colorOutlineVariant"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/spacing_sm">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Extras"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurface"/>
+
+                    <TextView
+                        android:id="@+id/tvExtras"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="12 (b 4, lb 3, w 5, nb 0)"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"/>
+                </LinearLayout>
+
+                <!-- Total -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="?attr/colorSecondaryContainer"
+                    android:padding="@dimen/spacing_sm">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Total"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorOnSecondaryContainer"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvTotal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="245/6 (45.2 Ov)"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorOnSecondaryContainer"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Bowling Card -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Tournafy.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Bowling Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="?attr/colorTertiaryContainer"
+                    android:padding="@dimen/spacing_md">
+
+                    <include
+                        layout="@layout/component_team_badge"
+                        android:layout_width="@dimen/avatar_size_sm"
+                        android:layout_height="@dimen/avatar_size_sm"/>
+
+                    <TextView
+                        android:id="@+id/tvBowlingTeam"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Pakistan Bowling"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorOnTertiaryContainer"
+                        android:textStyle="bold"
+                        android:layout_marginStart="@dimen/spacing_sm"/>
+                </LinearLayout>
+
+                <!-- Bowling Table Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="?attr/colorSurfaceVariant"
+                    android:padding="@dimen/spacing_sm">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:text="Bowler"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="O"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="M"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="R"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="W"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="Eco"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <!-- Bowling List -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvBowling"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Fall of Wickets -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Tournafy.Card.Filled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/spacing_md">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Fall of Wickets"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="@dimen/spacing_sm"/>
+
+                <TextView
+                    android:id="@+id/tvFallOfWickets"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="1-45 (8.3 ov), 2-89 (15.2 ov), 3-145 (25.4 ov)"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:lineSpacingMultiplier="1.3"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

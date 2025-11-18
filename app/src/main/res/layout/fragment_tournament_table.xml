@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_md">
+
+        <!-- Group/Stage Filter -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupStages"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/spacing_md"
+            app:singleSelection="true"
+            app:selectionRequired="true"
+            app:chipSpacingHorizontal="@dimen/spacing_sm">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipGroup"
+                style="@style/Widget.Tournafy.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Group Stage"
+                android:checked="true"/>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipAll"
+                style="@style/Widget.Tournafy.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="All Teams"/>
+        </com.google.android.material.chip.ChipGroup>
+
+        <!-- Points Table Card -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Tournafy.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="?attr/colorPrimaryContainer"
+                    android:padding="@dimen/spacing_sm">
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="Pos"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:text="Team"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="P"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="W"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="L"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="NRR"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:layout_width="@dimen/scorecard_column_width"
+                        android:layout_height="wrap_content"
+                        android:text="Pts"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <!-- Table Rows -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvPointsTable"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Qualification Info -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Tournafy.Card.Filled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/spacing_md">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Qualification"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="@dimen/spacing_sm"/>
+
+                <!-- Qualified -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="@dimen/spacing_xs">
+
+                    <View
+                        android:layout_width="@dimen/icon_size_sm"
+                        android:layout_height="@dimen/icon_size_sm"
+                        android:background="@color/success_green"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Qualified for Knockout"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginStart="@dimen/spacing_sm"/>
+                </LinearLayout>
+
+                <!-- Elimination -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="@dimen/spacing_xs">
+
+                    <View
+                        android:layout_width="@dimen/icon_size_sm"
+                        android:layout_height="@dimen/icon_size_sm"
+                        android:background="@color/error_red"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Eliminated"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginStart="@dimen/spacing_sm"/>
+                </LinearLayout>
+
+                <!-- Note -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="P: Played, W: Won, L: Lost, NRR: Net Run Rate, Pts: Points"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:layout_marginTop="@dimen/spacing_md"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

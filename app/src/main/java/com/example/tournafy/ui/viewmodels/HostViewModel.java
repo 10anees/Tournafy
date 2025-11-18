@@ -27,7 +27,11 @@ public class HostViewModel extends ViewModel {
 
     private final IHostingService hostingService;
 
-    // Private MutableLiveData for internal updates
+    // --- Shared State for Match Wizard ---
+    // FIX: Added this field so AddMatchDetailsFragment can pass the name to HostNewMatchFragment
+    public final MutableLiveData<String> matchNameInput = new MutableLiveData<>("");
+
+    // --- Creation State ---
     private final MutableLiveData<Boolean> _isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<HostedEntity> _creationSuccess = new MutableLiveData<>();
     private final MutableLiveData<String> _errorMessage = new MutableLiveData<>();

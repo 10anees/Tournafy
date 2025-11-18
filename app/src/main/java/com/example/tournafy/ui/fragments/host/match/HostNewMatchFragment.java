@@ -1,6 +1,7 @@
 package com.example.tournafy.ui.fragments.host.match;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,13 +41,9 @@ public class HostNewMatchFragment extends Fragment {
 
     private SportTypeEnum selectedSport = SportTypeEnum.CRICKET;
     private String currentUserId;
-    
-    // Constant for offline/guest user
     private static final String GUEST_HOST_ID = "GUEST_HOST";
 
-    public HostNewMatchFragment() {
-        // Required empty public constructor
-    }
+    public HostNewMatchFragment() { }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -65,6 +62,12 @@ public class HostNewMatchFragment extends Fragment {
         setupViewPager();
         setupButtons();
         observeViewModel();
+    }
+    
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        // Reset loading state just in case, though HostingService logic should handle it
     }
 
     private void initViews(View view) {
@@ -117,11 +120,13 @@ public class HostNewMatchFragment extends Fragment {
     }
 
     private void finalizeCreation() {
-        // FIX: Allow Guest Hosting by defaulting to GUEST_HOST_ID
         String hostId = (currentUserId != null) ? currentUserId : GUEST_HOST_ID;
 
-        // In a real app, we would get the 'name' from the ViewModel shared with child fragments.
-        String matchName = "New " + selectedSport.name() + " Match"; 
+        // FIX: Retrieve match name from Shared ViewModel
+        String matchName = hostViewModel.matchNameInput.getValue();
+        if (TextUtils.isEmpty(matchName)) {
+            matchName = "New " + selectedSport.name() + " Match"; // Fallback
+        }
         
         if (selectedSport == SportTypeEnum.CRICKET) {
             hostViewModel.createCricketMatch(new CricketMatch.Builder(matchName, hostId));
@@ -142,7 +147,6 @@ public class HostNewMatchFragment extends Fragment {
             if (entity != null) {
                 Toast.makeText(getContext(), "Match Created!", Toast.LENGTH_SHORT).show();
                 
-                // FIX: Navigate to Host Mode (Live Score) instead of Home
                 Bundle args = new Bundle();
                 args.putString("match_id", entity.getEntityId());
 

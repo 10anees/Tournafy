@@ -14,7 +14,10 @@ import javax.inject.Singleton;
 
 /**
  * Concrete implementation of the IHostingService.
- * Orchestrates persistence using the Task-based Firestore Repositories.
+ * * FIX APPLIED: Offline-First Optimistic Updates.
+ * We no longer wait for .addOnSuccessListener() to fire UI callbacks, 
+ * because that listener waits for Server Synchronization (which hangs when offline).
+ * Instead, we trigger success immediately after handing the data to the Firestore SDK.
  */
 @Singleton
 public class HostingService implements IHostingService {
@@ -36,10 +39,12 @@ public class HostingService implements IHostingService {
     public void createCricketMatch(CricketMatch.Builder builder, HostingCallback<CricketMatch> callback) {
         try {
             CricketMatch match = builder.build();
-            // FIX: Use addOnSuccessListener on the returned Task
+            // Fire and forget for UI purposes (Offline First)
             matchRepository.add(match)
-                    .addOnSuccessListener(aVoid -> callback.onSuccess(match))
-                    .addOnFailureListener(callback::onError);
+                .addOnFailureListener(callback::onError); // Only report if local write completely fails
+            
+            // Optimistic Success: Don't wait for server sync
+            callback.onSuccess(match);
         } catch (Exception e) {
             callback.onError(e);
         }
@@ -49,10 +54,11 @@ public class HostingService implements IHostingService {
     public void createFootballMatch(FootballMatch.Builder builder, HostingCallback<FootballMatch> callback) {
         try {
             FootballMatch match = builder.build();
-            // FIX: Use addOnSuccessListener on the returned Task
             matchRepository.add(match)
-                    .addOnSuccessListener(aVoid -> callback.onSuccess(match))
-                    .addOnFailureListener(callback::onError);
+                .addOnFailureListener(callback::onError);
+            
+            // Optimistic Success
+            callback.onSuccess(match);
         } catch (Exception e) {
             callback.onError(e);
         }
@@ -63,8 +69,10 @@ public class HostingService implements IHostingService {
         try {
             Tournament tournament = builder.build();
             tournamentRepository.add(tournament)
-                    .addOnSuccessListener(aVoid -> callback.onSuccess(tournament))
-                    .addOnFailureListener(callback::onError);
+                .addOnFailureListener(callback::onError);
+            
+            // Optimistic Success
+            callback.onSuccess(tournament);
         } catch (Exception e) {
             callback.onError(e);
         }
@@ -75,8 +83,10 @@ public class HostingService implements IHostingService {
         try {
             Series series = builder.build();
             seriesRepository.add(series)
-                    .addOnSuccessListener(aVoid -> callback.onSuccess(series))
-                    .addOnFailureListener(callback::onError);
+                .addOnFailureListener(callback::onError);
+            
+            // Optimistic Success
+            callback.onSuccess(series);
         } catch (Exception e) {
             callback.onError(e);
         }
@@ -84,12 +94,12 @@ public class HostingService implements IHostingService {
 
     @Override
     public <T> void updateMatch(T match, HostingCallback<Void> callback) {
-        // We need to cast T to a known Match type or use reflection/overloading.
-        // Since MatchFirestoreRepository expects a Match object:
         if (match instanceof com.example.tournafy.domain.models.base.Match) {
             matchRepository.update((com.example.tournafy.domain.models.base.Match) match)
-                    .addOnSuccessListener(aVoid -> callback.onSuccess(null))
                     .addOnFailureListener(callback::onError);
+            
+            // Optimistic Success
+            callback.onSuccess(null);
         } else {
             callback.onError(new IllegalArgumentException("Object provided is not a valid Match"));
         }
@@ -98,14 +108,18 @@ public class HostingService implements IHostingService {
     @Override
     public void updateTournament(Tournament tournament, HostingCallback<Void> callback) {
         tournamentRepository.update(tournament)
-                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
                 .addOnFailureListener(callback::onError);
+        
+        // Optimistic Success
+        callback.onSuccess(null);
     }
 
     @Override
     public void updateSeries(Series series, HostingCallback<Void> callback) {
         seriesRepository.update(series)
-                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
                 .addOnFailureListener(callback::onError);
+        
+        // Optimistic Success
+        callback.onSuccess(null);
     }
 }

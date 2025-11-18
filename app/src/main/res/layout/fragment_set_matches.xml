@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:liftOnScroll="true">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="Set Matches"
+            app:navigationIcon="@android:drawable/ic_menu_revert"/>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_md">
+
+            <!-- Progress Indicator -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="@dimen/spacing_lg">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Step 3 of 3"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"/>
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/spacing_md"
+                    app:indicatorColor="?attr/colorPrimary"
+                    app:trackColor="?attr/colorSurfaceVariant"
+                    app:trackThickness="4dp"
+                    android:progress="100"/>
+            </LinearLayout>
+
+            <!-- Auto-generate Option -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Tournafy.Card.Filled"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_md">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/spacing_md">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Quick Setup"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="@dimen/spacing_sm"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Automatically generate matches based on tournament format"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginBottom="@dimen/spacing_md"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAutoGenerate"
+                        style="@style/Widget.Tournafy.Button.Tonal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Auto-Generate Matches"
+                        app:icon="@android:drawable/ic_menu_rotate"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- OR Divider -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginVertical="@dimen/spacing_md">
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/divider_thickness"
+                    android:layout_weight="1"
+                    android:background="?attr/colorOutlineVariant"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="OR"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:paddingHorizontal="@dimen/spacing_md"/>
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/divider_thickness"
+                    android:layout_weight="1"
+                    android:background="?attr/colorOutlineVariant"/>
+            </LinearLayout>
+
+            <!-- Manual Setup -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Tournafy.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="@dimen/spacing_md"
+                        android:background="?attr/colorSecondaryContainer">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Manual Setup"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorOnSecondaryContainer"
+                            android:textStyle="bold"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipMatchCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 Matches"
+                            app:chipBackgroundColor="?attr/colorSurface"
+                            android:textColor="?attr/colorOnSurface"/>
+                    </LinearLayout>
+
+                    <!-- Matches RecyclerView -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvMatches"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="200dp"
+                        android:padding="@dimen/spacing_sm"
+                        android:clipToPadding="false"/>
+
+                    <!-- Empty State -->
+                    <LinearLayout
+                        android:id="@+id/layoutEmptyState"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="@dimen/spacing_xl"
+                        android:visibility="visible">
+
+                        <ImageView
+                            android:layout_width="@dimen/empty_state_icon_size"
+                            android:layout_height="@dimen/empty_state_icon_size"
+                            android:src="@android:drawable/ic_menu_add"
+                            android:contentDescription="No matches"
+                            android:alpha="0.38"
+                            app:tint="?attr/colorOnSurfaceVariant"/>
+
+                        <TextView
+                            style="@style/Widget.Tournafy.EmptyState.Text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="No matches scheduled"
+                            android:layout_marginTop="@dimen/spacing_md"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Use auto-generate or add matches manually"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:layout_marginTop="@dimen/spacing_xs"/>
+                    </LinearLayout>
+
+                    <!-- Add Match Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAddMatch"
+                        style="@style/Widget.Tournafy.Button.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Add Match Manually"
+                        app:icon="@android:drawable/ic_input_add"
+                        android:layout_margin="@dimen/spacing_md"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Action Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="@dimen/spacing_lg">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBack"
+                    style="@style/Widget.Tournafy.Button.Outlined"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Back"
+                    app:icon="@android:drawable/ic_media_previous"
+                    android:layout_marginEnd="@dimen/spacing_sm"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCreateTournament"
+                    style="@style/Widget.Tournafy.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Create Tournament"
+                    app:icon="@android:drawable/ic_menu_save"
+                    app:iconGravity="end"
+                    android:layout_marginStart="@dimen/spacing_sm"/>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- FAB for Quick Add Match -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddMatch"
+        style="@style/Widget.Tournafy.FloatingActionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="Add Match"
+        app:srcCompat="@android:drawable/ic_input_add"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/fab_margin"
+        app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

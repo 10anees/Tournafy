@@ -69,8 +69,9 @@ public class HomeViewModel extends ViewModel {
             allEntitiesCache.removeIf(item -> type.isInstance(item));
         } else {
             List<HostedEntity> toRemove = new ArrayList<>();
-            for(HostedEntity item : allEntitiesCache) {
-                if (type.isInstance(item)) toRemove.add(item);
+            for (HostedEntity item : allEntitiesCache) {
+                if (type.isInstance(item))
+                    toRemove.add(item);
             }
             allEntitiesCache.removeAll(toRemove);
         }
@@ -87,7 +88,8 @@ public class HomeViewModel extends ViewModel {
 
     private void applyFilter() {
         EntityTypeFilter filter = _currentFilter.getValue();
-        if (filter == null) filter = EntityTypeFilter.ALL;
+        if (filter == null)
+            filter = EntityTypeFilter.ALL;
 
         if (filter == EntityTypeFilter.ALL) {
             _hostedEntities.setValue(new ArrayList<>(allEntitiesCache));
@@ -105,6 +107,18 @@ public class HomeViewModel extends ViewModel {
             }
         }
         _hostedEntities.setValue(filteredList);
+    }
+
+    // In HomeViewModel.java
+    public void deleteEntity(HostedEntity entity) {
+        if (entity instanceof Match) {
+            matchRepo.delete(entity.getEntityId());
+        } else if (entity instanceof Tournament) {
+            tournamentRepo.delete(entity.getEntityId());
+        } else if (entity instanceof Series) {
+            seriesRepo.delete(entity.getEntityId());
+        }
+        // LiveData will update automatically
     }
 
     public enum EntityTypeFilter {

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="@dimen/spacing_md"
+    android:background="?attr/selectableItemBackground"
+    android:gravity="center_vertical">
+
+    <!-- Time Indicator -->
+    <LinearLayout
+        android:layout_width="@dimen/scorecard_column_width"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tvTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="45'"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"/>
+
+        <View
+            android:id="@+id/viewTimeline"
+            android:layout_width="2dp"
+            android:layout_height="@dimen/spacing_md"
+            android:background="?attr/colorOutlineVariant"
+            android:layout_marginTop="@dimen/spacing_xs"/>
+    </LinearLayout>
+
+    <!-- Event Icon -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardEventIcon"
+        android:layout_width="@dimen/icon_size_lg"
+        android:layout_height="@dimen/icon_size_lg"
+        android:layout_marginStart="@dimen/spacing_md"
+        app:cardCornerRadius="@dimen/icon_size_lg"
+        app:cardElevation="@dimen/elevation_sm"
+        app:cardBackgroundColor="?attr/colorPrimaryContainer">
+
+        <ImageView
+            android:id="@+id/ivEventIcon"
+            android:layout_width="@dimen/icon_size_md"
+            android:layout_height="@dimen/icon_size_md"
+            android:src="@android:drawable/ic_menu_info_details"
+            android:layout_gravity="center"
+            app:tint="?attr/colorOnPrimaryContainer"
+            android:contentDescription="Event"/>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Event Details -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="@dimen/spacing_md">
+
+        <TextView
+            android:id="@+id/tvEventTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Goal!"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/tvEventDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cristiano Ronaldo"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginTop="@dimen/spacing_xs"/>
+
+        <TextView
+            android:id="@+id/tvEventTeam"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Real Madrid"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:alpha="0.7"/>
+    </LinearLayout>
+
+    <!-- Score (Optional) -->
+    <TextView
+        android:id="@+id/tvScore"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="1-0"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textColor="?attr/colorPrimary"
+        android:textStyle="bold"
+        android:layout_marginStart="@dimen/spacing_sm"
+        android:visibility="gone"/>
+
+</LinearLayout>

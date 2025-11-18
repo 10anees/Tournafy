@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fitsSystemWindows="true"
+        app:liftOnScroll="true">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            style="@style/Widget.Tournafy.TopAppBar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="Add Teams"
+            app:navigationIcon="@android:drawable/ic_menu_revert"/>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_md">
+
+            <!-- Teams Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Tournafy.Card"
+                android:layout_marginBottom="@dimen/spacing_md">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Selected Teams"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="@dimen/spacing_sm"/>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvSelectedTeams"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"/>
+
+                    <!-- Empty State -->
+                    <LinearLayout
+                        android:id="@+id/llEmptyState"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="@dimen/spacing_xl"
+                        android:visibility="gone">
+
+                        <ImageView
+                            style="@style/Widget.Tournafy.EmptyState.Icon"
+                            android:src="@drawable/ic_add"/>
+
+                        <TextView
+                            style="@style/Widget.Tournafy.EmptyState.Text"
+                            android:text="No teams added yet"
+                            android:layout_marginTop="@dimen/spacing_md"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Add Team Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddTeam"
+                style="@style/Widget.Tournafy.Button.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Add Team"
+                app:icon="@drawable/ic_add"
+                android:layout_marginBottom="@dimen/spacing_md"/>
+
+            <!-- Create Series Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCreateSeries"
+                style="@style/Widget.Tournafy.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Create Series"
+                app:icon="@drawable/ic_series"/>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fabAddTeam"
+        style="@style/Widget.Tournafy.ExtendedFloatingActionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Quick Add Team"
+        app:icon="@drawable/ic_add"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/spacing_md"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="@dimen/dialog_padding"
+    android:background="?attr/colorSurface">
+
+    <!-- Dialog Title -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Choose Theme"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+        android:textColor="?attr/colorOnSurface"
+        android:layout_marginBottom="@dimen/spacing_md"/>
+
+    <!-- Theme Options -->
+    <RadioGroup
+        android:id="@+id/rgThemeOptions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/spacing_lg">
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/rbSystemDefault"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="System Default"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:padding="@dimen/spacing_md"
+            android:checked="true"/>
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/rbLightMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Light Mode"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:padding="@dimen/spacing_md"/>
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/rbDarkMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Dark Mode"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:padding="@dimen/spacing_md"/>
+    </RadioGroup>
+
+    <!-- Info Text -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Dynamic color adapts to your device wallpaper"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:layout_marginBottom="@dimen/spacing_lg"/>
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancel"
+            style="@style/Widget.Tournafy.Button.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:layout_marginEnd="@dimen/spacing_sm"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnApply"
+            style="@style/Widget.Tournafy.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Apply"/>
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.Tournafy.Card.Outlined"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_md"
+    android:layout_marginVertical="@dimen/spacing_xs">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="@dimen/spacing_md"
+        android:background="?attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:minHeight="@dimen/list_item_height">
+
+        <!-- Team Badge -->
+        <include
+            layout="@layout/component_team_badge"
+            android:id="@+id/teamBadge"
+            android:layout_width="@dimen/avatar_size_md"
+            android:layout_height="@dimen/avatar_size_md"/>
+
+        <!-- Team Info -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="@dimen/spacing_md">
+
+            <!-- Team Name -->
+            <TextView
+                android:id="@+id/tvTeamName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="India"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"/>
+
+            <!-- Team Code / Additional Info -->
+            <TextView
+                android:id="@+id/tvTeamCode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="IND • 11 Players"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginTop="@dimen/spacing_xs"
+                android:maxLines="1"
+                android:ellipsize="end"/>
+        </LinearLayout>
+
+        <!-- Stats Badge (Optional) -->
+        <LinearLayout
+            android:id="@+id/layoutStats"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginStart="@dimen/spacing_md"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvStatValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textColor="?attr/colorPrimary"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/tvStatLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Wins"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"/>
+        </LinearLayout>
+
+        <!-- Menu Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMenu"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="@dimen/icon_size_lg"
+            android:layout_height="@dimen/icon_size_lg"
+            app:icon="@android:drawable/ic_menu_more"
+            app:iconTint="?attr/colorOnSurfaceVariant"
+            android:layout_marginStart="@dimen/spacing_sm"
+            android:contentDescription="More options"/>
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

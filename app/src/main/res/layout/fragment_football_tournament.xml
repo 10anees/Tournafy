@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_md">
+
+        <!-- Tournament Info Card -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Tournafy.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/spacing_md">
+
+                <TextView
+                    android:id="@+id/tvTournamentName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="UEFA Champions League"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="@dimen/spacing_sm"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="@dimen/spacing_xs">
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size_sm"
+                        android:layout_height="@dimen/icon_size_sm"
+                        android:src="@android:drawable/ic_menu_my_calendar"
+                        android:contentDescription="Season"
+                        app:tint="?attr/colorOnSurfaceVariant"/>
+
+                    <TextView
+                        android:id="@+id/tvSeason"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="2023-24 Season"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginStart="@dimen/spacing_sm"/>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Match Context -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Tournafy.Card.Filled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/spacing_md">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Match Context"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="@dimen/spacing_sm"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Round"
+                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"/>
+
+                        <TextView
+                            android:id="@+id/tvRound"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Quarter Final"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            android:layout_marginTop="@dimen/spacing_xs"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Leg"
+                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"/>
+
+                        <TextView
+                            android:id="@+id/tvLeg"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="2nd Leg"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            android:layout_marginTop="@dimen/spacing_xs"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Aggregate Score -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/divider_thickness"
+                    android:background="?attr/colorOutlineVariant"
+                    android:layout_marginVertical="@dimen/spacing_md"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Aggregate Score"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:layout_marginBottom="@dimen/spacing_xs"/>
+
+                <TextView
+                    android:id="@+id/tvAggregateScore"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Barcelona 3 - 2 Real Madrid"
+                    android:textAppearance="?attr/textAppearanceTitleLarge"
+                    android:textColor="?attr/colorPrimary"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- View Standings Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnViewStandings"
+            style="@style/Widget.Tournafy.Button.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View Group Standings"
+            app:icon="@android:drawable/ic_menu_view"
+            android:layout_marginTop="@dimen/spacing_md"/>
+
+        <!-- View Bracket Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnViewBracket"
+            style="@style/Widget.Tournafy.Button.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View Knockout Bracket"
+            app:icon="@android:drawable/ic_menu_sort_by_size"
+            android:layout_marginTop="@dimen/spacing_sm"/>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

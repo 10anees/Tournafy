@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_md">
+
+        <!-- Tournament Info Card -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Tournafy.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/spacing_md">
+
+                <TextView
+                    android:id="@+id/tvTournamentName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="ICC World Cup 2023"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="@dimen/spacing_sm"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="@dimen/spacing_xs">
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size_sm"
+                        android:layout_height="@dimen/icon_size_sm"
+                        android:src="@android:drawable/ic_menu_my_calendar"
+                        android:contentDescription="Date"
+                        app:tint="?attr/colorOnSurfaceVariant"/>
+
+                    <TextView
+                        android:id="@+id/tvTournamentDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Oct 5 - Nov 19, 2023"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginStart="@dimen/spacing_sm"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="@dimen/spacing_xs">
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size_sm"
+                        android:layout_height="@dimen/icon_size_sm"
+                        android:src="@android:drawable/ic_dialog_map"
+                        android:contentDescription="Venue"
+                        app:tint="?attr/colorOnSurfaceVariant"/>
+
+                    <TextView
+                        android:id="@+id/tvTournamentVenue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="India"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginStart="@dimen/spacing_sm"/>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Match Context -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Tournafy.Card.Filled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_md">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/spacing_md">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Match Context"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="@dimen/spacing_sm"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Stage"
+                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"/>
+
+                        <TextView
+                            android:id="@+id/tvStage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Semi Final"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            android:layout_marginTop="@dimen/spacing_xs"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Match Number"
+                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"/>
+
+                        <TextView
+                            android:id="@+id/tvMatchNumber"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Match 47"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            android:layout_marginTop="@dimen/spacing_xs"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Points Table Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnViewTable"
+            style="@style/Widget.Tournafy.Button.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View Points Table"
+            app:icon="@android:drawable/ic_menu_view"
+            android:layout_marginTop="@dimen/spacing_md"/>
+
+        <!-- Tournament Bracket Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnViewBracket"
+            style="@style/Widget.Tournafy.Button.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View Tournament Bracket"
+            app:icon="@android:drawable/ic_menu_sort_by_size"
+            android:layout_marginTop="@dimen/spacing_sm"/>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

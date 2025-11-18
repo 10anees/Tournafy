@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="@dimen/spacing_sm"
+    android:background="?attr/selectableItemBackground"
+    android:minHeight="@dimen/list_item_height">
+
+    <!-- Player Name/Status -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:orientation="vertical"
+        android:paddingEnd="@dimen/spacing_xs">
+
+        <TextView
+            android:id="@+id/tvPlayerName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Virat Kohli"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+
+        <TextView
+            android:id="@+id/tvDismissal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="c Smith b Cummins"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginTop="2dp"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+    </LinearLayout>
+
+    <!-- Runs -->
+    <TextView
+        android:id="@+id/tvRuns"
+        android:layout_width="@dimen/scorecard_column_width"
+        android:layout_height="wrap_content"
+        android:text="89"
+        android:gravity="center"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurface"
+        android:textStyle="bold"/>
+
+    <!-- Balls -->
+    <TextView
+        android:id="@+id/tvBalls"
+        android:layout_width="@dimen/scorecard_column_width"
+        android:layout_height="wrap_content"
+        android:text="67"
+        android:gravity="center"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"/>
+
+    <!-- Fours -->
+    <TextView
+        android:id="@+id/tvFours"
+        android:layout_width="@dimen/scorecard_column_width"
+        android:layout_height="wrap_content"
+        android:text="11"
+        android:gravity="center"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"/>
+
+    <!-- Sixes -->
+    <TextView
+        android:id="@+id/tvSixes"
+        android:layout_width="@dimen/scorecard_column_width"
+        android:layout_height="wrap_content"
+        android:text="2"
+        android:gravity="center"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"/>
+
+    <!-- Strike Rate -->
+    <TextView
+        android:id="@+id/tvStrikeRate"
+        android:layout_width="@dimen/scorecard_column_width"
+        android:layout_height="wrap_content"
+        android:text="132.8"
+        android:gravity="center"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"/>
+
+</LinearLayout>

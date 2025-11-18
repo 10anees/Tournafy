@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    style="@style/Widget.Tournafy.Card.Outlined"
+    android:layout_margin="@dimen/spacing_sm"
+    app:cardElevation="0dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_md">
+
+        <!-- Sport Icon -->
+        <ImageView
+            android:id="@+id/ivSportIcon"
+            android:layout_width="@dimen/icon_size_xl"
+            android:layout_height="@dimen/icon_size_xl"
+            android:src="@drawable/ic_sports_cricket"
+            app:tint="?attr/colorPrimary"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"/>
+
+        <!-- Match Name -->
+        <TextView
+            android:id="@+id/tvMatchName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            tools:text="India vs Pakistan"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            android:layout_marginStart="@dimen/spacing_md"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:layout_constraintTop_toTopOf="@id/ivSportIcon"
+            app:layout_constraintStart_toEndOf="@id/ivSportIcon"
+            app:layout_constraintEnd_toStartOf="@id/chipStatus"/>
+
+        <!-- Venue -->
+        <TextView
+            android:id="@+id/tvVenue"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            tools:text="Eden Gardens, Kolkata"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginStart="@dimen/spacing_md"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:layout_constraintTop_toBottomOf="@id/tvMatchName"
+            app:layout_constraintStart_toEndOf="@id/ivSportIcon"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Date & Time -->
+        <TextView
+            android:id="@+id/tvDateTime"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            tools:text="Nov 18, 2025 • 3:30 PM"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginStart="@dimen/spacing_md"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:maxLines="1"
+            app:layout_constraintTop_toBottomOf="@id/tvVenue"
+            app:layout_constraintStart_toEndOf="@id/ivSportIcon"
+            app:layout_constraintBottom_toBottomOf="@id/ivSportIcon"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Status Chip -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="LIVE"
+            android:textSize="@dimen/text_size_label_small"
+            android:textStyle="bold"
+            app:chipBackgroundColor="@color/live_red"
+            android:textColor="@color/white"
+            app:chipMinHeight="28dp"
+            app:chipCornerRadius="8dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Divider -->
+        <View
+            android:id="@+id/divider"
+            style="@style/Widget.Tournafy.Divider"
+            android:layout_marginTop="@dimen/spacing_md"
+            app:layout_constraintTop_toBottomOf="@id/ivSportIcon"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Score Section -->
+        <LinearLayout
+            android:id="@+id/llScores"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="@dimen/spacing_md"
+            app:layout_constraintTop_toBottomOf="@id/divider"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- Team A -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="@dimen/spacing_sm">
+
+                <TextView
+                    android:id="@+id/tvTeamAName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    tools:text="India"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/tvTeamAScore"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="245/6"
+                    android:textAppearance="?attr/textAppearanceTitleLarge"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-condensed"/>
+            </LinearLayout>
+
+            <!-- Team B -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvTeamBName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    tools:text="Pakistan"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant"/>
+
+                <TextView
+                    android:id="@+id/tvTeamBScore"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="180/8"
+                    android:textAppearance="?attr/textAppearanceTitleLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:fontFamily="sans-serif-condensed"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Match Result/Status Text -->
+        <TextView
+            android:id="@+id/tvMatchResult"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            tools:text="India won by 65 runs"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:layout_marginTop="@dimen/spacing_sm"
+            app:layout_constraintTop_toBottomOf="@id/llScores"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

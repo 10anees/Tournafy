@@ -12,4 +12,9 @@
         <item>Round Robin</item>
         <item>Mixed</item>
     </string-array>
+    
+    <!-- Custom View Strings -->
+    <string name="trophy">Trophy</string>
+    <string name="no_bracket">No Bracket</string>
+    <string name="no_bracket_data">No tournament bracket available</string>
 </resources>

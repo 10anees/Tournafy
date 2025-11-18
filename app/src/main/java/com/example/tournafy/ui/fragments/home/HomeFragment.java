@@ -84,21 +84,14 @@ public class HomeFragment extends Fragment implements HomeAdapter.OnEntityClickL
     private void setupFab() {
         fabCreate.setOnClickListener(v -> {
             String[] options = {"Match", "Tournament", "Series"};
-            
             new AlertDialog.Builder(requireContext())
                 .setTitle("Host New Event")
                 .setItems(options, (dialog, which) -> {
                     NavController nav = Navigation.findNavController(v);
                     switch(which) {
-                        case 0: // Match
-                            nav.navigate(R.id.action_homeFragment_to_hostNewMatchFragment);
-                            break;
-                        case 1: // Tournament
-                            nav.navigate(R.id.action_home_to_hostNewTournamentFragment);
-                            break;
-                        case 2: // Series
-                            nav.navigate(R.id.action_home_to_hostNewSeriesFragment);
-                            break;
+                        case 0: nav.navigate(R.id.action_homeFragment_to_hostNewMatchFragment); break;
+                        case 1: nav.navigate(R.id.action_home_to_hostNewTournamentFragment); break;
+                        case 2: nav.navigate(R.id.action_home_to_hostNewSeriesFragment); break;
                     }
                 })
                 .show();
@@ -126,9 +119,7 @@ public class HomeFragment extends Fragment implements HomeAdapter.OnEntityClickL
         
         if (entity instanceof Match) {
             Match match = (Match) entity;
-            // Check specific sport ID strings ("CRICKET" / "FOOTBALL")
             boolean isCricket = "CRICKET".equalsIgnoreCase(match.getSportId());
-            
             if (isCricket) {
                 navController.navigate(R.id.action_home_to_cricketLiveScore, args);
             } else {
@@ -148,5 +139,19 @@ public class HomeFragment extends Fragment implements HomeAdapter.OnEntityClickL
         } else {
             Toast.makeText(getContext(), "Syncing " + entity.getName() + " to Cloud...", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    public void onDeleteClick(HostedEntity entity) {
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Delete Event")
+            .setMessage("Are you sure you want to delete '" + entity.getName() + "'? This cannot be undone.")
+            .setPositiveButton("Delete", (dialog, which) -> {
+                // Call ViewModel to delete
+                homeViewModel.deleteEntity(entity);
+                Toast.makeText(getContext(), "Deleted", Toast.LENGTH_SHORT).show();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 }

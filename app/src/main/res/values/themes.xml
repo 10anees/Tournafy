@@ -1,12 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Base.Theme.Tournafy" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/design_default_color_primary</item>
-        <item name="colorPrimaryVariant">@color/design_default_color_primary_variant</item>
-        <item name="colorOnPrimary">@color/design_default_color_on_primary</item>
-        <item name="android:statusBarColor">?attr/colorSurface</item>
+        <!-- Material 3 Color System -->
+        <item name="colorPrimary">@color/md_theme_light_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_light_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/md_theme_light_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_light_onPrimaryContainer</item>
+        
+        <item name="colorSecondary">@color/md_theme_light_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_light_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_light_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_light_onSecondaryContainer</item>
+        
+        <item name="colorTertiary">@color/md_theme_light_tertiary</item>
+        <item name="colorOnTertiary">@color/md_theme_light_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/md_theme_light_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/md_theme_light_onTertiaryContainer</item>
+        
+        <item name="colorError">@color/md_theme_light_error</item>
+        <item name="colorOnError">@color/md_theme_light_onError</item>
+        <item name="colorErrorContainer">@color/md_theme_light_errorContainer</item>
+        <item name="colorOnErrorContainer">@color/md_theme_light_onErrorContainer</item>
+        
+        <item name="android:colorBackground">@color/md_theme_light_background</item>
+        <item name="colorOnBackground">@color/md_theme_light_onBackground</item>
+        <item name="colorSurface">@color/md_theme_light_surface</item>
+        <item name="colorOnSurface">@color/md_theme_light_onSurface</item>
+        
+        <item name="colorSurfaceVariant">@color/md_theme_light_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/md_theme_light_onSurfaceVariant</item>
+        <item name="colorOutline">@color/md_theme_light_outline</item>
+        <item name="colorOutlineVariant">@color/md_theme_light_outlineVariant</item>
+        
+        <item name="colorSurfaceContainer">@color/md_theme_light_surfaceContainer</item>
+        <item name="colorSurfaceContainerHigh">@color/md_theme_light_surfaceContainerHigh</item>
+        <item name="colorSurfaceContainerHighest">@color/md_theme_light_surfaceContainerHighest</item>
+        <item name="colorSurfaceContainerLow">@color/md_theme_light_surfaceContainerLow</item>
+        <item name="colorSurfaceContainerLowest">@color/md_theme_light_surfaceContainerLowest</item>
+        
+        <!-- Status Bar & Navigation Bar -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        
+        <!-- Edge to Edge -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+        
+        <!-- Material 3 Shapes -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.Tournafy.SmallComponent</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Tournafy.MediumComponent</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Tournafy.LargeComponent</item>
+        
+        <!-- Typography -->
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.Tournafy.DisplayLarge</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.Tournafy.HeadlineLarge</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.Tournafy.TitleLarge</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Tournafy.BodyLarge</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.Tournafy.LabelLarge</item>
+        
+        <!-- Motion -->
+        <item name="motionDurationShort1">@integer/material_motion_duration_short_1</item>
+        <item name="motionDurationShort2">@integer/material_motion_duration_short_2</item>
+        <item name="motionDurationMedium1">@integer/material_motion_duration_medium_1</item>
+        <item name="motionDurationMedium2">@integer/material_motion_duration_medium_2</item>
     </style>
 
     <style name="Theme.Tournafy" parent="Base.Theme.Tournafy" />
+    
+    <!-- Shape Appearances -->
+    <style name="ShapeAppearance.Tournafy.SmallComponent" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+    
+    <style name="ShapeAppearance.Tournafy.MediumComponent" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+    
+    <style name="ShapeAppearance.Tournafy.LargeComponent" parent="ShapeAppearance.Material3.LargeComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+    
+    <!-- Typography -->
+    <style name="TextAppearance.Tournafy.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="android:textSize">57sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    
+    <style name="TextAppearance.Tournafy.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:textSize">32sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    
+    <style name="TextAppearance.Tournafy.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textSize">22sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    
+    <style name="TextAppearance.Tournafy.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+    
+    <style name="TextAppearance.Tournafy.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
 </resources>

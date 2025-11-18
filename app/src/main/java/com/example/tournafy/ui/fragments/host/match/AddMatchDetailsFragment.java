@@ -1,6 +1,8 @@
 package com.example.tournafy.ui.fragments.host.match;
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,7 +23,6 @@ public class AddMatchDetailsFragment extends Fragment {
 
     private HostViewModel hostViewModel;
     
-    // UI Views
     private ChipGroup chipGroupSport;
     private LinearLayout grpCricketConfig, grpFootballConfig;
     private TextInputEditText etMatchName, etVenue, etOvers, etDuration, etPlayersPerSide;
@@ -40,6 +41,7 @@ public class AddMatchDetailsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Use requireActivity() to share the ViewModel with the parent Fragment
         hostViewModel = new ViewModelProvider(requireActivity()).get(HostViewModel.class);
         
         initViews(view);
@@ -59,6 +61,17 @@ public class AddMatchDetailsFragment extends Fragment {
     }
 
     private void setupListeners() {
+        // FIX: Listen for text changes and update the shared ViewModel
+        etMatchName.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(Editable s) {
+                hostViewModel.matchNameInput.setValue(s.toString());
+            }
+        });
+        
         chipGroupSport.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (checkedIds.isEmpty()) return;
             
@@ -75,7 +88,6 @@ public class AddMatchDetailsFragment extends Fragment {
         grpCricketConfig.setVisibility(View.VISIBLE);
         grpFootballConfig.setVisibility(View.GONE);
         
-        // Notify parent fragment to update its internal state if necessary
         if (getParentFragment() instanceof HostNewMatchFragment) {
             ((HostNewMatchFragment) getParentFragment()).setSelectedSport(SportTypeEnum.CRICKET);
         }
@@ -90,9 +102,8 @@ public class AddMatchDetailsFragment extends Fragment {
         }
     }
     
-    // This method can be called by the Parent Fragment before moving to next step
     public boolean validate() {
-        // Implement validation logic (e.g., ensure venue isn't empty)
+        // Implement validation if needed
         return true;
     }
 }

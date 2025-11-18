@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.textfield.TextInputLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.Tournafy.TextInputLayout.Outlined"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/spacing_lg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Edit Team"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            android:layout_marginBottom="@dimen/spacing_lg"/>
+
+        <!-- Team Name -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilTeamName"
+            style="@style/Widget.Tournafy.TextInputLayout.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Team Name"
+            app:startIconDrawable="@android:drawable/ic_menu_edit"
+            app:counterEnabled="true"
+            app:counterMaxLength="30">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etTeamName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapWords"
+                android:maxLength="30"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Short Name -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilShortName"
+            style="@style/Widget.Tournafy.TextInputLayout.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Short Name / Code"
+            android:layout_marginTop="@dimen/spacing_md"
+            app:startIconDrawable="@android:drawable/ic_menu_edit"
+            app:counterEnabled="true"
+            app:counterMaxLength="5"
+            app:helperText="e.g., IND, AUS, BAR, RMA">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etShortName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapCharacters"
+                android:maxLength="5"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Team Logo URL (Optional) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilLogoUrl"
+            style="@style/Widget.Tournafy.TextInputLayout.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Logo URL (Optional)"
+            android:layout_marginTop="@dimen/spacing_md"
+            app:startIconDrawable="@android:drawable/ic_menu_gallery">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etLogoUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textUri"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="@dimen/spacing_xl"
+            android:gravity="end">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancel"
+                style="@style/Widget.Tournafy.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel"
+                android:layout_marginEnd="@dimen/spacing_sm"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSave"
+                style="@style/Widget.Tournafy.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save"/>
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.textfield.TextInputLayout>

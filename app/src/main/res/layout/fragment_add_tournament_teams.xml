@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:liftOnScroll="true">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="Add Teams"
+            app:navigationIcon="@android:drawable/ic_menu_revert"/>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_md">
+
+            <!-- Progress Indicator -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="@dimen/spacing_lg">
+
+                <TextView
+                    android:id="@+id/tvProgress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Step 2 of 3"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"/>
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/progressIndicator"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/spacing_md"
+                    app:indicatorColor="?attr/colorPrimary"
+                    app:trackColor="?attr/colorSurfaceVariant"
+                    app:trackThickness="4dp"
+                    android:progress="66"/>
+            </LinearLayout>
+
+            <!-- Info Card -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Tournafy.Card.Filled"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/spacing_md">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="@dimen/spacing_md">
+
+                    <ImageView
+                        android:layout_width="@dimen/icon_size_lg"
+                        android:layout_height="@dimen/icon_size_lg"
+                        android:src="@android:drawable/ic_dialog_info"
+                        android:contentDescription="Info"
+                        app:tint="?attr/colorPrimary"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="@dimen/spacing_md">
+
+                        <TextView
+                            android:id="@+id/tvRequiredTeams"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Add 8 teams to continue"
+                            android:textAppearance="?attr/textAppearanceTitleSmall"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:id="@+id/tvTeamsAdded"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 teams added"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:layout_marginTop="@dimen/spacing_xs"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Selected Teams Card -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Tournafy.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="@dimen/spacing_md"
+                        android:background="?attr/colorPrimaryContainer">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Selected Teams"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorOnPrimaryContainer"
+                            android:textStyle="bold"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnAddTeam"
+                            style="@style/Widget.Tournafy.Button.Tonal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Add Team"
+                            app:icon="@android:drawable/ic_input_add"
+                            app:iconSize="@dimen/icon_size_sm"/>
+                    </LinearLayout>
+
+                    <!-- Teams RecyclerView -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvTeams"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="200dp"
+                        android:padding="@dimen/spacing_sm"
+                        android:clipToPadding="false"/>
+
+                    <!-- Empty State -->
+                    <LinearLayout
+                        android:id="@+id/layoutEmptyState"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="@dimen/spacing_xl"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:layout_width="@dimen/empty_state_icon_size"
+                            android:layout_height="@dimen/empty_state_icon_size"
+                            android:src="@android:drawable/ic_input_add"
+                            android:contentDescription="No teams"
+                            android:alpha="0.38"
+                            app:tint="?attr/colorOnSurfaceVariant"/>
+
+                        <TextView
+                            style="@style/Widget.Tournafy.EmptyState.Text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="No teams added yet"
+                            android:layout_marginTop="@dimen/spacing_md"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tap 'Add Team' to get started"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:layout_marginTop="@dimen/spacing_xs"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Action Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="@dimen/spacing_lg">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBack"
+                    style="@style/Widget.Tournafy.Button.Outlined"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Back"
+                    app:icon="@android:drawable/ic_media_previous"
+                    android:layout_marginEnd="@dimen/spacing_sm"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnNext"
+                    style="@style/Widget.Tournafy.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Next: Set Matches"
+                    app:icon="@android:drawable/ic_media_next"
+                    app:iconGravity="end"
+                    android:layout_marginStart="@dimen/spacing_sm"
+                    android:enabled="false"/>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- FAB for Quick Add -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fabQuickAdd"
+        style="@style/Widget.Tournafy.ExtendedFloatingActionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Quick Add Team"
+        app:icon="@android:drawable/ic_input_add"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/fab_margin"
+        app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

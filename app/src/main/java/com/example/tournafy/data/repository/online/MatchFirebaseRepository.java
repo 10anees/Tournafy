@@ -21,13 +21,6 @@ import javax.inject.Singleton;
 
 /**
  * Firebase Realtime Database repository for ONLINE Match entities.
- * This is used when a match is hosted online (isOnline=true) and needs to be
- * accessible via a link for real-time viewing by multiple users.
- * Differences from MatchFirestoreRepository (offline):
- * - Uses Firebase Realtime Database for cloud storage
- * - No offline persistence
- * - Optimized for real-time updates
- * - Accessible via visibility links
  */
 @Singleton
 public class MatchFirebaseRepository extends FirebaseRepository<Match> {
@@ -46,26 +39,28 @@ public class MatchFirebaseRepository extends FirebaseRepository<Match> {
     
     /**
      * CRITICAL: Deserializes a DataSnapshot to the correct concrete Match subclass.
-     * This prevents crashes from trying to instantiate abstract Match class.
-     * @param snapshot The DataSnapshot containing match data.
-     * @return The correct Match subclass instance (CricketMatch or FootballMatch).
      */
     private Match deserializeMatch(DataSnapshot snapshot) {
         if (snapshot == null || !snapshot.exists()) {
             return null;
         }
         
-        // Read the sportType field to determine which class to use
-        String sportType = snapshot.child("sportType").getValue(String.class);
+        // CRITICAL FIX: Read 'sportId' instead of 'sportType' to match Domain Model
+        String sportId = snapshot.child("sportId").getValue(String.class);
         
-        if (sportType == null) {
+        if (sportId == null) {
+             // Fallback for legacy data
+             sportId = snapshot.child("sportType").getValue(String.class);
+        }
+        
+        if (sportId == null) {
             return null;
         }
         
         // Deserialize to the correct concrete class
-        if (SportTypeEnum.CRICKET.name().equals(sportType)) {
+        if (SportTypeEnum.CRICKET.name().equals(sportId)) {
             return snapshot.getValue(CricketMatch.class);
-        } else if (SportTypeEnum.FOOTBALL.name().equals(sportType)) {
+        } else if (SportTypeEnum.FOOTBALL.name().equals(sportId)) {
             return snapshot.getValue(FootballMatch.class);
         }
         
@@ -124,12 +119,8 @@ public class MatchFirebaseRepository extends FirebaseRepository<Match> {
         return liveData;
     }
 
-    /**
-     * Overrides the generic 'add' method to ensure a Match ID is set.
-     */
     @Override
     public Task<Void> add(Match entity) {
-        // If the entity doesn't have an ID, create one.
         if (entity.getEntityId() == null || entity.getEntityId().isEmpty()) {
             String newId = databaseReference.push().getKey();
             entity.setEntityId(newId);
@@ -137,13 +128,6 @@ public class MatchFirebaseRepository extends FirebaseRepository<Match> {
         return addOrUpdateWithId(entity.getEntityId(), entity);
     }
 
-    /**
-     * Gets all online matches hosted by a specific user.
-     * This uses Firebase queries for efficient filtering.
-     * FIXED: Uses deserializeMatch() to handle polymorphism.
-     * @param hostId The ID of the host user.
-     * @return LiveData holding a list of matches.
-     */
     public LiveData<List<Match>> getMatchesByHostId(String hostId) {
         MutableLiveData<List<Match>> liveData = new MutableLiveData<>();
         
@@ -171,12 +155,6 @@ public class MatchFirebaseRepository extends FirebaseRepository<Match> {
         return liveData;
     }
 
-    /**
-     * Gets all live (currently ongoing) matches.
-     * This can be used for a "Live Matches" feed.
-     * FIXED: Uses deserializeMatch() to handle polymorphism.
-     * @return LiveData holding a list of live matches.
-     */
     public LiveData<List<Match>> getLiveMatches() {
         MutableLiveData<List<Match>> liveData = new MutableLiveData<>();
         
@@ -204,13 +182,6 @@ public class MatchFirebaseRepository extends FirebaseRepository<Match> {
         return liveData;
     }
 
-    /**
-     * Gets a match by its visibility link.
-     * This is the primary way viewers access online matches.
-     * FIXED: Uses deserializeMatch() to handle polymorphism.
-     * @param visibilityLink The unique link for the match.
-     * @return LiveData holding the match.
-     */
     public LiveData<Match> getMatchByVisibilityLink(String visibilityLink) {
         MutableLiveData<Match> liveData = new MutableLiveData<>();
         
@@ -222,9 +193,9 @@ public class MatchFirebaseRepository extends FirebaseRepository<Match> {
                 for (DataSnapshot childSnapshot : snapshot.getChildren()) {
                     Match match = deserializeMatch(childSnapshot);
                     liveData.setValue(match);
-                    return; // Only one match should have this link
+                    return; 
                 }
-                liveData.setValue(null); // No match found
+                liveData.setValue(null); 
             }
 
             @Override
@@ -236,25 +207,10 @@ public class MatchFirebaseRepository extends FirebaseRepository<Match> {
         return liveData;
     }
 
-    /**
-     * Updates only the match status field.
-     * More efficient than updating the entire match object.
-     * @param matchId The match ID.
-     * @param newStatus The new status (e.g., "LIVE", "COMPLETED").
-     * @return Task that completes when operation finishes.
-     */
     public Task<Void> updateMatchStatus(String matchId, String newStatus) {
         return updateField(matchId, "matchStatus", newStatus);
     }
 
-    /**
-     * Updates only the match score fields.
-     * Useful for frequent score updates without syncing the entire match.
-     * @param matchId The match ID.
-     * @param homeScore The home team score.
-     * @param awayScore The away team score.
-     * @return Task that completes when operation finishes.
-     */
     public Task<Void> updateScores(String matchId, int homeScore, int awayScore) {
         return databaseReference.child(matchId).updateChildren(
             new java.util.HashMap<String, Object>() {{

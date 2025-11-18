@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Spacing System -->
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">16dp</dimen>
+    <dimen name="spacing_lg">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
+    <dimen name="spacing_xxl">48dp</dimen>
+    <dimen name="spacing_xxxl">64dp</dimen>
+    
+    <!-- Card Dimensions -->
+    <dimen name="card_corner_radius">12dp</dimen>
+    <dimen name="card_elevation">2dp</dimen>
+    <dimen name="card_margin">16dp</dimen>
+    <dimen name="card_padding">16dp</dimen>
+    
+    <!-- Button Dimensions -->
+    <dimen name="button_height">48dp</dimen>
+    <dimen name="button_height_large">56dp</dimen>
+    <dimen name="button_corner_radius">12dp</dimen>
+    <dimen name="button_padding_horizontal">24dp</dimen>
+    
+    <!-- Icon Sizes -->
+    <dimen name="icon_size_sm">16dp</dimen>
+    <dimen name="icon_size_md">24dp</dimen>
+    <dimen name="icon_size_lg">32dp</dimen>
+    <dimen name="icon_size_xl">48dp</dimen>
+    <dimen name="icon_size_xxl">64dp</dimen>
+    
+    <!-- Text Sizes -->
+    <dimen name="text_size_display">57sp</dimen>
+    <dimen name="text_size_headline_large">32sp</dimen>
+    <dimen name="text_size_headline_medium">28sp</dimen>
+    <dimen name="text_size_headline_small">24sp</dimen>
+    <dimen name="text_size_title_large">22sp</dimen>
+    <dimen name="text_size_title_medium">16sp</dimen>
+    <dimen name="text_size_title_small">14sp</dimen>
+    <dimen name="text_size_body_large">16sp</dimen>
+    <dimen name="text_size_body_medium">14sp</dimen>
+    <dimen name="text_size_body_small">12sp</dimen>
+    <dimen name="text_size_label_large">14sp</dimen>
+    <dimen name="text_size_label_medium">12sp</dimen>
+    <dimen name="text_size_label_small">11sp</dimen>
+    
+    <!-- Elevation -->
+    <dimen name="elevation_none">0dp</dimen>
+    <dimen name="elevation_sm">2dp</dimen>
+    <dimen name="elevation_md">4dp</dimen>
+    <dimen name="elevation_lg">8dp</dimen>
+    <dimen name="elevation_xl">16dp</dimen>
+    
+    <!-- App Bar -->
+    <dimen name="app_bar_height">56dp</dimen>
+    <dimen name="app_bar_elevation">4dp</dimen>
+    
+    <!-- Bottom Navigation -->
+    <dimen name="bottom_nav_height">80dp</dimen>
+    
+    <!-- FAB -->
+    <dimen name="fab_size">56dp</dimen>
+    <dimen name="fab_size_mini">40dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
+    
+    <!-- List Item -->
+    <dimen name="list_item_height">72dp</dimen>
+    <dimen name="list_item_height_compact">56dp</dimen>
+    <dimen name="list_item_padding">16dp</dimen>
+    
+    <!-- Avatar/Badge -->
+    <dimen name="avatar_size_sm">32dp</dimen>
+    <dimen name="avatar_size_md">48dp</dimen>
+    <dimen name="avatar_size_lg">64dp</dimen>
+    <dimen name="avatar_size_xl">96dp</dimen>
+    
+    <!-- Scoreboard -->
+    <dimen name="scoreboard_height">140dp</dimen>
+    <dimen name="score_text_size">48sp</dimen>
+    <dimen name="team_name_text_size">20sp</dimen>
+    
+    <!-- Keypad -->
+    <dimen name="keypad_button_size">64dp</dimen>
+    <dimen name="keypad_button_margin">4dp</dimen>
+    
+    <!-- Ball Circle -->
+    <dimen name="ball_circle_size">36dp</dimen>
+    <dimen name="ball_circle_text_size">14sp</dimen>
+    
+    <!-- Divider -->
+    <dimen name="divider_height">1dp</dimen>
+    <dimen name="divider_thickness">1dp</dimen>
+    <dimen name="divider_margin">16dp</dimen>
+    
+    <!-- Dialog -->
+    <dimen name="dialog_corner_radius">28dp</dimen>
+    <dimen name="dialog_padding">24dp</dimen>
+    <dimen name="dialog_min_width">280dp</dimen>
+    <dimen name="dialog_max_width">560dp</dimen>
+    
+    <!-- Empty State -->
+    <dimen name="empty_state_icon_size">96dp</dimen>
+    
+    <!-- Scorecard -->
+    <dimen name="scorecard_column_width">48dp</dimen>
+</resources>

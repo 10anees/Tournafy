@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Custom Pitch Map View for Cricket - Shows where balls landed -->
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/spacing_md">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvPitchMapTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pitch Map"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <!-- Legend Container -->
+    <LinearLayout
+        android:id="@+id/containerLegend"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="@dimen/spacing_sm"
+        app:layout_constraintTop_toBottomOf="@id/tvPitchMapTitle"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Dot Legend -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginEnd="@dimen/spacing_md"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:background="@drawable/shape_circle"
+                android:backgroundTint="?attr/colorOnSurfaceVariant"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:text="Dot"
+                android:textAppearance="?attr/textAppearanceLabelSmall"/>
+        </LinearLayout>
+
+        <!-- Single Legend -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginEnd="@dimen/spacing_md"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:background="@drawable/shape_circle"
+                android:backgroundTint="?attr/colorPrimary"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:text="1-2"
+                android:textAppearance="?attr/textAppearanceLabelSmall"/>
+        </LinearLayout>
+
+        <!-- Boundary Legend -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginEnd="@dimen/spacing_md"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:background="@drawable/shape_circle"
+                android:backgroundTint="@color/success_green"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:text="4/6"
+                android:textAppearance="?attr/textAppearanceLabelSmall"/>
+        </LinearLayout>
+
+        <!-- Wicket Legend -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:background="@drawable/shape_circle"
+                android:backgroundTint="@color/error_red"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:text="Wicket"
+                android:textAppearance="?attr/textAppearanceLabelSmall"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Pitch Canvas Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardPitchCanvas"
+        style="@style/Widget.Tournafy.Card"
+        android:layout_width="0dp"
+        android:layout_height="400dp"
+        android:layout_marginTop="@dimen/spacing_md"
+        app:layout_constraintTop_toBottomOf="@id/containerLegend"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Custom View will be added programmatically here -->
+        <FrameLayout
+            android:id="@+id/pitchCanvasContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="@dimen/spacing_md">
+
+            <!-- Pitch Representation -->
+            <View
+                android:id="@+id/viewPitch"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/colorSurfaceVariant"/>
+
+            <!-- Stumps (Top) -->
+            <View
+                android:layout_width="60dp"
+                android:layout_height="4dp"
+                android:layout_gravity="center_horizontal|top"
+                android:layout_marginTop="40dp"
+                android:background="?attr/colorOnSurface"/>
+
+            <!-- Stumps (Bottom) -->
+            <View
+                android:layout_width="60dp"
+                android:layout_height="4dp"
+                android:layout_gravity="center_horizontal|bottom"
+                android:layout_marginBottom="40dp"
+                android:background="?attr/colorOnSurface"/>
+
+            <!-- Pitch Line (Center) -->
+            <View
+                android:layout_width="2dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_horizontal"
+                android:background="?attr/colorOutline"/>
+
+            <!-- Ball markers will be added programmatically -->
+            <FrameLayout
+                android:id="@+id/ballMarkersContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Stats Summary -->
+    <LinearLayout
+        android:id="@+id/containerPitchStats"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_md"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:weightSum="3"
+        app:layout_constraintTop_toBottomOf="@id/cardPitchCanvas"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tvGoodLength"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textStyle="bold"
+                android:textColor="?attr/colorPrimary"
+                tools:text="42%"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Good Length"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tvShortPitched"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textStyle="bold"
+                android:textColor="?attr/colorPrimary"
+                tools:text="28%"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Short"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tvFullToss"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textStyle="bold"
+                android:textColor="?attr/colorPrimary"
+                tools:text="30%"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Full"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant"/>
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

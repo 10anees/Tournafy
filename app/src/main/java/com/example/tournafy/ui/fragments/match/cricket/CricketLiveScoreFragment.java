@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,8 +21,10 @@ import com.example.tournafy.domain.models.match.cricket.Ball;
 import com.example.tournafy.domain.models.match.cricket.CricketMatch;
 import com.example.tournafy.domain.models.match.cricket.Innings;
 import com.example.tournafy.domain.models.match.cricket.Over;
+import com.example.tournafy.domain.enums.MatchStatus;
 import com.example.tournafy.ui.components.ScoreboardView;
 import com.example.tournafy.ui.viewmodels.MatchViewModel;
+import com.google.android.material.button.MaterialButton;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -32,7 +35,9 @@ public class CricketLiveScoreFragment extends Fragment {
     private String matchId;
 
     // UI Components from new Layout
+    private MaterialButton btnStartMatch;
     private ScoreboardView scoreboardView;
+    private ProgressBar progressBar;
     private TextView tvStriker, tvNonStriker, tvBowler;
     private LinearLayout llRecentBalls;
 
@@ -76,7 +81,9 @@ public class CricketLiveScoreFragment extends Fragment {
 
     private void initViews(View view) {
         // Main Views
+        btnStartMatch = view.findViewById(R.id.btnStartMatch);
         scoreboardView = view.findViewById(R.id.scoreboardView);
+        progressBar = scoreboardView.findViewById(R.id.progressBar);
         tvStriker = view.findViewById(R.id.tvStriker);
         tvNonStriker = view.findViewById(R.id.tvNonStriker);
         tvBowler = view.findViewById(R.id.tvBowler);
@@ -104,6 +111,16 @@ public class CricketLiveScoreFragment extends Fragment {
     }
 
     private void setupListeners() {
+        // Start Match Button
+        btnStartMatch.setOnClickListener(v -> {
+            if (matchViewModel.canStartMatch()) {
+                matchViewModel.startMatch();
+                Toast.makeText(getContext(), "Match Started!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(getContext(), "Cannot start match", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         // Runs
         btnZero.setOnClickListener(v -> matchViewModel.addCricketBall(0));
         btnOne.setOnClickListener(v -> matchViewModel.addCricketBall(1));
@@ -128,8 +145,12 @@ public class CricketLiveScoreFragment extends Fragment {
 
         // Actions
         btnUndo.setOnClickListener(v -> {
-            matchViewModel.undoLastEvent();
-            Toast.makeText(getContext(), "Undo", Toast.LENGTH_SHORT).show();
+            if (matchViewModel.canUndo()) {
+                matchViewModel.undoLastEvent();
+                Toast.makeText(getContext(), "Undo", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(getContext(), "Nothing to undo", Toast.LENGTH_SHORT).show();
+            }
         });
 
         btnRetire.setOnClickListener(v -> Toast.makeText(getContext(), "Retire Player", Toast.LENGTH_SHORT).show());
@@ -137,14 +158,37 @@ public class CricketLiveScoreFragment extends Fragment {
     }
 
     private void observeViewModel() {
+        // Observe match updates
         matchViewModel.offlineMatch.observe(getViewLifecycleOwner(), match -> {
             if (match instanceof CricketMatch) {
                 updateUI((CricketMatch) match);
             }
         });
+        
+        // Observe loading state
+        matchViewModel.isLoading.observe(getViewLifecycleOwner(), isLoading -> {
+            if (progressBar != null) {
+                progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            }
+        });
+        
+        // Observe errors
+        matchViewModel.errorMessage.observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
+                matchViewModel.clearErrorMessage();
+            }
+        });
     }
 
     private void updateUI(CricketMatch match) {
+        // Update Start Match button visibility based on match status
+        MatchStatus status;
+        try {
+            status = MatchStatus.valueOf(match.getMatchStatus());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            status = MatchStatus.SCHEDULED;
+        }
         Innings currentInnings = match.getCurrentInnings();
 
         if (currentInnings != null) {
@@ -168,6 +212,9 @@ public class CricketLiveScoreFragment extends Fragment {
 
         // 3. Update Recent Balls (This Over)
         updateRecentBalls(match);
+        
+        // 4. Update button states
+        btnUndo.setEnabled(matchViewModel.canUndo());
     }
 
     private void updateRecentBalls(CricketMatch match) {

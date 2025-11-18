@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="?attr/colorSurface">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_md">
+
+        <!-- Header -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Series Details"
+            android:textAppearance="?attr/textAppearanceHeadlineMedium"
+            android:textColor="?attr/colorOnBackground"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Series Name -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilSeriesName"
+            style="@style/Widget.Tournafy.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Series Name"
+            android:layout_marginTop="@dimen/spacing_lg"
+            app:layout_constraintTop_toBottomOf="@id/tvTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etSeriesName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:maxLines="1"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Sport Type -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilSportType"
+            style="@style/Widget.Tournafy.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Sport Type"
+            android:layout_marginTop="@dimen/spacing_md"
+            app:endIconMode="dropdown_menu"
+            app:layout_constraintTop_toBottomOf="@id/tilSeriesName"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <AutoCompleteTextView
+                android:id="@+id/actvSportType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Number of Matches -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilNumberOfMatches"
+            style="@style/Widget.Tournafy.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Number of Matches"
+            android:layout_marginTop="@dimen/spacing_md"
+            app:layout_constraintTop_toBottomOf="@id/tilSportType"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etNumberOfMatches"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:maxLines="1"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Start Date -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilStartDate"
+            style="@style/Widget.Tournafy.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Start Date"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:layout_marginEnd="@dimen/spacing_sm"
+            app:startIconDrawable="@android:drawable/ic_menu_my_calendar"
+            app:layout_constraintTop_toBottomOf="@id/tilNumberOfMatches"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tilEndDate">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etStartDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="false"
+                android:clickable="true"
+                android:inputType="none"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- End Date -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilEndDate"
+            style="@style/Widget.Tournafy.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="End Date"
+            android:layout_marginStart="@dimen/spacing_sm"
+            android:layout_marginTop="@dimen/spacing_md"
+            app:startIconDrawable="@android:drawable/ic_menu_my_calendar"
+            app:layout_constraintTop_toBottomOf="@id/tilNumberOfMatches"
+            app:layout_constraintStart_toEndOf="@id/tilStartDate"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etEndDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="false"
+                android:clickable="true"
+                android:inputType="none"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Venue -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilVenue"
+            style="@style/Widget.Tournafy.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Venue"
+            android:layout_marginTop="@dimen/spacing_md"
+            app:startIconDrawable="@android:drawable/ic_dialog_map"
+            app:layout_constraintTop_toBottomOf="@id/tilStartDate"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etVenue"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:maxLines="1"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Description -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilDescription"
+            style="@style/Widget.Tournafy.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Description (Optional)"
+            android:layout_marginTop="@dimen/spacing_md"
+            app:layout_constraintTop_toBottomOf="@id/tilVenue"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textMultiLine"
+                android:minLines="3"
+                android:maxLines="5"
+                android:gravity="top|start"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Next Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNext"
+            style="@style/Widget.Tournafy.Button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Next: Add Teams"
+            app:icon="@android:drawable/ic_media_ff"
+            app:iconGravity="textEnd"
+            android:layout_marginTop="@dimen/spacing_lg"
+            app:layout_constraintTop_toBottomOf="@id/tilDescription"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

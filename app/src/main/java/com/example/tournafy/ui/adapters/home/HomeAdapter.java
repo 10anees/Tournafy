@@ -4,6 +4,7 @@ import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -27,6 +28,7 @@ public class HomeAdapter extends ListAdapter<HostedEntity, HomeAdapter.EntityVie
     public interface OnEntityClickListener {
         void onEntityClick(HostedEntity entity);
         void onEntityLongClick(HostedEntity entity);
+        void onDeleteClick(HostedEntity entity); // NEW METHOD
     }
 
     public HomeAdapter(OnEntityClickListener listener) {
@@ -51,15 +53,16 @@ public class HomeAdapter extends ListAdapter<HostedEntity, HomeAdapter.EntityVie
         TextView tvName, tvStatus, tvType;
         ImageView ivIcon;
         Chip chipOnlineStatus;
+        ImageButton btnDelete; // NEW
 
         public EntityViewHolder(@NonNull View itemView) {
             super(itemView);
-            // Bind views using the IDs from item_home_hosted_entity.xml
             tvName = itemView.findViewById(R.id.tvEntityName);
             tvStatus = itemView.findViewById(R.id.tvEntityStatus);
             tvType = itemView.findViewById(R.id.tvEntityType);
             ivIcon = itemView.findViewById(R.id.ivEntityIcon);
             chipOnlineStatus = itemView.findViewById(R.id.chipOnlineStatus);
+            btnDelete = itemView.findViewById(R.id.btnDelete); // Bind new button
         }
 
         public void bind(HostedEntity entity, OnEntityClickListener listener) {
@@ -77,16 +80,13 @@ public class HomeAdapter extends ListAdapter<HostedEntity, HomeAdapter.EntityVie
                 ivIcon.setImageResource(R.drawable.ic_series);
             }
 
-            // FIX: Use standard colors instead of private internal resources
             if (entity.isOnline()) {
                 chipOnlineStatus.setText("Online");
-                // Use green or accent color for Online
                 chipOnlineStatus.setChipBackgroundColor(ColorStateList.valueOf(
                         ContextCompat.getColor(itemView.getContext(), android.R.color.holo_green_light)
                 ));
             } else {
                 chipOnlineStatus.setText("Offline");
-                // Use gray for Offline
                 chipOnlineStatus.setChipBackgroundColor(ColorStateList.valueOf(
                         ContextCompat.getColor(itemView.getContext(), android.R.color.darker_gray)
                 ));
@@ -97,13 +97,15 @@ public class HomeAdapter extends ListAdapter<HostedEntity, HomeAdapter.EntityVie
                 listener.onEntityLongClick(entity);
                 return true;
             });
+            
+            // NEW: Handle delete click
+            btnDelete.setOnClickListener(v -> listener.onDeleteClick(entity));
         }
     }
 
     static class DiffCallback extends DiffUtil.ItemCallback<HostedEntity> {
         @Override
         public boolean areItemsTheSame(@NonNull HostedEntity oldItem, @NonNull HostedEntity newItem) {
-            // Null check added for safety
             if (oldItem.getEntityId() == null || newItem.getEntityId() == null) return false;
             return oldItem.getEntityId().equals(newItem.getEntityId());
         }

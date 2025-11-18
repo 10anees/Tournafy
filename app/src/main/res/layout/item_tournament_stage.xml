@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.Tournafy.Card.Filled"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/spacing_md"
+    android:layout_marginVertical="@dimen/spacing_xs">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_md">
+
+        <!-- Stage Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="@dimen/spacing_sm">
+
+            <TextView
+                android:id="@+id/tvStageName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Group A"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold"/>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipMatchCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="6 Matches"
+                app:chipBackgroundColor="?attr/colorPrimaryContainer"
+                android:textColor="?attr/colorOnPrimaryContainer"
+                app:chipMinHeight="@dimen/spacing_lg"/>
+        </LinearLayout>
+
+        <!-- Stage Details -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="@dimen/spacing_xs">
+
+            <!-- Date Range -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size_sm"
+                    android:layout_height="@dimen/icon_size_sm"
+                    android:src="@android:drawable/ic_menu_my_calendar"
+                    android:contentDescription="Date"
+                    app:tint="?attr/colorOnSurfaceVariant"/>
+
+                <TextView
+                    android:id="@+id/tvDateRange"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Oct 5-15"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:layout_marginStart="@dimen/spacing_xs"/>
+            </LinearLayout>
+
+            <!-- Status -->
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipStatus"
+                style="@style/Widget.Tournafy.StatusChip.Completed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Completed"/>
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/divider_thickness"
+            android:background="?attr/colorOutlineVariant"
+            android:layout_marginVertical="@dimen/spacing_sm"/>
+
+        <!-- Teams Grid -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Teams"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginBottom="@dimen/spacing_xs"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvTeams"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"/>
+
+        <!-- View Details Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnViewDetails"
+            style="@style/Widget.Tournafy.Button.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="View Matches"
+            app:icon="@android:drawable/ic_menu_view"
+            android:layout_gravity="end"
+            android:layout_marginTop="@dimen/spacing_xs"/>
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

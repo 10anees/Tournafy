@@ -16,148 +16,111 @@ import java.util.UUID;
 /**
  * Concrete implementation of a Match for Cricket.
  * Extends the abstract Match class and provides cricket-specific logic.
- * This is the STATE MACHINE for cricket matches - all state changes happen through processEvent().
- * This class implements the Builder Pattern for easy construction.
  */
 public class CricketMatch extends Match {
 
     // Cricket-specific relational data
     private List<Innings> innings;
-    private List<CricketEvent> cricketEvents;
-    private List<MatchTeam> teams; // List of teams participating
-    
+    private List<CricketEvent> cricketEvents; // For AddWicketCommand, AddExtrasCommand [cite: 99, 100]
+    private List<MatchTeam> teams;
+
     // State tracking
     private int currentInningsNumber;
-    private int targetScore; // For second innings
-    private List<Over> currentOvers; // All overs in current innings
-    
+    private int targetScore;
+    private List<Over> currentOvers;
+
     // Observer Pattern
     private List<MatchObserver> observers;
-    
+
     // Match Result
     private MatchResult matchResult;
 
-    /**
-     * Constructor initializes the match in SCHEDULED state.
-     */
     public CricketMatch() {
         super();
         this.entityType = "MATCH";
         this.sportId = SportTypeEnum.CRICKET.name();
-        this.matchStatus = MatchStatus.SCHEDULED.name();
+        setMatchStatus(MatchStatus.SCHEDULED.name());
 
         this.innings = new ArrayList<>();
         this.cricketEvents = new ArrayList<>();
         this.teams = new ArrayList<>();
         this.currentOvers = new ArrayList<>();
         this.observers = new ArrayList<>();
-        
+
         this.currentInningsNumber = 0;
         this.targetScore = 0;
     }
 
-    // --- --- --- --- --- --- --- --- ---
-    //   CORE EVENT-DRIVEN LOGIC
-    // --- --- --- --- --- --- --- --- ---
+    // --- CORE LOGIC (processEvent) ---
 
-    /**
-     * The ONLY public method for changing match state.
-     * All scoring, wickets, and state transitions happen here.
-     * This is the heart of the event-driven architecture.
-     * 
-     * @param event The MatchEvent to process (will be cast to CricketEvent)
-     */
     public void processEvent(MatchEvent event) {
         if (!(event instanceof CricketEvent)) {
             throw new IllegalArgumentException("Event must be a CricketEvent for CricketMatch");
         }
-        
+
         CricketEvent cricketEvent = (CricketEvent) event;
-        
-        // Add event to timeline
-        this.cricketEvents.add(cricketEvent);
-        
-        // Get current innings and over
+
         Innings currentInnings = getCurrentInnings();
-        if (currentInnings == null) {
-            // Match hasn't started properly - can't process events yet
-            return;
-        }
-        
+        if (currentInnings == null) return;
+
         Over currentOver = getCurrentOver();
         if (currentOver == null) {
-            // No over exists, create one
             currentOver = createNewOver(currentInnings);
         }
-        
-        // --- STEP 1: Create and add Ball to the Over ---
+
+        // Fill Foreign Keys
+        if (cricketEvent.getMatchId() == null) cricketEvent.setMatchId(this.entityId);
+        if (cricketEvent.getTeamId() == null) cricketEvent.setTeamId(currentInnings.getBattingTeamId());
+        if (cricketEvent.getOverNumber() == 0) cricketEvent.setOverNumber(currentOver.getOverNumber());
+        if (cricketEvent.getBallNumber() == 0) cricketEvent.setBallNumber(currentOver.getBalls() != null ? currentOver.getBalls().size() + 1 : 1);
+        if (cricketEvent.getEventId() == null) cricketEvent.setEventId(UUID.randomUUID().toString());
+        if (cricketEvent.getEventTime() == null) cricketEvent.setEventTime(new Date());
+
+        this.cricketEvents.add(cricketEvent);
+
+        // Update State
         Ball ball = createBallFromEvent(cricketEvent);
-        if (currentOver.getBalls() == null) {
-            currentOver.setBalls(new ArrayList<>());
-        }
+        if (currentOver.getBalls() == null) currentOver.setBalls(new ArrayList<>());
         currentOver.getBalls().add(ball);
-        
-        // --- STEP 2: Update Innings Score ---
+
         int runsToAdd = cricketEvent.getTotalRuns();
         currentInnings.setTotalRuns(currentInnings.getTotalRuns() + runsToAdd);
         currentOver.setRunsInOver(currentOver.getRunsInOver() + runsToAdd);
-        
-        // --- STEP 3: Handle Wickets ---
+
         if (cricketEvent.isWicket()) {
             currentInnings.setWicketsFallen(currentInnings.getWicketsFallen() + 1);
             currentOver.setWicketsInOver(currentOver.getWicketsInOver() + 1);
         }
-        
-        // --- STEP 4: Check if this is a legal delivery ---
+
         if (cricketEvent.isLegalDelivery()) {
-            // Legal ball counts towards the over
             int legalBallsInOver = countLegalBalls(currentOver);
-            
-            // Check if over is complete (6 legal balls)
             if (legalBallsInOver >= 6) {
                 endOver(currentInnings, currentOver);
             }
         }
-        
-        // --- STEP 5: Check if innings should end ---
+
+        // Check completion
         CricketMatchConfig config = (CricketMatchConfig) this.matchConfig;
         boolean inningsComplete = false;
-        
-        // Check all wickets down (assuming 10 wickets, or playersPerSide - 1)
-        if (currentInnings.getWicketsFallen() >= 10) {
-            inningsComplete = true;
-        }
-        
-        // Check all overs bowled
-        if (currentInnings.getOversCompleted() >= config.getNumberOfOvers()) {
-            inningsComplete = true;
-        }
-        
-        // For second innings: check if target achieved or impossible
+
+        if (currentInnings.getWicketsFallen() >= 10) inningsComplete = true;
+        if (currentInnings.getOversCompleted() >= config.getNumberOfOvers()) inningsComplete = true;
+
         if (currentInningsNumber == 2 && targetScore > 0) {
-            if (currentInnings.getTotalRuns() >= targetScore) {
-                inningsComplete = true; // Target achieved
-            } else if (currentInnings.getWicketsFallen() >= 10) {
-                inningsComplete = true; // All out
-            }
+            if (currentInnings.getTotalRuns() >= targetScore) inningsComplete = true;
+            else if (currentInnings.getWicketsFallen() >= 10) inningsComplete = true;
         }
-        
+
         if (inningsComplete) {
             endInnings(currentInnings);
         }
-        
-        // --- STEP 6: Notify all observers ---
+
         notifyObservers();
         notifyEventAdded(cricketEvent);
     }
 
-    // --- --- --- --- --- --- --- --- ---
-    //   STATE MANAGEMENT METHODS
-    // --- --- --- --- --- --- --- --- ---
+    // --- STATE METHODS (createNewOver, endOver, endInnings, determineWinner) ---
 
-    /**
-     * Creates a new Over object and adds it to the current innings.
-     */
     private Over createNewOver(Innings innings) {
         Over over = new Over();
         over.setOverId(UUID.randomUUID().toString());
@@ -165,204 +128,90 @@ public class CricketMatch extends Match {
         over.setOverNumber(innings.getOversCompleted() + 1);
         over.setBalls(new ArrayList<>());
         over.setCompleted(false);
-        over.setRunsInOver(0);
-        over.setWicketsInOver(0);
-        
+
         this.currentOvers.add(over);
         return over;
     }
 
-    /**
-     * Marks the current over as complete and increments overs_completed.
-     * Creates a new over for the next set of deliveries.
-     */
     private void endOver(Innings innings, Over over) {
         over.setCompleted(true);
         innings.setOversCompleted(innings.getOversCompleted() + 1);
-        
-        // Create a new over for next deliveries (if innings continues)
-        if (!innings.isCompleted()) {
-            createNewOver(innings);
-        }
+        if (!innings.isCompleted()) createNewOver(innings);
     }
 
-    /**
-     * Marks the current innings as complete.
-     * If first innings, set target. If second innings, determine winner.
-     */
     private void endInnings(Innings innings) {
         innings.setCompleted(true);
-        
         if (currentInningsNumber == 1) {
-            // First innings complete - set target for second innings
             this.targetScore = innings.getTotalRuns() + 1;
-            
-            // Check if there's a second innings to play
             if (this.innings.size() > 1) {
                 currentInningsNumber = 2;
-                this.currentOvers.clear(); // Reset overs for new innings
+                this.currentOvers.clear();
             } else {
-                // No second innings defined - match ends
                 determineWinner();
             }
         } else if (currentInningsNumber == 2) {
-            // Second innings complete - determine winner
             determineWinner();
         }
     }
 
-    /**
-     * Compares final scores and determines the winner.
-     * Updates matchStatus and creates MatchResult.
-     */
     private void determineWinner() {
         if (innings.size() < 2) {
-            // Can't determine winner without two innings
-            this.matchStatus = MatchStatus.COMPLETED.name();
-            this.status = "COMPLETED";
+            setMatchStatus(MatchStatus.COMPLETED.name());
             return;
         }
-        
+
         Innings firstInnings = innings.get(0);
         Innings secondInnings = innings.get(1);
-        
-        int firstScore = firstInnings.getTotalRuns();
-        int secondScore = secondInnings.getTotalRuns();
-        
-        // Create MatchResult
+
         this.matchResult = new MatchResult();
         this.matchResult.setMatchId(this.entityId);
         this.matchResult.setResultId(UUID.randomUUID().toString());
-        
-        if (secondScore >= firstScore) {
-            // Second batting team wins
+
+        if (secondInnings.getTotalRuns() >= firstInnings.getTotalRuns()) {
             this.winnerTeamId = secondInnings.getBattingTeamId();
             this.matchResult.setWinnerTeamId(secondInnings.getBattingTeamId());
-            this.matchResult.setLoserTeamId(firstInnings.getBattingTeamId());
             this.matchResult.setResultType("WIN");
-            
-            int wicketsRemaining = 10 - secondInnings.getWicketsFallen();
-            this.matchResult.setWinMargin(wicketsRemaining + " wickets");
-            
-        } else if (firstScore > secondScore) {
-            // First batting team wins
+            this.matchResult.setWinMargin((10 - secondInnings.getWicketsFallen()) + " wickets");
+        } else {
             this.winnerTeamId = firstInnings.getBattingTeamId();
             this.matchResult.setWinnerTeamId(firstInnings.getBattingTeamId());
-            this.matchResult.setLoserTeamId(secondInnings.getBattingTeamId());
             this.matchResult.setResultType("WIN");
-            
-            int runDifference = firstScore - secondScore;
-            this.matchResult.setWinMargin(runDifference + " runs");
-            
-        } else {
-            // Tie
-            this.matchResult.setResultType("TIE");
-            this.matchResult.setWinMargin("Match Tied");
+            this.matchResult.setWinMargin((firstInnings.getTotalRuns() - secondInnings.getTotalRuns()) + " runs");
         }
-        
-        this.matchResult.setWinnerScore(firstScore > secondScore ? firstScore : secondScore);
-        this.matchResult.setLoserScore(firstScore > secondScore ? secondScore : firstScore);
-        
-        // Update match status
-        this.matchStatus = MatchStatus.COMPLETED.name();
-        this.status = "COMPLETED";
-        
-        // Notify observers of status change
+
+        setMatchStatus(MatchStatus.COMPLETED.name());
         notifyStatusChanged(MatchStatus.COMPLETED.name());
     }
 
-    // --- --- --- --- --- --- --- --- ---
-    //   OBSERVER PATTERN IMPLEMENTATION
-    // --- --- --- --- --- --- --- --- ---
+    // --- OBSERVERS ---
 
-    /**
-     * Register a new observer to receive match updates.
-     */
-    public void addObserver(MatchObserver observer) {
-        if (!this.observers.contains(observer)) {
-            this.observers.add(observer);
-        }
-    }
+    public void addObserver(MatchObserver observer) { if (!observers.contains(observer)) observers.add(observer); }
+    public void removeObserver(MatchObserver observer) { observers.remove(observer); }
+    private void notifyObservers() { for (MatchObserver o : observers) o.onMatchUpdated(this); }
+    private void notifyEventAdded(MatchEvent e) { for (MatchObserver o : observers) o.onEventAdded(e); }
+    private void notifyStatusChanged(String s) { for (MatchObserver o : observers) o.onMatchStatusChanged(s); }
 
-    /**
-     * Remove an observer.
-     */
-    public void removeObserver(MatchObserver observer) {
-        this.observers.remove(observer);
-    }
+    // --- HELPERS (getCurrentInnings, createBallFromEvent, etc.) ---
 
-    /**
-     * Notify all observers of a match state update.
-     */
-    private void notifyObservers() {
-        for (MatchObserver observer : observers) {
-            observer.onMatchUpdated(this);
-        }
-    }
-
-    /**
-     * Notify all observers of a new event.
-     */
-    private void notifyEventAdded(MatchEvent event) {
-        for (MatchObserver observer : observers) {
-            observer.onEventAdded(event);
-        }
-    }
-
-    /**
-     * Notify all observers of a status change.
-     */
-    private void notifyStatusChanged(String newStatus) {
-        for (MatchObserver observer : observers) {
-            observer.onMatchStatusChanged(newStatus);
-        }
-    }
-
-    // --- --- --- --- --- --- --- --- ---
-    //   HELPER METHODS
-    // --- --- --- --- --- --- --- --- ---
-
-    /**
-     * Gets the current active innings.
-     */
     public Innings getCurrentInnings() {
-        if (currentInningsNumber == 0 || innings.isEmpty()) {
-            return null;
-        }
+        if (currentInningsNumber == 0 || innings.isEmpty()) return null;
         return innings.get(currentInningsNumber - 1);
     }
 
-    /**
-     * Gets the current active over.
-     */
     public Over getCurrentOver() {
-        if (currentOvers.isEmpty()) {
-            return null;
-        }
-        // Return the last over (most recent)
+        if (currentOvers.isEmpty()) return null;
         return currentOvers.get(currentOvers.size() - 1);
     }
 
-    /**
-     * Counts legal balls in an over (excludes wides, no-balls, etc.)
-     */
     private int countLegalBalls(Over over) {
-        if (over.getBalls() == null) {
-            return 0;
+        if (over.getBalls() == null) return 0;
+        int count = 0;
+        for (Ball b : over.getBalls()) {
+            if (b.isLegalDelivery()) count++;
         }
-        
-        int legalCount = 0;
-        for (Ball ball : over.getBalls()) {
-            if (ball.getExtrasType() == null || ball.getExtrasType().equals("NONE")) {
-                legalCount++;
-            }
-        }
-        return legalCount;
+        return count;
     }
 
-    /**
-     * Creates a Ball object from a CricketEvent.
-     */
     private Ball createBallFromEvent(CricketEvent event) {
         Ball ball = new Ball();
         ball.setBallId(UUID.randomUUID().toString());
@@ -372,237 +221,293 @@ public class CricketMatch extends Match {
         ball.setRunsScored(event.getTotalRuns());
         ball.setWicket(event.isWicket());
         ball.setExtrasType(event.getExtrasType());
-        
         if (event.isWicket() && event.getWicketDetail() != null) {
             ball.setWicketType(event.getWicketDetail().getWicketType());
         }
-        
         return ball;
     }
 
-    // --- Abstract Method Implementations ---
+    // --- ABSTRACT IMPL (startMatch, endMatch, addEvent, canStartMatch) ---
 
     @Override
     public void startMatch() {
-        // Set the match status to LIVE
-        this.matchStatus = MatchStatus.LIVE.name();
-        this.status = "ACTIVE";
-        
-        // Initialize first innings if not already done
+        setMatchStatus(MatchStatus.LIVE.name());
+
         if (innings.isEmpty() && teams.size() >= 2) {
-            // Create first innings
-            Innings firstInnings = new Innings();
-            firstInnings.setInningsId(UUID.randomUUID().toString());
-            firstInnings.setMatchId(this.entityId);
-            firstInnings.setInningsNumber(1);
-            firstInnings.setBattingTeamId(teams.get(0).getTeamId());
-            firstInnings.setBowlingTeamId(teams.get(1).getTeamId());
-            firstInnings.setTotalRuns(0);
-            firstInnings.setWicketsFallen(0);
-            firstInnings.setOversCompleted(0);
-            firstInnings.setCompleted(false);
-            
-            innings.add(firstInnings);
+            Innings first = new Innings();
+            first.setInningsId(UUID.randomUUID().toString());
+            first.setMatchId(this.entityId);
+            first.setInningsNumber(1);
+            first.setBattingTeamId(teams.get(0).getTeamId());
+            first.setBowlingTeamId(teams.get(1).getTeamId());
+            innings.add(first);
             currentInningsNumber = 1;
-            
-            // Create second innings placeholder
-            Innings secondInnings = new Innings();
-            secondInnings.setInningsId(UUID.randomUUID().toString());
-            secondInnings.setMatchId(this.entityId);
-            secondInnings.setInningsNumber(2);
-            secondInnings.setBattingTeamId(teams.get(1).getTeamId());
-            secondInnings.setBowlingTeamId(teams.get(0).getTeamId());
-            secondInnings.setTotalRuns(0);
-            secondInnings.setWicketsFallen(0);
-            secondInnings.setOversCompleted(0);
-            secondInnings.setCompleted(false);
-            
-            innings.add(secondInnings);
+
+            Innings second = new Innings();
+            second.setInningsId(UUID.randomUUID().toString());
+            second.setMatchId(this.entityId);
+            second.setInningsNumber(2);
+            second.setBattingTeamId(teams.get(1).getTeamId());
+            second.setBowlingTeamId(teams.get(0).getTeamId());
+            innings.add(second);
         }
-        
         notifyStatusChanged(MatchStatus.LIVE.name());
     }
 
     @Override
     public void endMatch() {
-        // Set the match status to COMPLETED
-        this.matchStatus = MatchStatus.COMPLETED.name();
-        this.status = "COMPLETED";
-        
-        // Determine winner if not already done
-        if (this.matchResult == null) {
-            determineWinner();
-        }
-        
+        setMatchStatus(MatchStatus.COMPLETED.name());
+        if (this.matchResult == null) determineWinner();
         notifyStatusChanged(MatchStatus.COMPLETED.name());
     }
 
     @Override
     public void addEvent(MatchEvent event) {
-        // Delegate to processEvent for proper state management
         processEvent(event);
     }
 
-    // --- Getters and Setters for Cricket-specific fields ---
-
-    public List<Innings> getInnings() {
-        return innings;
+    @Override
+    public boolean canStartMatch() {
+        return teams != null && teams.size() >= 2 &&
+                matchConfig != null &&
+                getMatchStatus().equals(MatchStatus.SCHEDULED.name());
     }
 
-    public void setInnings(List<Innings> innings) {
-        this.innings = innings;
-    }
-
-    public List<CricketEvent> getCricketEvents() {
-        return cricketEvents;
-    }
-
-    public void setCricketEvents(List<CricketEvent> cricketEvents) {
-        this.cricketEvents = cricketEvents;
-    }
-
-    public List<MatchTeam> getTeams() {
-        return teams;
-    }
-
-    public void setTeams(List<MatchTeam> teams) {
-        this.teams = teams;
-    }
-
-    public int getCurrentInningsNumber() {
-        return currentInningsNumber;
-    }
-
-    public int getTargetScore() {
-        return targetScore;
-    }
-
-    public MatchResult getMatchResult() {
-        return matchResult;
-    }
-
-    public List<Over> getCurrentOvers() {
-        return currentOvers;
-    }
-
-    // --- --- --- --- --- --- --- --- ---
-    //   COMMAND PATTERN SUPPORT METHODS
-    // --- --- --- --- --- --- --- --- ---
+    // =========================================================================
+    // COMMAND PATTERN IMPLEMENTATIONS (Required by Match.java)
+    // =========================================================================
 
     /**
-     * Starts a new over in the current innings.
-     * Used by EndOverCommand to transition to next over.
+     * Implements Match.addMatchEvent(MatchEvent event) for Undo/Redo support.
+     * This method is called by the Command to register the event for persistence.
      */
-    public void startNewOver() {
-        Innings currentInnings = getCurrentInnings();
-        if (currentInnings != null && !currentInnings.isCompleted()) {
-            createNewOver(currentInnings);
+    @Override
+    public void addMatchEvent(MatchEvent event) {
+        if (event instanceof CricketEvent) {
+            this.cricketEvents.add((CricketEvent) event);
         }
+        // NOTE: We rely on the Command implementation to handle score/state updates
+        // before calling this method, or we assume the event is already processed
+        // and we are just logging it for persistence/redo.
     }
 
     /**
-     * Removes the last over from the current innings.
-     * Used by EndOverCommand undo operation.
+     * Implements Match.removeMatchEvent(MatchEvent event) for Undo/Redo support.
+     * This method is called by the Command to un-register the event.
      */
+    @Override
+    public void removeMatchEvent(MatchEvent event) {
+        this.cricketEvents.remove(event);
+    }
+    
+    // --- COMMAND HELPERS: FOOTBALL SPECIFIC (UNSUPPORTED IN CRICKET) ---
+
+    /**
+     * Implements Match.setHomeScore(int score). Not applicable to event-based Cricket scoring.
+     * @throws UnsupportedOperationException as Cricket uses processEvent for state changes.
+     */
+    @Override
+    public void setHomeScore(int score) {
+        throw new UnsupportedOperationException("setHomeScore is not supported in CricketMatch. Use addEvent/processEvent.");
+    }
+
+    /**
+     * Implements Match.setAwayScore(int score). Not applicable to event-based Cricket scoring.
+     * @throws UnsupportedOperationException as Cricket uses processEvent for state changes.
+     */
+    @Override
+    public void setAwayScore(int score) {
+        throw new UnsupportedOperationException("setAwayScore is not supported in CricketMatch. Use addEvent/processEvent.");
+    }
+
+    /**
+     * Implements Match.getHomeTeamId(). Cricket tracks teams via innings order.
+     * We return the ID of the team batting first as the 'Home' contextually.
+     * This prevents AddGoalCommand from crashing when trying to access this method.
+     */
+    @Override
+    public String getHomeTeamId() {
+        if (teams != null && !teams.isEmpty()) {
+            // Assume the first team added is the 'Home' team for ID lookup
+            return teams.get(0).getTeamId();
+        }
+        return null;
+    }
+
+    /**
+     * Implements Match.performSubstitution(). Not applicable to Cricket.
+     * @throws UnsupportedOperationException
+     */
+    @Override
+    public void performSubstitution(String playerOutId, String playerInId) {
+        throw new UnsupportedOperationException("Player substitution is not supported in CricketMatch for team lineup changes.");
+    }
+
+    // --- GETTERS ---
+
+    public List<Innings> getInnings() { return innings; }
+    public void setInnings(List<Innings> innings) { this.innings = innings; }
+    public List<CricketEvent> getCricketEvents() { return cricketEvents; }
+    public void setCricketEvents(List<CricketEvent> cricketEvents) { this.cricketEvents = cricketEvents; }
+    public List<MatchTeam> getTeams() { return teams; }
+    public void setTeams(List<MatchTeam> teams) { this.teams = teams; }
+    public int getCurrentInningsNumber() { return currentInningsNumber; }
+    public int getTargetScore() { return targetScore; }
+    public MatchResult getMatchResult() { return matchResult; }
+    public List<Over> getCurrentOvers() { return currentOvers; }
+
+    // --- COMMAND SUPPORT (Existing for Over management) ---
+
+    public void startNewOver() {
+        Innings curr = getCurrentInnings();
+        if (curr != null && !curr.isCompleted()) createNewOver(curr);
+    }
+
     public void removeLastOver() {
         if (!currentOvers.isEmpty()) {
-            Over lastOver = currentOvers.remove(currentOvers.size() - 1);
-            Innings currentInnings = getCurrentInnings();
-            if (currentInnings != null && lastOver.isCompleted()) {
-                currentInnings.setOversCompleted(currentInnings.getOversCompleted() - 1);
+            Over last = currentOvers.remove(currentOvers.size() - 1);
+            Innings curr = getCurrentInnings();
+            if (curr != null && last.isCompleted()) curr.setOversCompleted(curr.getOversCompleted() - 1);
+        }
+    }
+
+    public void setCurrentOver(Over over) {
+        if (!currentOvers.isEmpty()) currentOvers.set(currentOvers.size() - 1, over);
+        else currentOvers.add(over);
+    }
+
+    public void endCurrentOver() {
+        Innings curr = getCurrentInnings();
+        Over over = getCurrentOver();
+        if (curr != null && over != null) endOver(curr, over);
+    }
+
+    public boolean canEndInnings() {
+        Innings curr = getCurrentInnings();
+        return curr != null && !curr.isCompleted() && getMatchStatus().equals(MatchStatus.LIVE.name());
+    }
+
+    public void endCurrentInnings() {
+        Innings curr = getCurrentInnings();
+        if (curr != null && !curr.isCompleted()) endInnings(curr);
+    }
+
+    public String getMatchSummary() { return "Summary Logic Placeholder"; }
+
+    // --- ABSTRACT METHOD IMPLEMENTATIONS (Required by Match.java) ---
+
+    /**
+     * Calculates the required run rate for the chasing team.
+     * Only applicable in the second innings when a target is set.
+     * @return Required run rate, or 0.0f if not in second innings or no target
+     */
+    @Override
+    public float getRequiredRunRate() {
+        if (currentInningsNumber != 2 || targetScore == 0) {
+            return 0.0f;
+        }
+
+        Innings currentInnings = getCurrentInnings();
+        if (currentInnings == null) {
+            return 0.0f;
+        }
+
+        CricketMatchConfig config = (CricketMatchConfig) this.matchConfig;
+        if (config == null) {
+            return 0.0f;
+        }
+
+        int runsRequired = targetScore - currentInnings.getTotalRuns();
+        if (runsRequired <= 0) {
+            return 0.0f;
+        }
+
+        int remainingBalls = getRemainingBalls();
+        if (remainingBalls <= 0) {
+            return 0.0f;
+        }
+
+        float remainingOvers = remainingBalls / 6.0f;
+        return runsRequired / remainingOvers;
+    }
+
+    /**
+     * Calculates the number of balls remaining in the current innings.
+     * Takes into account completed overs and balls in the current over.
+     * @return Number of balls remaining
+     */
+    @Override
+    public int getRemainingBalls() {
+        Innings currentInnings = getCurrentInnings();
+        if (currentInnings == null) {
+            return 0;
+        }
+
+        CricketMatchConfig config = (CricketMatchConfig) this.matchConfig;
+        if (config == null) {
+            return 0;
+        }
+
+        int totalBalls = config.getNumberOfOvers() * 6;
+        int ballsBowled = currentInnings.getOversCompleted() * 6;
+
+        // Add legal balls in current incomplete over
+        Over currentOver = getCurrentOver();
+        if (currentOver != null && !currentOver.isCompleted()) {
+            ballsBowled += countLegalBalls(currentOver);
+        }
+
+        return Math.max(0, totalBalls - ballsBowled);
+    }
+
+    /**
+     * Calculates the total number of extras conceded in the current innings.
+     * Includes wides, no-balls, byes, and leg-byes.
+     * @return Total extras count
+     */
+    @Override
+    public int getExtrasCount() {
+        Innings currentInnings = getCurrentInnings();
+        if (currentInnings == null) {
+            return 0;
+        }
+
+        int extrasCount = 0;
+
+        // Count extras from all cricket events in current innings
+        for (CricketEvent event : cricketEvents) {
+            // Only count events from current innings
+            if (event.getOverNumber() > 0 && 
+                event.getOverNumber() <= currentInnings.getOversCompleted() + 1) {
+                
+                String extrasType = event.getExtrasType();
+                if (extrasType != null && !extrasType.equals("NONE")) {
+                    extrasCount += event.getTotalRuns();
+                }
             }
         }
+
+        return extrasCount;
     }
 
-    /**
-     * Sets the current over.
-     * Used by command pattern to restore state.
-     */
-    public void setCurrentOver(Over over) {
-        if (!currentOvers.isEmpty()) {
-            currentOvers.set(currentOvers.size() - 1, over);
-        } else {
-            currentOvers.add(over);
-        }
-    }
 
-    /**
-     * Adds a cricket event to the match timeline.
-     * Used by command pattern for undo/redo support.
-     */
-    public void addMatchEvent(CricketEvent event) {
-        if (!cricketEvents.contains(event)) {
-            cricketEvents.add(event);
-        }
-    }
-
-    /**
-     * Removes a cricket event from the match timeline.
-     * Used by command pattern undo operations.
-     */
-    public void removeMatchEvent(CricketEvent event) {
-        cricketEvents.remove(event);
-    }
-
-    // --- --- --- --- --- --- --- --- ---
-    //   BUILDER PATTERN IMPLEMENTATION
-    // --- --- --- --- --- --- --- --- ---
-
-    /**
-     * Concrete Builder for creating a CricketMatch.
-     * This extends the abstract Match.Builder to provide a fluent API.
-     */
     public static class Builder extends Match.Builder<Builder> {
         private CricketMatchConfig config;
-        private List<MatchTeam> teams;
-
-        public Builder(String name, String hostUserId) {
-            super(name, hostUserId);
-            this.teams = new ArrayList<>();
-        }
-
-        public Builder withConfig(CricketMatchConfig config) {
-            this.config = config;
-            return this;
-        }
-
-        public Builder addTeam(MatchTeam team) {
-            this.teams.add(team);
-            return this;
-        }
-
-        public Builder withTeams(List<MatchTeam> teams) {
-            this.teams = teams;
-            return this;
-        }
-
-        @Override
-        protected Builder self() {
-            return this;
-        }
-
-        @Override
-        public CricketMatch build() {
-            CricketMatch match = new CricketMatch();
-            
-            match.setEntityId(UUID.randomUUID().toString());
-            match.setName(this.name);
-            match.setHostUserId(this.hostUserId);
-            match.setCreatedAt(new Date());
-            match.setOnline(false);
-            
-            // CRITICAL FIX: Explicitly set Sport ID
-            match.setSportId(SportTypeEnum.CRICKET.name());
-            
-            match.setMatchDate(this.matchDate);
-            match.setVenue(this.venue);
-            match.setMatchStatus(MatchStatus.SCHEDULED.name());
-            match.setStatus("DRAFT");
-
-            match.setMatchConfig(this.config != null ? this.config : new CricketMatchConfig());
-            match.setTeams(this.teams);
-
-            return match;
+        private List<MatchTeam> teams = new ArrayList<>();
+        public Builder(String name, String hostUserId) { super(name, hostUserId); }
+        public Builder withConfig(CricketMatchConfig config) { this.config = config; return this; }
+        public Builder addTeam(MatchTeam team) { this.teams.add(team); return this; }
+        @Override protected Builder self() { return this; }
+        @Override public CricketMatch build() {
+            CricketMatch m = new CricketMatch();
+            m.setEntityId(UUID.randomUUID().toString());
+            m.setName(this.name);
+            m.setHostUserId(this.hostUserId);
+            m.setSportId(SportTypeEnum.CRICKET.name());
+            m.setMatchStatus(MatchStatus.SCHEDULED.name());
+            m.setMatchConfig(this.config != null ? this.config : new CricketMatchConfig());
+            m.setTeams(this.teams);
+            return m;
         }
     }
 }

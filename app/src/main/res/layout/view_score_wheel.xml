@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Custom Score Wheel View - Shows run distribution in a circular graph -->
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/spacing_md">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvScoreWheelTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Run Distribution"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <!-- Score Wheel Canvas -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardScoreWheel"
+        style="@style/Widget.Tournafy.Card"
+        android:layout_width="0dp"
+        android:layout_height="300dp"
+        android:layout_marginTop="@dimen/spacing_md"
+        app:layout_constraintTop_toBottomOf="@id/tvScoreWheelTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <FrameLayout
+            android:id="@+id/scoreWheelContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="@dimen/spacing_md">
+
+            <!-- Custom circular chart view will be added programmatically -->
+            <View
+                android:id="@+id/viewScoreWheel"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+
+            <!-- Center Stats -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/tvTotalRuns"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceDisplaySmall"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorPrimary"
+                    tools:text="156"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Total Runs"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"/>
+            </LinearLayout>
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Legend -->
+    <LinearLayout
+        android:id="@+id/containerScoreLegend"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_md"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@id/cardScoreWheel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Dots (0 runs) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="@dimen/spacing_xs"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@drawable/shape_circle"
+                android:backgroundTint="?attr/colorOnSurfaceVariant"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/spacing_sm"
+                android:text="Dots (0 runs)"
+                android:textAppearance="?attr/textAppearanceBodyMedium"/>
+
+            <TextView
+                android:id="@+id/tvDotsCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textStyle="bold"
+                tools:text="24 (40%)"/>
+        </LinearLayout>
+
+        <!-- Singles (1 run) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="@dimen/spacing_xs"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@drawable/shape_circle"
+                android:backgroundTint="?attr/colorPrimary"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/spacing_sm"
+                android:text="Singles (1 run)"
+                android:textAppearance="?attr/textAppearanceBodyMedium"/>
+
+            <TextView
+                android:id="@+id/tvSinglesCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textStyle="bold"
+                tools:text="18 (30%)"/>
+        </LinearLayout>
+
+        <!-- Twos (2 runs) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="@dimen/spacing_xs"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@drawable/shape_circle"
+                android:backgroundTint="?attr/colorTertiary"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/spacing_sm"
+                android:text="Twos (2 runs)"
+                android:textAppearance="?attr/textAppearanceBodyMedium"/>
+
+            <TextView
+                android:id="@+id/tvTwosCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textStyle="bold"
+                tools:text="6 (10%)"/>
+        </LinearLayout>
+
+        <!-- Fours (4 runs) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="@dimen/spacing_xs"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@drawable/shape_circle"
+                android:backgroundTint="@color/success_green"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/spacing_sm"
+                android:text="Fours (4 runs)"
+                android:textAppearance="?attr/textAppearanceBodyMedium"/>
+
+            <TextView
+                android:id="@+id/tvFoursCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textStyle="bold"
+                tools:text="8 (13%)"/>
+        </LinearLayout>
+
+        <!-- Sixes (6 runs) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="@dimen/spacing_xs"
+            android:gravity="center_vertical">
+
+            <View
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@drawable/shape_circle"
+                android:backgroundTint="@color/cricket_green"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/spacing_sm"
+                android:text="Sixes (6 runs)"
+                android:textAppearance="?attr/textAppearanceBodyMedium"/>
+
+            <TextView
+                android:id="@+id/tvSixesCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textStyle="bold"
+                tools:text="4 (7%)"/>
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
