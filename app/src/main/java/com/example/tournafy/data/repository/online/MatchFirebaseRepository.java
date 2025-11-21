@@ -1,7 +1,11 @@
 package com.example.tournafy.data.repository.online;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+
+import com.example.tournafy.domain.models.match.cricket.CricketMatchConfig;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -12,7 +16,8 @@ import com.example.tournafy.domain.models.base.Match;
 import com.example.tournafy.domain.models.match.cricket.CricketMatch;
 import com.example.tournafy.domain.models.match.football.FootballMatch;
 import com.example.tournafy.domain.models.sport.SportTypeEnum;
-
+import com.example.tournafy.domain.models.match.cricket.CricketEvent;
+import com.example.tournafy.domain.models.match.cricket.CricketMatchConfig;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +30,7 @@ import javax.inject.Singleton;
 @Singleton
 public class MatchFirebaseRepository extends FirebaseRepository<Match> {
 
+    private static final String TAG = "MatchFirebaseRepository";
     public static final String DATABASE_PATH = "matches";
 
     @Inject
@@ -39,6 +45,7 @@ public class MatchFirebaseRepository extends FirebaseRepository<Match> {
     
     /**
      * CRITICAL: Deserializes a DataSnapshot to the correct concrete Match subclass.
+     * CRITICAL FIX: Now properly deserializes cricket-specific nested fields (innings, events, teams, currentOvers).
      */
     private Match deserializeMatch(DataSnapshot snapshot) {
         if (snapshot == null || !snapshot.exists()) {
@@ -59,7 +66,87 @@ public class MatchFirebaseRepository extends FirebaseRepository<Match> {
         
         // Deserialize to the correct concrete class
         if (SportTypeEnum.CRICKET.name().equals(sportId)) {
-            return snapshot.getValue(CricketMatch.class);
+            // Create match manually to avoid abstract MatchConfig deserialization issue
+            Log.d(TAG, "Using manual deserialization for CricketMatch to handle abstract MatchConfig");
+            CricketMatch match = new CricketMatch();
+            
+            // Deserialize basic Match fields
+            match.setEntityId(snapshot.child("entityId").getValue(String.class));
+            match.setName(snapshot.child("name").getValue(String.class));
+            match.setSportId(snapshot.child("sportId").getValue(String.class));
+            match.setMatchStatus(snapshot.child("matchStatus").getValue(String.class));
+            match.setVenue(snapshot.child("venue").getValue(String.class));
+            match.setHostUserId(snapshot.child("hostUserId").getValue(String.class));
+            match.setStatus(snapshot.child("status").getValue(String.class));
+            
+            // Deserialize CricketMatchConfig
+            DataSnapshot configSnapshot = snapshot.child("matchConfig");
+            if (configSnapshot.exists()) {
+                CricketMatchConfig config = new CricketMatchConfig();
+                if (configSnapshot.child("numberOfOvers").exists()) {
+                    config.setNumberOfOvers(configSnapshot.child("numberOfOvers").getValue(Integer.class));
+                }
+                if (configSnapshot.child("wideOn").exists()) {
+                    config.setWideOn(configSnapshot.child("wideOn").getValue(Boolean.class));
+                }
+                match.setMatchConfig(config);
+            }
+            
+            // CRITICAL FIX: Manually deserialize nested cricket-specific fields
+            if (match != null) {
+                // Deserialize currentInningsNumber using reflection (private field)
+                try {
+                    Integer currentInningsNumber = snapshot.child("currentInningsNumber").getValue(Integer.class);
+                    if (currentInningsNumber != null) {
+                        java.lang.reflect.Field field = CricketMatch.class.getDeclaredField("currentInningsNumber");
+                        field.setAccessible(true);
+                        field.set(match, currentInningsNumber);
+                        android.util.Log.d(TAG, "Set currentInningsNumber to " + currentInningsNumber + " for match " + match.getEntityId());
+                    }
+                } catch (NoSuchFieldException | IllegalAccessException e) {
+                    android.util.Log.e(TAG, "Failed to set currentInningsNumber via reflection", e);
+                }
+                
+                // Deserialize targetScore using reflection (private field)
+                try {
+                    Integer targetScore = snapshot.child("targetScore").getValue(Integer.class);
+                    if (targetScore != null) {
+                        java.lang.reflect.Field field = CricketMatch.class.getDeclaredField("targetScore");
+                        field.setAccessible(true);
+                        field.set(match, targetScore);
+                        android.util.Log.d(TAG, "Set targetScore to " + targetScore + " for match " + match.getEntityId());
+                    }
+                } catch (NoSuchFieldException | IllegalAccessException e) {
+                    android.util.Log.e(TAG, "Failed to set targetScore via reflection", e);
+                }
+                
+                // Deserialize innings list
+                com.google.firebase.database.GenericTypeIndicator<List<com.example.tournafy.domain.models.match.cricket.Innings>> inningsType = 
+                    new com.google.firebase.database.GenericTypeIndicator<List<com.example.tournafy.domain.models.match.cricket.Innings>>() {};
+                List<com.example.tournafy.domain.models.match.cricket.Innings> innings = snapshot.child("innings").getValue(inningsType);
+                if (innings != null) {
+                    match.setInnings(innings);
+                    android.util.Log.d(TAG, "Deserialized " + innings.size() + " innings for match " + match.getEntityId());
+                }
+                
+                // Deserialize cricket events list
+                com.google.firebase.database.GenericTypeIndicator<List<CricketEvent>> eventsType = 
+                    new com.google.firebase.database.GenericTypeIndicator<List<CricketEvent>>() {};
+                List<CricketEvent> cricketEvents = snapshot.child("cricketEvents").getValue(eventsType);
+                if (cricketEvents != null) {
+                    match.setCricketEvents(cricketEvents);
+                }
+                
+                // Deserialize teams list
+                com.google.firebase.database.GenericTypeIndicator<List<com.example.tournafy.domain.models.team.MatchTeam>> teamsType = 
+                    new com.google.firebase.database.GenericTypeIndicator<List<com.example.tournafy.domain.models.team.MatchTeam>>() {};
+                List<com.example.tournafy.domain.models.team.MatchTeam> teams = snapshot.child("teams").getValue(teamsType);
+                if (teams != null) {
+                    match.setTeams(teams);
+                }
+            }
+            
+            return match;
         } else if (SportTypeEnum.FOOTBALL.name().equals(sportId)) {
             return snapshot.getValue(FootballMatch.class);
         }

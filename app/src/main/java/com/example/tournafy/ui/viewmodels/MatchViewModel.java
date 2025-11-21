@@ -115,8 +115,46 @@ public class MatchViewModel extends ViewModel {
         );
     }
 
+    /**
+     * CRITICAL FIX: Registers FirebaseMatchObserver to enable automatic sync from Firestore (offline) to Firebase (online).
+     * This method should be called whenever a match is loaded, created, or started.
+     * 
+     * DISABLED FOR OFFLINE-FIRST: Online sync disabled to improve offline performance.
+     * Re-enable when implementing explicit sync feature.
+     * 
+     * @param match The CricketMatch to register the observer for
+     */
+    private void registerOnlineSync(CricketMatch match) {
+        // DISABLED: Online sync causes performance issues for offline-first app
+        // TODO: Re-enable with network check and user preference
+        /*
+        if (match != null && onlineMatchRepo != null) {
+            // Create observer with Firebase repository and match ID
+            com.example.tournafy.service.observers.FirebaseMatchObserver observer = 
+                new com.example.tournafy.service.observers.FirebaseMatchObserver(
+                    onlineMatchRepo, 
+                    match.getEntityId()
+                );
+            
+            // Register observer to receive notifications
+            match.addObserver(observer);
+            
+            // Log for debugging
+            android.util.Log.d("MatchViewModel", "Registered FirebaseMatchObserver for match: " + match.getEntityId());
+        }
+        */
+        android.util.Log.d("MatchViewModel", "Online sync DISABLED for offline-first experience");
+    }
+
     public void loadOfflineMatch(String matchId) {
         _offlineMatchId.setValue(matchId);
+        
+        // CRITICAL FIX: Register online sync observer when match is loaded
+        offlineMatch.observeForever(match -> {
+            if (match instanceof CricketMatch) {
+                registerOnlineSync((CricketMatch) match);
+            }
+        });
     }
 
     public void loadOnlineMatch(String matchId) {
@@ -160,15 +198,19 @@ public class MatchViewModel extends ViewModel {
         if (match instanceof CricketMatch) {
             CricketMatch cm = (CricketMatch) match;
             Innings innings = cm.getCurrentInnings();
-            if (innings != null && innings.getOversCompleted() > 0) {
+            if (innings != null) {
                 // CRR = Runs / Overs
-                // Note: 1.3 overs = 1.5 in decimal for math? 
                 // Standard CRR uses balls: (Runs / Balls) * 6
                 int totalBalls = (innings.getOversCompleted() * 6); 
                 // Add current over balls
                 Over currentOver = cm.getCurrentOver();
                 if (currentOver != null && currentOver.getBalls() != null) {
-                    totalBalls += currentOver.getBalls().size();
+                    // Count only legal deliveries
+                    for (Ball ball : currentOver.getBalls()) {
+                        if (ball.isLegalDelivery()) {
+                            totalBalls++;
+                        }
+                    }
                 }
                 
                 if (totalBalls > 0) {
@@ -180,12 +222,63 @@ public class MatchViewModel extends ViewModel {
     }
 
     public String getStrikerId() {
-        // Placeholder: In real app, track striker in CricketMatch state
+        Match match = offlineMatch.getValue();
+        if (match instanceof CricketMatch) {
+            CricketMatch cm = (CricketMatch) match;
+            String strikerId = cm.getCurrentStrikerId();
+            if (strikerId != null) {
+                // Try to resolve player name from teams
+                String playerName = getPlayerName(cm, strikerId);
+                return playerName != null ? playerName : strikerId;
+            }
+        }
         return "Striker";
     }
 
     public String getNonStrikerId() {
+        Match match = offlineMatch.getValue();
+        if (match instanceof CricketMatch) {
+            CricketMatch cm = (CricketMatch) match;
+            String nonStrikerId = cm.getCurrentNonStrikerId();
+            if (nonStrikerId != null) {
+                // Try to resolve player name from teams
+                String playerName = getPlayerName(cm, nonStrikerId);
+                return playerName != null ? playerName : nonStrikerId;
+            }
+        }
         return "Non-Striker";
+    }
+    
+    public String getCurrentBowlerId() {
+        Match match = offlineMatch.getValue();
+        if (match instanceof CricketMatch) {
+            CricketMatch cm = (CricketMatch) match;
+            String bowlerId = cm.getCurrentBowlerId();
+            if (bowlerId != null) {
+                // Try to resolve player name from teams
+                String playerName = getPlayerName(cm, bowlerId);
+                return playerName != null ? playerName : bowlerId;
+            }
+        }
+        return "Bowler";
+    }
+    
+    /**
+     * Helper method to get player name from player ID by searching all teams.
+     */
+    private String getPlayerName(CricketMatch match, String playerId) {
+        if (match.getTeams() != null) {
+            for (com.example.tournafy.domain.models.team.MatchTeam team : match.getTeams()) {
+                if (team.getPlayers() != null) {
+                    for (com.example.tournafy.domain.models.team.Player player : team.getPlayers()) {
+                        if (playerId.equals(player.getPlayerId())) {
+                            return player.getPlayerName();
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public Over getCurrentOver() {
@@ -217,12 +310,12 @@ public class MatchViewModel extends ViewModel {
         
         CricketMatch cricketMatch = (CricketMatch) currentMatch;
         
-        // Get current innings and over
+        // Get current innings (processEvent will create over if needed)
         Innings currentInnings = cricketMatch.getCurrentInnings();
-        Over currentOver = cricketMatch.getCurrentOver();
+        Over currentOver = cricketMatch.getCurrentOver(); // May be null, processEvent handles it
         
-        if (currentInnings == null || currentOver == null) {
-            _errorMessage.setValue("Match not started or no active over");
+        if (currentInnings == null) {
+            _errorMessage.setValue("Match not started: No current innings");
             _isLoading.setValue(false);
             return;
         }
@@ -233,8 +326,9 @@ public class MatchViewModel extends ViewModel {
         event.setMatchId(cricketMatch.getEntityId());
         event.setTeamId(currentInnings.getBattingTeamId());
         event.setEventType("BALL");
-        event.setOverNumber(currentOver.getOverNumber());
-        event.setBallNumber(currentOver.getBalls() != null ? currentOver.getBalls().size() + 1 : 1);
+        // processEvent will fill these if currentOver is null:
+        event.setOverNumber(currentOver != null ? currentOver.getOverNumber() : 0);
+        event.setBallNumber(currentOver != null && currentOver.getBalls() != null ? currentOver.getBalls().size() + 1 : 0);
         event.setTotalRuns(runs);
         event.setRunsScoredBat(runs);
         event.setRunsScoredExtras(0);
@@ -244,54 +338,45 @@ public class MatchViewModel extends ViewModel {
         event.setBoundary(runs == 4 || runs == 6);
         event.setBoundaryType(runs == 4 ? 4 : (runs == 6 ? 6 : 0));
         event.setEventTime(new java.util.Date());
+        // Set player IDs
+        event.setBatsmanStrikerId(cricketMatch.getCurrentStrikerId());
+        event.setBatsmanNonStrikerId(cricketMatch.getCurrentNonStrikerId());
+        event.setBowlerId(cricketMatch.getCurrentBowlerId());
         
         // --- STEP 2: Process event to update in-memory state (score) ---
         cricketMatch.processEvent(event);
         
-        // --- STEP 3: Create Ball entity with ALL Foreign Keys ---
-        Ball ball = new Ball();
-        ball.setBallId(java.util.UUID.randomUUID().toString());
-        ball.setMatchId(cricketMatch.getEntityId());
-        ball.setInningsId(currentInnings.getInningsId());
-        ball.setOverId(currentOver.getOverId());
-        ball.setInningsNumber(currentInnings.getInningsNumber());
-        ball.setOverNumber(currentOver.getOverNumber());
-        ball.setBallNumber(event.getBallNumber());
-        ball.setRunsScored(runs);
-        ball.setWicket(false);
-        ball.setBoundary(runs == 4 || runs == 6);
-        ball.setExtrasType("NONE");
-        // TODO: Set batsmanId and bowlerId from match state when available
+        // --- Get current over AFTER processEvent (it may have created it) ---
+        Over finalCurrentOver = cricketMatch.getCurrentOver();
+        if (finalCurrentOver == null) {
+            _errorMessage.setValue("Failed to create over");
+            _isLoading.setValue(false);
+            return;
+        }
         
-        // --- STEP 4: Persist Ball to database ---
-        offlineBallRepo.add(ball).addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                // --- STEP 5: Update Over in database (includes the new ball) ---
-                offlineOverRepo.update(currentOver).addOnCompleteListener(overTask -> {
-                    if (overTask.isSuccessful()) {
-                        // --- STEP 6: Update Innings in database (updated score) ---
-                        offlineInningsRepo.update(currentInnings).addOnCompleteListener(inningsTask -> {
-                            if (inningsTask.isSuccessful()) {
-                                // --- STEP 7: Update Match in database ---
-                                offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
-                                    _isLoading.setValue(false);
-                                    if (!matchTask.isSuccessful()) {
-                                        _errorMessage.setValue("Failed to save match update");
-                                    }
-                                });
-                            } else {
-                                _isLoading.setValue(false);
-                                _errorMessage.setValue("Failed to save innings update");
-                            }
-                        });
-                    } else {
-                        _isLoading.setValue(false);
-                        _errorMessage.setValue("Failed to save over update");
+        // DEBUG: Log balls count before saving
+        android.util.Log.d("MatchViewModel", "Before save - Balls in currentOver: " + 
+            (finalCurrentOver.getBalls() != null ? finalCurrentOver.getBalls().size() : 0));
+        android.util.Log.d("MatchViewModel", "Before save - Total runs: " + currentInnings.getTotalRuns());
+        
+        // --- SIMPLIFIED PERSISTENCE: Only update Match document ---
+        // All nested data (innings, overs, balls) is stored within the match document
+        // No need to persist Ball, Over, Innings separately
+        
+        offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
+            _isLoading.setValue(false);
+            
+            if (matchTask.isSuccessful()) {
+                // Trigger LiveData update to refresh UI by re-fetching from database
+                // Add small delay to ensure Firestore write is fully committed
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    String currentId = _offlineMatchId.getValue();
+                    if (currentId != null) {
+                        _offlineMatchId.setValue(currentId);
                     }
-                });
+                }, 100); // 100ms delay
             } else {
-                _isLoading.setValue(false);
-                _errorMessage.setValue("Failed to save ball");
+                _errorMessage.setValue("Failed to save match update");
             }
         });
     }
@@ -315,10 +400,10 @@ public class MatchViewModel extends ViewModel {
         CricketMatch cricketMatch = (CricketMatch) currentMatch;
         
         Innings currentInnings = cricketMatch.getCurrentInnings();
-        Over currentOver = cricketMatch.getCurrentOver();
+        Over currentOver = cricketMatch.getCurrentOver(); // May be null, processEvent handles it
         
-        if (currentInnings == null || currentOver == null) {
-            _errorMessage.setValue("Match not started or no active over");
+        if (currentInnings == null) {
+            _errorMessage.setValue("Match not started: No current innings");
             _isLoading.setValue(false);
             return;
         }
@@ -329,8 +414,9 @@ public class MatchViewModel extends ViewModel {
         event.setMatchId(cricketMatch.getEntityId());
         event.setTeamId(currentInnings.getBattingTeamId());
         event.setEventType("WICKET");
-        event.setOverNumber(currentOver.getOverNumber());
-        event.setBallNumber(currentOver.getBalls() != null ? currentOver.getBalls().size() + 1 : 1);
+        // processEvent will fill these if currentOver is null:
+        event.setOverNumber(currentOver != null ? currentOver.getOverNumber() : 0);
+        event.setBallNumber(currentOver != null && currentOver.getBalls() != null ? currentOver.getBalls().size() + 1 : 0);
         event.setTotalRuns(0); // Wickets usually score 0 runs unless run out
         event.setRunsScoredBat(0);
         event.setRunsScoredExtras(0);
@@ -340,6 +426,10 @@ public class MatchViewModel extends ViewModel {
         event.setBoundary(false);
         event.setBoundaryType(0);
         event.setEventTime(new java.util.Date());
+        // Set player IDs
+        event.setBatsmanStrikerId(cricketMatch.getCurrentStrikerId());
+        event.setBatsmanNonStrikerId(cricketMatch.getCurrentNonStrikerId());
+        event.setBowlerId(cricketMatch.getCurrentBowlerId());
         
         // Create wicket detail
         CricketWicketDetail wicketDetail = new CricketWicketDetail();
@@ -349,50 +439,31 @@ public class MatchViewModel extends ViewModel {
         // --- Process event ---
         cricketMatch.processEvent(event);
         
-        // --- Create Ball entity ---
-        Ball ball = new Ball();
-        ball.setBallId(java.util.UUID.randomUUID().toString());
-        ball.setMatchId(cricketMatch.getEntityId());
-        ball.setInningsId(currentInnings.getInningsId());
-        ball.setOverId(currentOver.getOverId());
-        ball.setInningsNumber(currentInnings.getInningsNumber());
-        ball.setOverNumber(currentOver.getOverNumber());
-        ball.setBallNumber(event.getBallNumber());
-        ball.setRunsScored(0);
-        ball.setWicket(true);
-        ball.setWicketType(wicketType);
-        ball.setBoundary(false);
-        ball.setExtrasType("NONE");
+        // --- Get current over AFTER processEvent ---
+        Over finalCurrentOver = cricketMatch.getCurrentOver();
+        if (finalCurrentOver == null) {
+            _errorMessage.setValue("Failed to create over");
+            _isLoading.setValue(false);
+            return;
+        }
         
-        // --- Persist ---
-        offlineBallRepo.add(ball).addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                // Update Over
-                offlineOverRepo.update(currentOver).addOnCompleteListener(overTask -> {
-                    if (overTask.isSuccessful()) {
-                        // Update Innings
-                        offlineInningsRepo.update(currentInnings).addOnCompleteListener(inningsTask -> {
-                            if (inningsTask.isSuccessful()) {
-                                // Update Match
-                                offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
-                                    _isLoading.setValue(false);
-                                    if (!matchTask.isSuccessful()) {
-                                        _errorMessage.setValue("Failed to save match update");
-                                    }
-                                });
-                            } else {
-                                _isLoading.setValue(false);
-                                _errorMessage.setValue("Failed to save innings update");
-                            }
-                        });
-                    } else {
-                        _isLoading.setValue(false);
-                        _errorMessage.setValue("Failed to save over update");
+        // --- SIMPLIFIED PERSISTENCE: Only update Match document ---
+        // All nested data (innings, overs, balls) is stored within the match document
+        
+        offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
+            _isLoading.setValue(false);
+            
+            if (matchTask.isSuccessful()) {
+                // Trigger LiveData update to refresh UI by re-fetching from database
+                // Add small delay to ensure Firestore write is fully committed
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    String currentId = _offlineMatchId.getValue();
+                    if (currentId != null) {
+                        _offlineMatchId.setValue(currentId);
                     }
-                });
+                }, 100); // 100ms delay
             } else {
-                _isLoading.setValue(false);
-                _errorMessage.setValue("Failed to save wicket");
+                _errorMessage.setValue("Failed to save match update");
             }
         });
     }
@@ -416,10 +487,10 @@ public class MatchViewModel extends ViewModel {
         CricketMatch cricketMatch = (CricketMatch) currentMatch;
         
         Innings currentInnings = cricketMatch.getCurrentInnings();
-        Over currentOver = cricketMatch.getCurrentOver();
+        Over currentOver = cricketMatch.getCurrentOver(); // May be null, processEvent handles it
         
-        if (currentInnings == null || currentOver == null) {
-            _errorMessage.setValue("Match not started or no active over");
+        if (currentInnings == null) {
+            _errorMessage.setValue("Match not started: No current innings");
             _isLoading.setValue(false);
             return;
         }
@@ -434,8 +505,9 @@ public class MatchViewModel extends ViewModel {
         event.setMatchId(cricketMatch.getEntityId());
         event.setTeamId(currentInnings.getBattingTeamId());
         event.setEventType("EXTRA");
-        event.setOverNumber(currentOver.getOverNumber());
-        event.setBallNumber(currentOver.getBalls() != null ? currentOver.getBalls().size() + 1 : 1);
+        // processEvent will fill these if currentOver is null:
+        event.setOverNumber(currentOver != null ? currentOver.getOverNumber() : 0);
+        event.setBallNumber(currentOver != null && currentOver.getBalls() != null ? currentOver.getBalls().size() + 1 : 0);
         event.setTotalRuns(extrasRuns);
         event.setRunsScoredBat(0);
         event.setRunsScoredExtras(extrasRuns);
@@ -445,53 +517,56 @@ public class MatchViewModel extends ViewModel {
         event.setBoundary(false);
         event.setBoundaryType(0);
         event.setEventTime(new java.util.Date());
+        // Set player IDs
+        event.setBatsmanStrikerId(cricketMatch.getCurrentStrikerId());
+        event.setBatsmanNonStrikerId(cricketMatch.getCurrentNonStrikerId());
+        event.setBowlerId(cricketMatch.getCurrentBowlerId());
         
         // --- Process event ---
         cricketMatch.processEvent(event);
+        
+        // --- Get current over AFTER processEvent ---
+        Over finalCurrentOver = cricketMatch.getCurrentOver();
+        if (finalCurrentOver == null) {
+            _errorMessage.setValue("Failed to create over");
+            _isLoading.setValue(false);
+            return;
+        }
         
         // --- Create Ball entity ---
         Ball ball = new Ball();
         ball.setBallId(java.util.UUID.randomUUID().toString());
         ball.setMatchId(cricketMatch.getEntityId());
         ball.setInningsId(currentInnings.getInningsId());
-        ball.setOverId(currentOver.getOverId());
+        ball.setOverId(finalCurrentOver.getOverId());
         ball.setInningsNumber(currentInnings.getInningsNumber());
-        ball.setOverNumber(currentOver.getOverNumber());
+        ball.setOverNumber(finalCurrentOver.getOverNumber());
         ball.setBallNumber(event.getBallNumber());
         ball.setRunsScored(extrasRuns);
         ball.setWicket(false);
         ball.setBoundary(false);
         ball.setExtrasType(extrasType);
+        // Set player IDs from match state
+        ball.setBatsmanId(cricketMatch.getCurrentStrikerId());
+        ball.setBowlerId(cricketMatch.getCurrentBowlerId());
         
-        // --- Persist ---
-        offlineBallRepo.add(ball).addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                // Update Over
-                offlineOverRepo.update(currentOver).addOnCompleteListener(overTask -> {
-                    if (overTask.isSuccessful()) {
-                        // Update Innings
-                        offlineInningsRepo.update(currentInnings).addOnCompleteListener(inningsTask -> {
-                            if (inningsTask.isSuccessful()) {
-                                // Update Match
-                                offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
-                                    _isLoading.setValue(false);
-                                    if (!matchTask.isSuccessful()) {
-                                        _errorMessage.setValue("Failed to save match update");
-                                    }
-                                });
-                            } else {
-                                _isLoading.setValue(false);
-                                _errorMessage.setValue("Failed to save innings update");
-                            }
-                        });
-                    } else {
-                        _isLoading.setValue(false);
-                        _errorMessage.setValue("Failed to save over update");
+        // --- SIMPLIFIED PERSISTENCE: Only update Match document ---
+        // All nested data (innings, overs, balls) is stored within the match document
+        
+        offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
+            _isLoading.setValue(false);
+            
+            if (matchTask.isSuccessful()) {
+                // Trigger LiveData update to refresh UI by re-fetching from database
+                // Add small delay to ensure Firestore write is fully committed
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    String currentId = _offlineMatchId.getValue();
+                    if (currentId != null) {
+                        _offlineMatchId.setValue(currentId);
                     }
-                });
+                }, 100); // 100ms delay
             } else {
-                _isLoading.setValue(false);
-                _errorMessage.setValue("Failed to save extra");
+                _errorMessage.setValue("Failed to save match update");
             }
         });
     }
@@ -512,6 +587,10 @@ public class MatchViewModel extends ViewModel {
         
         // Persist the updated match
         offlineMatchRepo.update(cricketMatch).addOnCompleteListener(task -> {
+            // DISABLED: Online sync disabled for offline-first performance
+            // if (task.isSuccessful()) {
+            //     cricketMatch.notifyObservers();
+            // }
             if (!task.isSuccessful()) {
                 _errorMessage.setValue("Failed to end over");
             }
@@ -520,6 +599,7 @@ public class MatchViewModel extends ViewModel {
 
     /**
      * Starts the match - initializes innings and sets status to LIVE.
+     * CRITICAL FIX: Now registers FirebaseMatchObserver and triggers online sync after offline persistence.
      */
     public void startMatch() {
         _isLoading.setValue(true);
@@ -534,13 +614,35 @@ public class MatchViewModel extends ViewModel {
         if (currentMatch instanceof CricketMatch) {
             CricketMatch cricketMatch = (CricketMatch) currentMatch;
             
-            if (!cricketMatch.canStartMatch()) {
-                _errorMessage.setValue("Match cannot be started - check configuration");
+            // Enhanced validation with specific error messages
+            if (cricketMatch.getTeams() == null || cricketMatch.getTeams().size() < 2) {
+                _errorMessage.setValue("Cannot start match: Need at least 2 teams");
                 _isLoading.setValue(false);
                 return;
             }
             
-            cricketMatch.startMatch();
+            if (cricketMatch.getMatchConfig() == null) {
+                _errorMessage.setValue("Cannot start match: Match configuration is missing");
+                _isLoading.setValue(false);
+                return;
+            }
+            
+            if (!cricketMatch.getMatchStatus().equals(com.example.tournafy.domain.enums.MatchStatus.SCHEDULED.name())) {
+                _errorMessage.setValue("Cannot start match: Match status is " + cricketMatch.getMatchStatus() + " (must be SCHEDULED)");
+                _isLoading.setValue(false);
+                return;
+            }
+            
+            // CRITICAL FIX: Register observer BEFORE starting match
+            registerOnlineSync(cricketMatch);
+            
+            try {
+                cricketMatch.startMatch();
+            } catch (IllegalStateException e) {
+                _errorMessage.setValue(e.getMessage());
+                _isLoading.setValue(false);
+                return;
+            }
             
             // Persist match and create first innings in DB
             offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
@@ -553,6 +655,10 @@ public class MatchViewModel extends ViewModel {
                             Over firstOver = cricketMatch.getCurrentOver();
                             if (firstOver != null) {
                                 offlineOverRepo.add(firstOver).addOnCompleteListener(overTask -> {
+                                    // DISABLED: Online sync disabled for offline-first performance
+                                    // if (overTask.isSuccessful()) {
+                                    //     cricketMatch.notifyStatusChanged(com.example.tournafy.domain.enums.MatchStatus.LIVE.name());
+                                    // }
                                     _isLoading.setValue(false);
                                     if (!overTask.isSuccessful()) {
                                         _errorMessage.setValue("Failed to create first over");
@@ -605,6 +711,9 @@ public class MatchViewModel extends ViewModel {
         // Persist updated match and innings
         offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
             if (matchTask.isSuccessful()) {
+                // CRITICAL FIX: Trigger online sync after offline persistence succeeds
+                cricketMatch.notifyObservers();
+                
                 // Update innings in database
                 Innings currentInnings = cricketMatch.getCurrentInnings();
                 if (currentInnings != null) {

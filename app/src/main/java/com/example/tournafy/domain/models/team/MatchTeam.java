@@ -18,6 +18,9 @@ public class MatchTeam {
 
     private boolean isHomeTeam;
     private int score;
+    
+    // List of players in this team for the match
+    private java.util.List<Player> players;
 
     public MatchTeam() {
         this.matchTeamId = UUID.randomUUID().toString();
@@ -73,5 +76,13 @@ public class MatchTeam {
 
     public void setScore(int score) {
         this.score = score;
+    }
+
+    public java.util.List<Player> getPlayers() {
+        return players;
+    }
+
+    public void setPlayers(java.util.List<Player> players) {
+        this.players = players;
     }
 }

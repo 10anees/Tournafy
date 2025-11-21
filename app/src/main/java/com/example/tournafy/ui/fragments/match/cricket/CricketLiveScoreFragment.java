@@ -74,6 +74,7 @@ public class CricketLiveScoreFragment extends Fragment {
         setupListeners();
 
         if (matchId != null) {
+            android.util.Log.d("CricketLiveScoreFragment", "Loading match with ID: " + matchId);
             matchViewModel.loadOfflineMatch(matchId);
             observeViewModel();
         }
@@ -113,12 +114,8 @@ public class CricketLiveScoreFragment extends Fragment {
     private void setupListeners() {
         // Start Match Button
         btnStartMatch.setOnClickListener(v -> {
-            if (matchViewModel.canStartMatch()) {
-                matchViewModel.startMatch();
-                Toast.makeText(getContext(), "Match Started!", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(getContext(), "Cannot start match", Toast.LENGTH_SHORT).show();
-            }
+            // Let the ViewModel handle all validation and show specific error messages
+            matchViewModel.startMatch();
         });
 
         // Runs
@@ -192,22 +189,23 @@ public class CricketLiveScoreFragment extends Fragment {
         Innings currentInnings = match.getCurrentInnings();
 
         if (currentInnings != null) {
-            // 1. Update Scoreboard View
-            // Assuming ScoreboardView has a method specifically for Cricket
+            // 1. Update Scoreboard View with proper overs format (e.g., "12.3")
+            String oversText = matchViewModel.getCurrentOversText();
+            float currentRunRate = matchViewModel.getCurrentRunRate();
+            
             scoreboardView.updateCricketScore(
                     matchViewModel.getTeamAName(),
                     matchViewModel.getTeamBName(),
                     currentInnings.getTotalRuns(),
                     currentInnings.getWicketsFallen(),
-                    currentInnings.getOversCompleted(),
-                    matchViewModel.getCurrentRunRate()
+                    oversText,
+                    currentRunRate
             );
 
-            // 2. Update Players (Placeholder logic until Player IDs are fully linked)
-            // In a real app, resolve player names using IDs from match.getCurrentStrikers()
+            // 2. Update Players - Now shows actual player names from team roster
             tvStriker.setText(matchViewModel.getStrikerId() + " *");
             tvNonStriker.setText(matchViewModel.getNonStrikerId());
-            // tvBowler.setText(matchViewModel.getCurrentBowlerId());
+            tvBowler.setText(matchViewModel.getCurrentBowlerId());
         }
 
         // 3. Update Recent Balls (This Over)

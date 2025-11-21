@@ -39,6 +39,10 @@ public class HostingService implements IHostingService {
     public void createCricketMatch(CricketMatch.Builder builder, HostingCallback<CricketMatch> callback) {
         try {
             CricketMatch match = builder.build();
+            android.util.Log.d("HostingService", "Creating match - ID: " + match.getEntityId() + 
+                ", Name: " + match.getName() + ", MatchStatus: " + match.getMatchStatus() + 
+                ", Teams: " + (match.getTeams() != null ? match.getTeams().size() : 0));
+            
             // Fire and forget for UI purposes (Offline First)
             matchRepository.add(match)
                 .addOnFailureListener(callback::onError); // Only report if local write completely fails

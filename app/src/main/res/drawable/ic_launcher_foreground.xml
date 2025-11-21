@@ -3,48 +3,46 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    
-    <!-- Trophy/Tournament Icon -->
+
     <group
         android:translateX="54"
-        android:translateY="54"
-        android:scaleX="2.2"
-        android:scaleY="2.2">
-        
+        android:translateY="60"
+        android:scaleX="1.7"
+        android:scaleY="1.7">
+
         <!-- Trophy cup -->
         <path
             android:fillColor="#FFFFFF"
             android:pathData="M-10,-15 L-10,-6 C-10,-2 -6,3 0,3 C6,3 10,-2 10,-6 L10,-15 Z"/>
-        
-        <!-- Trophy left handle -->
+
+        <!-- Left handle -->
         <path
             android:fillColor="#FFFFFF"
             android:pathData="M-12,-12 L-15,-12 C-17,-12 -17,-8 -15,-8 L-12,-8 Z"/>
-        
-        <!-- Trophy right handle -->
+
+        <!-- Right handle -->
         <path
             android:fillColor="#FFFFFF"
             android:pathData="M12,-12 L15,-12 C17,-12 17,-8 15,-8 L12,-8 Z"/>
-        
-        <!-- Trophy base platform -->
+
+        <!-- Trophy platform -->
         <path
             android:fillColor="#FFFFFF"
             android:pathData="M-7,3 L-5,10 L5,10 L7,3 Z"/>
-        
-        <!-- Base stand -->
+
+        <!-- Base -->
         <path
             android:fillColor="#FFFFFF"
             android:pathData="M-5,10 L-7,13 L7,13 L5,10 Z"/>
-        
-        <!-- Cricket ball detail in trophy -->
-        <group
-            android:translateX="0"
-            android:translateY="-9">
+
+        <!-- Cricket ball -->
+        <group android:translateY="-9">
             <path
-                android:fillColor="#89F8C7"
+                android:fillColor="#005138"
                 android:pathData="M0,-2.5 A2.5,2.5 0 1,1 0,2.5 A2.5,2.5 0 1,1 0,-2.5"/>
+
             <path
-                android:strokeColor="#006C4C"
+                android:strokeColor="#89F8C7"
                 android:strokeWidth="0.6"
                 android:pathData="M-2,-0.8 L2,0.8 M-2,0.8 L2,-0.8"/>
         </group>

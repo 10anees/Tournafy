@@ -81,9 +81,11 @@ public class Ball {
     /**
      * Checks if this ball is a legal delivery (counts towards the 6-ball over).
      * Legal deliveries are those without extras like WIDE or NO_BALL.
+     * This is a calculated field and should not be serialized to Firestore.
      * 
      * @return true if the ball is legal, false otherwise
      */
+    @com.google.firebase.firestore.Exclude
     public boolean isLegalDelivery() {
         return extrasType == null || extrasType.equals("NONE") || extrasType.isEmpty();
     }

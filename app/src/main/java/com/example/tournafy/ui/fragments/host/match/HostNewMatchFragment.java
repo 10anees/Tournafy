@@ -128,11 +128,76 @@ public class HostNewMatchFragment extends Fragment {
             matchName = "New " + selectedSport.name() + " Match"; // Fallback
         }
         
-        if (selectedSport == SportTypeEnum.CRICKET) {
-            hostViewModel.createCricketMatch(new CricketMatch.Builder(matchName, hostId));
-        } else {
-            hostViewModel.createFootballMatch(new FootballMatch.Builder(matchName, hostId));
+        // Get details fragment (position 0)
+        Fragment detailsFragment = getChildFragmentManager().findFragmentByTag("f0");
+        
+        // Get teams fragment (position 1)
+        Fragment teamsFragment = getChildFragmentManager().findFragmentByTag("f1");
+        
+        if (!(teamsFragment instanceof AddMatchTeamsFragment)) {
+            Toast.makeText(getContext(), "Error: Cannot find teams data", Toast.LENGTH_SHORT).show();
+            return;
         }
+        
+        AddMatchTeamsFragment teamsFragmentInstance = (AddMatchTeamsFragment) teamsFragment;
+        
+        // Validate teams before creating match
+        if (!teamsFragmentInstance.validate()) {
+            Toast.makeText(getContext(), "Please fill in team details", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Get teams
+        com.example.tournafy.domain.models.team.Team teamA = teamsFragmentInstance.getTeamA();
+        com.example.tournafy.domain.models.team.Team teamB = teamsFragmentInstance.getTeamB();
+        
+        if (selectedSport == SportTypeEnum.CRICKET) {
+            CricketMatch.Builder builder = new CricketMatch.Builder(matchName, hostId);
+            
+            // Add teams
+            builder.addTeam(convertToMatchTeam(teamA, true));
+            builder.addTeam(convertToMatchTeam(teamB, false));
+            
+            // Add cricket configuration
+            if (detailsFragment instanceof AddMatchDetailsFragment) {
+                AddMatchDetailsFragment detailsFragmentInstance = (AddMatchDetailsFragment) detailsFragment;
+                com.example.tournafy.domain.models.match.cricket.CricketMatchConfig config = 
+                    detailsFragmentInstance.getCricketConfig();
+                builder.withConfig(config);
+            } else {
+                // Use default config if fragment not found
+                builder.withConfig(new com.example.tournafy.domain.models.match.cricket.CricketMatchConfig());
+            }
+            
+            hostViewModel.createCricketMatch(builder);
+        } else {
+            FootballMatch.Builder builder = new FootballMatch.Builder(matchName, hostId);
+            
+            // Add teams
+            builder.addTeam(convertToMatchTeam(teamA, true));
+            builder.addTeam(convertToMatchTeam(teamB, false));
+            
+            // Add football configuration if needed
+            // TODO: Implement getFootballConfig() in AddMatchDetailsFragment if required
+            
+            hostViewModel.createFootballMatch(builder);
+        }
+    }
+    
+    /**
+     * Converts a Team to MatchTeam for use in match creation
+     */
+    private com.example.tournafy.domain.models.team.MatchTeam convertToMatchTeam(
+            com.example.tournafy.domain.models.team.Team team, boolean isHomeTeam) {
+        com.example.tournafy.domain.models.team.MatchTeam matchTeam = 
+            new com.example.tournafy.domain.models.team.MatchTeam();
+        matchTeam.setTeamId(team.getTeamId());
+        matchTeam.setTeamName(team.getTeamName());
+        matchTeam.setHomeTeam(isHomeTeam);
+        matchTeam.setScore(0);
+        // Copy players list from Team to MatchTeam
+        matchTeam.setPlayers(team.getPlayers());
+        return matchTeam;
     }
 
     private void observeViewModel() {
@@ -145,6 +210,11 @@ public class HostNewMatchFragment extends Fragment {
 
         hostViewModel.creationSuccess.observe(getViewLifecycleOwner(), entity -> {
             if (entity != null) {
+                String matchStatus = (entity instanceof com.example.tournafy.domain.models.base.Match) 
+                    ? ((com.example.tournafy.domain.models.base.Match) entity).getMatchStatus() 
+                    : "N/A";
+                android.util.Log.d("HostNewMatchFragment", "Navigating to match - ID: " + entity.getEntityId() + 
+                    ", Name: " + entity.getName() + ", MatchStatus: " + matchStatus);
                 Toast.makeText(getContext(), "Match Created!", Toast.LENGTH_SHORT).show();
                 
                 Bundle args = new Bundle();

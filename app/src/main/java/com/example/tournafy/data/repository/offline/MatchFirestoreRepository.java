@@ -2,6 +2,8 @@ package com.example.tournafy.data.repository.offline;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+
+import com.example.tournafy.domain.models.match.cricket.CricketEvent;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.Exclude;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -123,6 +125,7 @@ public class MatchFirestoreRepository extends FirestoreRepository<Match> {
     /**
      * Helper method to populate Match fields from a data map.
      * This is used when automatic deserialization fails.
+     * CRITICAL FIX: Now properly handles cricket-specific fields.
      */
     private void populateMatchFields(Match match, Map<String, Object> data) {
         // Populate common Match fields
@@ -133,7 +136,255 @@ public class MatchFirestoreRepository extends FirestoreRepository<Match> {
         if (data.containsKey("venue")) match.setVenue((String) data.get("venue"));
         if (data.containsKey("hostUserId")) match.setHostUserId((String) data.get("hostUserId"));
         if (data.containsKey("status")) match.setStatus((String) data.get("status"));
-        // Add other Match fields as needed
+        
+        // CRITICAL FIX: Populate cricket-specific fields if this is a CricketMatch
+        if (match instanceof CricketMatch) {
+            CricketMatch cricketMatch = (CricketMatch) match;
+            
+            // Populate innings
+            if (data.containsKey("innings")) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> inningsData = (List<Map<String, Object>>) data.get("innings");
+                if (inningsData != null) {
+                    List<com.example.tournafy.domain.models.match.cricket.Innings> innings = new ArrayList<>();
+                    for (Map<String, Object> inningsMap : inningsData) {
+                        com.example.tournafy.domain.models.match.cricket.Innings inning = 
+                            new com.example.tournafy.domain.models.match.cricket.Innings();
+                        if (inningsMap.containsKey("inningsId")) 
+                            inning.setInningsId((String) inningsMap.get("inningsId"));
+                        if (inningsMap.containsKey("matchId")) 
+                            inning.setMatchId((String) inningsMap.get("matchId"));
+                        if (inningsMap.containsKey("inningsNumber")) 
+                            inning.setInningsNumber(((Long) inningsMap.get("inningsNumber")).intValue());
+                        if (inningsMap.containsKey("battingTeamId")) 
+                            inning.setBattingTeamId((String) inningsMap.get("battingTeamId"));
+                        if (inningsMap.containsKey("bowlingTeamId")) 
+                            inning.setBowlingTeamId((String) inningsMap.get("bowlingTeamId"));
+                        if (inningsMap.containsKey("totalRuns")) 
+                            inning.setTotalRuns(((Long) inningsMap.get("totalRuns")).intValue());
+                        if (inningsMap.containsKey("wicketsFallen")) 
+                            inning.setWicketsFallen(((Long) inningsMap.get("wicketsFallen")).intValue());
+                        if (inningsMap.containsKey("oversCompleted")) 
+                            inning.setOversCompleted(((Long) inningsMap.get("oversCompleted")).intValue());
+                        if (inningsMap.containsKey("completed")) 
+                            inning.setCompleted((Boolean) inningsMap.get("completed"));
+                        innings.add(inning);
+                    }
+                    cricketMatch.setInnings(innings);
+                    android.util.Log.d("MatchFirestoreRepository", "Deserialized " + innings.size() + 
+                        " innings for match " + match.getEntityId());
+                }
+            }
+            
+            // Populate cricketEvents
+            if (data.containsKey("cricketEvents")) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> eventsData = (List<Map<String, Object>>) data.get("cricketEvents");
+                if (eventsData != null) {
+                    List<CricketEvent> events = new ArrayList<>();
+                    // TODO: Populate individual CricketEvent fields from map
+                    // For now, we'll skip detailed event deserialization
+                    cricketMatch.setCricketEvents(events);
+                }
+            }
+            
+            // Populate teams with players
+            if (data.containsKey("teams")) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> teamsData = (List<Map<String, Object>>) data.get("teams");
+                if (teamsData != null) {
+                    List<com.example.tournafy.domain.models.team.MatchTeam> teams = new ArrayList<>();
+                    for (Map<String, Object> teamMap : teamsData) {
+                        com.example.tournafy.domain.models.team.MatchTeam team = 
+                            new com.example.tournafy.domain.models.team.MatchTeam();
+                        if (teamMap.containsKey("teamId")) 
+                            team.setTeamId((String) teamMap.get("teamId"));
+                        if (teamMap.containsKey("teamName")) 
+                            team.setTeamName((String) teamMap.get("teamName"));
+                        
+                        // Deserialize players list
+                        if (teamMap.containsKey("players")) {
+                            @SuppressWarnings("unchecked")
+                            List<Map<String, Object>> playersData = (List<Map<String, Object>>) teamMap.get("players");
+                            if (playersData != null) {
+                                List<com.example.tournafy.domain.models.team.Player> players = new ArrayList<>();
+                                for (Map<String, Object> playerMap : playersData) {
+                                    com.example.tournafy.domain.models.team.Player player = 
+                                        new com.example.tournafy.domain.models.team.Player();
+                                    if (playerMap.containsKey("playerId")) 
+                                        player.setPlayerId((String) playerMap.get("playerId"));
+                                    if (playerMap.containsKey("playerName")) 
+                                        player.setPlayerName((String) playerMap.get("playerName"));
+                                    if (playerMap.containsKey("jerseyNumber")) 
+                                        player.setJerseyNumber(((Long) playerMap.get("jerseyNumber")).intValue());
+                                    players.add(player);
+                                }
+                                team.setPlayers(players);
+                                android.util.Log.d("MatchFirestoreRepository", "Deserialized " + players.size() + 
+                                    " players for team " + team.getTeamName());
+                            }
+                        }
+                        
+                        teams.add(team);
+                    }
+                    cricketMatch.setTeams(teams);
+                }
+            }
+            
+            // Populate currentInningsNumber and targetScore
+            if (data.containsKey("currentInningsNumber")) {
+                Object inningsNum = data.get("currentInningsNumber");
+                if (inningsNum instanceof Long) {
+                    // Use reflection to set private field
+                    try {
+                        java.lang.reflect.Field field = CricketMatch.class.getDeclaredField("currentInningsNumber");
+                        field.setAccessible(true);
+                        field.set(cricketMatch, ((Long) inningsNum).intValue());
+                        android.util.Log.d("MatchFirestoreRepository", "Set currentInningsNumber to " + inningsNum);
+                    } catch (Exception e) {
+                        android.util.Log.e("MatchFirestoreRepository", "Failed to set currentInningsNumber", e);
+                    }
+                }
+            }
+            if (data.containsKey("targetScore")) {
+                Object targetScoreObj = data.get("targetScore");
+                if (targetScoreObj instanceof Long) {
+                    // Use reflection to set private field
+                    try {
+                        java.lang.reflect.Field field = CricketMatch.class.getDeclaredField("targetScore");
+                        field.setAccessible(true);
+                        field.set(cricketMatch, ((Long) targetScoreObj).intValue());
+                    } catch (Exception e) {
+                        android.util.Log.e("MatchFirestoreRepository", "Failed to set targetScore", e);
+                    }
+                }
+            }
+            
+            // Populate player tracking fields (striker, non-striker, bowler)
+            if (data.containsKey("currentStrikerId")) {
+                Object strikerId = data.get("currentStrikerId");
+                if (strikerId instanceof String) {
+                    try {
+                        java.lang.reflect.Field field = CricketMatch.class.getDeclaredField("currentStrikerId");
+                        field.setAccessible(true);
+                        field.set(cricketMatch, strikerId);
+                        android.util.Log.d("MatchFirestoreRepository", "Set currentStrikerId to " + strikerId);
+                    } catch (Exception e) {
+                        android.util.Log.e("MatchFirestoreRepository", "Failed to set currentStrikerId", e);
+                    }
+                }
+            }
+            if (data.containsKey("currentNonStrikerId")) {
+                Object nonStrikerId = data.get("currentNonStrikerId");
+                if (nonStrikerId instanceof String) {
+                    try {
+                        java.lang.reflect.Field field = CricketMatch.class.getDeclaredField("currentNonStrikerId");
+                        field.setAccessible(true);
+                        field.set(cricketMatch, nonStrikerId);
+                        android.util.Log.d("MatchFirestoreRepository", "Set currentNonStrikerId to " + nonStrikerId);
+                    } catch (Exception e) {
+                        android.util.Log.e("MatchFirestoreRepository", "Failed to set currentNonStrikerId", e);
+                    }
+                }
+            }
+            if (data.containsKey("currentBowlerId")) {
+                Object bowlerId = data.get("currentBowlerId");
+                if (bowlerId instanceof String) {
+                    try {
+                        java.lang.reflect.Field field = CricketMatch.class.getDeclaredField("currentBowlerId");
+                        field.setAccessible(true);
+                        field.set(cricketMatch, bowlerId);
+                        android.util.Log.d("MatchFirestoreRepository", "Set currentBowlerId to " + bowlerId);
+                    } catch (Exception e) {
+                        android.util.Log.e("MatchFirestoreRepository", "Failed to set currentBowlerId", e);
+                    }
+                }
+            }
+            
+            // Populate currentOvers with nested balls
+            if (data.containsKey("currentOvers")) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> oversData = (List<Map<String, Object>>) data.get("currentOvers");
+                if (oversData != null) {
+                    List<com.example.tournafy.domain.models.match.cricket.Over> overs = new ArrayList<>();
+                    for (Map<String, Object> overMap : oversData) {
+                        com.example.tournafy.domain.models.match.cricket.Over over = 
+                            new com.example.tournafy.domain.models.match.cricket.Over();
+                        if (overMap.containsKey("overId")) 
+                            over.setOverId((String) overMap.get("overId"));
+                        if (overMap.containsKey("inningsId")) 
+                            over.setInningsId((String) overMap.get("inningsId"));
+                        if (overMap.containsKey("overNumber")) 
+                            over.setOverNumber(((Long) overMap.get("overNumber")).intValue());
+                        if (overMap.containsKey("bowlerId")) 
+                            over.setBowlerId((String) overMap.get("bowlerId"));
+                        if (overMap.containsKey("runsInOver")) 
+                            over.setRunsInOver(((Long) overMap.get("runsInOver")).intValue());
+                        if (overMap.containsKey("wicketsInOver")) 
+                            over.setWicketsInOver(((Long) overMap.get("wicketsInOver")).intValue());
+                        if (overMap.containsKey("completed")) 
+                            over.setCompleted((Boolean) overMap.get("completed"));
+                        
+                        // Deserialize balls list
+                        if (overMap.containsKey("balls")) {
+                            @SuppressWarnings("unchecked")
+                            List<Map<String, Object>> ballsData = (List<Map<String, Object>>) overMap.get("balls");
+                            if (ballsData != null) {
+                                List<com.example.tournafy.domain.models.match.cricket.Ball> balls = new ArrayList<>();
+                                for (Map<String, Object> ballMap : ballsData) {
+                                    com.example.tournafy.domain.models.match.cricket.Ball ball = 
+                                        new com.example.tournafy.domain.models.match.cricket.Ball();
+                                    if (ballMap.containsKey("ballId")) 
+                                        ball.setBallId((String) ballMap.get("ballId"));
+                                    if (ballMap.containsKey("matchId")) 
+                                        ball.setMatchId((String) ballMap.get("matchId"));
+                                    if (ballMap.containsKey("inningsId")) 
+                                        ball.setInningsId((String) ballMap.get("inningsId"));
+                                    if (ballMap.containsKey("overId")) 
+                                        ball.setOverId((String) ballMap.get("overId"));
+                                    if (ballMap.containsKey("inningsNumber")) 
+                                        ball.setInningsNumber(((Long) ballMap.get("inningsNumber")).intValue());
+                                    if (ballMap.containsKey("overNumber")) 
+                                        ball.setOverNumber(((Long) ballMap.get("overNumber")).intValue());
+                                    if (ballMap.containsKey("ballNumber")) 
+                                        ball.setBallNumber(((Long) ballMap.get("ballNumber")).intValue());
+                                    if (ballMap.containsKey("batsmanId")) 
+                                        ball.setBatsmanId((String) ballMap.get("batsmanId"));
+                                    if (ballMap.containsKey("bowlerId")) 
+                                        ball.setBowlerId((String) ballMap.get("bowlerId"));
+                                    if (ballMap.containsKey("runsScored")) 
+                                        ball.setRunsScored(((Long) ballMap.get("runsScored")).intValue());
+                                    if (ballMap.containsKey("isWicket")) 
+                                        ball.setWicket((Boolean) ballMap.get("isWicket"));
+                                    if (ballMap.containsKey("isBoundary")) 
+                                        ball.setBoundary((Boolean) ballMap.get("isBoundary"));
+                                    if (ballMap.containsKey("extrasType")) 
+                                        ball.setExtrasType((String) ballMap.get("extrasType"));
+                                    if (ballMap.containsKey("wicketType")) 
+                                        ball.setWicketType((String) ballMap.get("wicketType"));
+                                    balls.add(ball);
+                                }
+                                over.setBalls(balls);
+                                android.util.Log.d("MatchFirestoreRepository", "Deserialized " + balls.size() + 
+                                    " balls for over " + over.getOverNumber());
+                            }
+                        }
+                        
+                        overs.add(over);
+                    }
+                    // Use reflection to set private currentOvers field
+                    try {
+                        java.lang.reflect.Field field = CricketMatch.class.getDeclaredField("currentOvers");
+                        field.setAccessible(true);
+                        field.set(cricketMatch, overs);
+                        android.util.Log.d("MatchFirestoreRepository", "Deserialized " + overs.size() + 
+                            " overs for match " + match.getEntityId());
+                    } catch (Exception e) {
+                        android.util.Log.e("MatchFirestoreRepository", "Failed to set currentOvers", e);
+                    }
+                }
+            }
+        }
     }
     
     /**
@@ -155,10 +406,15 @@ public class MatchFirestoreRepository extends FirestoreRepository<Match> {
         collectionReference.document(id)
             .addSnapshotListener((snapshot, e) -> {
                 if (e != null) {
+                    android.util.Log.e("MatchFirestoreRepository", "Error loading match " + id, e);
                     liveData.setValue(null);
                     return;
                 }
                 Match match = deserializeMatch(snapshot);
+                if (match != null) {
+                    android.util.Log.d("MatchFirestoreRepository", "Loaded match from Firestore - ID: " + 
+                        match.getEntityId() + ", Name: " + match.getName() + ", Status: " + match.getMatchStatus());
+                }
                 liveData.setValue(match);
             });
             

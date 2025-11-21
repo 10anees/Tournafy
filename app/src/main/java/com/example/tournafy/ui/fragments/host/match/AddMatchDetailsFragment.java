@@ -106,4 +106,30 @@ public class AddMatchDetailsFragment extends Fragment {
         // Implement validation if needed
         return true;
     }
+    
+    /**
+     * Gets the cricket configuration from the UI inputs
+     */
+    public com.example.tournafy.domain.models.match.cricket.CricketMatchConfig getCricketConfig() {
+        com.example.tournafy.domain.models.match.cricket.CricketMatchConfig config = 
+            new com.example.tournafy.domain.models.match.cricket.CricketMatchConfig();
+        
+        // Get number of overs
+        String oversText = etOvers.getText() != null ? etOvers.getText().toString() : "20";
+        try {
+            int overs = Integer.parseInt(oversText);
+            config.setNumberOfOvers(overs);
+        } catch (NumberFormatException e) {
+            config.setNumberOfOvers(20); // Default
+        }
+        
+        // Get wide/no ball setting
+        com.google.android.material.materialswitch.MaterialSwitch switchWideBall = 
+            getView().findViewById(R.id.switchWideBall);
+        if (switchWideBall != null) {
+            config.setWideOn(switchWideBall.isChecked());
+        }
+        
+        return config;
+    }
 }

@@ -57,11 +57,13 @@ public class AddMatchTeamsFragment extends Fragment implements AddPlayerDialog.A
 
         hostViewModel = new ViewModelProvider(requireActivity()).get(HostViewModel.class);
 
-        // Initialize default empty teams
-        teamA = new Team(); // Assuming Team has a default constructor or builder
+        // Initialize default empty teams with unique IDs
+        teamA = new Team();
+        teamA.setTeamId(java.util.UUID.randomUUID().toString());
         teamA.setPlayers(new ArrayList<>());
         
         teamB = new Team();
+        teamB.setTeamId(java.util.UUID.randomUUID().toString());
         teamB.setPlayers(new ArrayList<>());
 
         initViews(view);

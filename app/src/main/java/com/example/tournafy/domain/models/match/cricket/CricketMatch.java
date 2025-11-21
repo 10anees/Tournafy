@@ -7,6 +7,7 @@ import com.example.tournafy.domain.models.base.MatchEvent;
 import com.example.tournafy.domain.models.match.MatchResult;
 import com.example.tournafy.domain.models.sport.SportTypeEnum;
 import com.example.tournafy.domain.models.team.MatchTeam;
+import com.google.firebase.database.Exclude;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -27,9 +28,16 @@ public class CricketMatch extends Match {
     // State tracking
     private int currentInningsNumber;
     private int targetScore;
+    @Exclude
     private List<Over> currentOvers;
+    
+    // Player tracking (striker, non-striker, bowler)
+    private String currentStrikerId;
+    private String currentNonStrikerId;
+    private String currentBowlerId;
 
     // Observer Pattern
+    @Exclude
     private List<MatchObserver> observers;
 
     // Match Result
@@ -61,7 +69,9 @@ public class CricketMatch extends Match {
         CricketEvent cricketEvent = (CricketEvent) event;
 
         Innings currentInnings = getCurrentInnings();
-        if (currentInnings == null) return;
+        if (currentInnings == null) {
+            throw new IllegalStateException("Cannot process event: No current innings. Did you start the match?");
+        }
 
         Over currentOver = getCurrentOver();
         if (currentOver == null) {
@@ -87,28 +97,50 @@ public class CricketMatch extends Match {
         currentInnings.setTotalRuns(currentInnings.getTotalRuns() + runsToAdd);
         currentOver.setRunsInOver(currentOver.getRunsInOver() + runsToAdd);
 
+        // Swap strikers on odd runs (1, 3, 5) for legal deliveries
+        if (cricketEvent.isLegalDelivery() && !cricketEvent.isWicket()) {
+            int batRuns = cricketEvent.getRunsScoredBat();
+            if (batRuns % 2 == 1) {  // Odd runs (1, 3, 5)
+                swapStrikers();
+            }
+        }
+
         if (cricketEvent.isWicket()) {
             currentInnings.setWicketsFallen(currentInnings.getWicketsFallen() + 1);
             currentOver.setWicketsInOver(currentOver.getWicketsInOver() + 1);
+            // TODO: Update striker to next batsman from team roster
         }
 
         if (cricketEvent.isLegalDelivery()) {
             int legalBallsInOver = countLegalBalls(currentOver);
             if (legalBallsInOver >= 6) {
                 endOver(currentInnings, currentOver);
+                // Swap strikers at end of over
+                swapStrikers();
             }
         }
 
         // Check completion
         CricketMatchConfig config = (CricketMatchConfig) this.matchConfig;
+        if (config == null) {
+            throw new IllegalStateException("Cannot process event: Match config is null");
+        }
+        
         boolean inningsComplete = false;
 
-        if (currentInnings.getWicketsFallen() >= 10) inningsComplete = true;
+        // Get available players for batting team
+        int availablePlayers = getTeamPlayersCount(currentInnings.getBattingTeamId());
+        // Max wickets is minimum of 10 or (availablePlayers - 1) since 2 batsmen must be on field
+        int maxWickets = Math.min(10, Math.max(1, availablePlayers - 1));
+        
+        // Standard completion conditions with player availability check
+        if (currentInnings.getWicketsFallen() >= maxWickets) inningsComplete = true;
         if (currentInnings.getOversCompleted() >= config.getNumberOfOvers()) inningsComplete = true;
 
+        // Second innings specific conditions
         if (currentInningsNumber == 2 && targetScore > 0) {
             if (currentInnings.getTotalRuns() >= targetScore) inningsComplete = true;
-            else if (currentInnings.getWicketsFallen() >= 10) inningsComplete = true;
+            else if (currentInnings.getWicketsFallen() >= maxWickets) inningsComplete = true;
         }
 
         if (inningsComplete) {
@@ -141,11 +173,20 @@ public class CricketMatch extends Match {
 
     private void endInnings(Innings innings) {
         innings.setCompleted(true);
+        
+        // End the current over if it exists
+        if (getCurrentOver() != null) {
+            getCurrentOver().setCompleted(true);
+        }
+        
         if (currentInningsNumber == 1) {
             this.targetScore = innings.getTotalRuns() + 1;
             if (this.innings.size() > 1) {
                 currentInningsNumber = 2;
                 this.currentOvers.clear();
+                // Create first over for second innings
+                Innings secondInnings = this.innings.get(1);
+                createNewOver(secondInnings);
             } else {
                 determineWinner();
             }
@@ -187,19 +228,19 @@ public class CricketMatch extends Match {
 
     public void addObserver(MatchObserver observer) { if (!observers.contains(observer)) observers.add(observer); }
     public void removeObserver(MatchObserver observer) { observers.remove(observer); }
-    private void notifyObservers() { for (MatchObserver o : observers) o.onMatchUpdated(this); }
-    private void notifyEventAdded(MatchEvent e) { for (MatchObserver o : observers) o.onEventAdded(e); }
-    private void notifyStatusChanged(String s) { for (MatchObserver o : observers) o.onMatchStatusChanged(s); }
+    public void notifyObservers() { for (MatchObserver o : observers) o.onMatchUpdated(this); }
+    public void notifyEventAdded(MatchEvent e) { for (MatchObserver o : observers) o.onEventAdded(e); }
+    public void notifyStatusChanged(String s) { for (MatchObserver o : observers) o.onMatchStatusChanged(s); }
 
     // --- HELPERS (getCurrentInnings, createBallFromEvent, etc.) ---
 
     public Innings getCurrentInnings() {
-        if (currentInningsNumber == 0 || innings.isEmpty()) return null;
+        if (currentInningsNumber == 0 || innings == null || innings.isEmpty()) return null;
         return innings.get(currentInningsNumber - 1);
     }
 
     public Over getCurrentOver() {
-        if (currentOvers.isEmpty()) return null;
+        if (currentOvers == null || currentOvers.isEmpty()) return null;
         return currentOvers.get(currentOvers.size() - 1);
     }
 
@@ -210,6 +251,27 @@ public class CricketMatch extends Match {
             if (b.isLegalDelivery()) count++;
         }
         return count;
+    }
+
+    /**
+     * Gets the number of players available in a team.
+     * Used to determine max wickets for innings completion.
+     * 
+     * @param teamId The ID of the team
+     * @return The number of players, or 11 as default if team not found
+     */
+    private int getTeamPlayersCount(String teamId) {
+        if (teams == null || teamId == null) return 11;  // Default to 11 players
+        
+        for (com.example.tournafy.domain.models.team.MatchTeam team : teams) {
+            if (teamId.equals(team.getTeamId())) {
+                if (team.getPlayers() != null) {
+                    return team.getPlayers().size();
+                }
+            }
+        }
+        
+        return 11;  // Default if team or players not found
     }
 
     private Ball createBallFromEvent(CricketEvent event) {
@@ -224,13 +286,67 @@ public class CricketMatch extends Match {
         if (event.isWicket() && event.getWicketDetail() != null) {
             ball.setWicketType(event.getWicketDetail().getWicketType());
         }
+        
+        // Set foreign keys from current match state
+        ball.setMatchId(this.getEntityId());
+        Innings currentInnings = getCurrentInnings();
+        if (currentInnings != null) {
+            ball.setInningsId(currentInnings.getInningsId());
+            ball.setInningsNumber(currentInnings.getInningsNumber());
+        }
+        Over currentOver = getCurrentOver();
+        if (currentOver != null) {
+            ball.setOverId(currentOver.getOverId());
+            ball.setOverNumber(currentOver.getOverNumber());
+        }
+        
         return ball;
+    }
+
+    /**
+     * Initializes striker and non-striker from the batting team's first 2 players.
+     */
+    private void initializeStrikers(MatchTeam battingTeam) {
+        if (battingTeam != null && battingTeam.getPlayers() != null && battingTeam.getPlayers().size() >= 2) {
+            this.currentStrikerId = battingTeam.getPlayers().get(0).getPlayerId();
+            this.currentNonStrikerId = battingTeam.getPlayers().get(1).getPlayerId();
+        } else if (battingTeam != null && battingTeam.getPlayers() != null && battingTeam.getPlayers().size() == 1) {
+            // Only one player, set striker and non-striker to same player (edge case)
+            this.currentStrikerId = battingTeam.getPlayers().get(0).getPlayerId();
+            this.currentNonStrikerId = null;
+        }
+    }
+
+    /**
+     * Initializes bowler from the bowling team's first player.
+     */
+    private void initializeBowler(MatchTeam bowlingTeam) {
+        if (bowlingTeam != null && bowlingTeam.getPlayers() != null && !bowlingTeam.getPlayers().isEmpty()) {
+            this.currentBowlerId = bowlingTeam.getPlayers().get(0).getPlayerId();
+        }
+    }
+
+    /**
+     * Swaps striker and non-striker positions.
+     */
+    private void swapStrikers() {
+        String temp = this.currentStrikerId;
+        this.currentStrikerId = this.currentNonStrikerId;
+        this.currentNonStrikerId = temp;
     }
 
     // --- ABSTRACT IMPL (startMatch, endMatch, addEvent, canStartMatch) ---
 
     @Override
     public void startMatch() {
+        if (teams == null || teams.size() < 2) {
+            throw new IllegalStateException("Cannot start match: Need at least 2 teams");
+        }
+        
+        if (matchConfig == null) {
+            throw new IllegalStateException("Cannot start match: Match config is null");
+        }
+        
         setMatchStatus(MatchStatus.LIVE.name());
 
         if (innings.isEmpty() && teams.size() >= 2) {
@@ -250,6 +366,12 @@ public class CricketMatch extends Match {
             second.setBattingTeamId(teams.get(1).getTeamId());
             second.setBowlingTeamId(teams.get(0).getTeamId());
             innings.add(second);
+            
+            // Initialize striker and non-striker from batting team
+            initializeStrikers(teams.get(0));
+            
+            // Initialize bowler from bowling team
+            initializeBowler(teams.get(1));
         }
         notifyStatusChanged(MatchStatus.LIVE.name());
     }
@@ -355,6 +477,9 @@ public class CricketMatch extends Match {
     public int getTargetScore() { return targetScore; }
     public MatchResult getMatchResult() { return matchResult; }
     public List<Over> getCurrentOvers() { return currentOvers; }
+    public String getCurrentStrikerId() { return currentStrikerId; }
+    public String getCurrentNonStrikerId() { return currentNonStrikerId; }
+    public String getCurrentBowlerId() { return currentBowlerId; }
 
     // --- COMMAND SUPPORT (Existing for Over management) ---
 

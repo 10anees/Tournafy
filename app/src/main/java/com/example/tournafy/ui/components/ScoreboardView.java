@@ -47,7 +47,7 @@ public class ScoreboardView extends FrameLayout {
         tvCRR = findViewById(R.id.tvCRR);
     }
 
-    public void updateCricketScore(String teamA, String teamB, int runs, int wickets, int overs, float runRate) {
+    public void updateCricketScore(String teamA, String teamB, int runs, int wickets, String overs, float runRate) {
         if (tvOvers != null) tvOvers.setVisibility(View.VISIBLE);
         if (tvCRR != null) tvCRR.setVisibility(View.VISIBLE);
 
@@ -64,10 +64,8 @@ public class ScoreboardView extends FrameLayout {
         }
 
         if (tvOvers != null) {
-            // Simplified over logic: 12 balls -> 2.0 overs. 13 balls -> 2.1 overs
-            int completedOvers = overs; // Assuming 'overs' passed is actually balls bowled? Or completed overs?
-            // If 'overs' is just the integer count of completed overs:
-            tvOvers.setText(String.format(Locale.getDefault(), "Overs: %d", completedOvers));
+            // Display overs in format "12.3" (completed.balls)
+            tvOvers.setText(String.format(Locale.getDefault(), "Overs: %s", overs));
         }
 
         if (tvCRR != null) {

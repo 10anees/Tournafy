@@ -49,9 +49,9 @@ public class FirebaseMatchObserver implements MatchObserver {
      * Called when a new individual event (like a goal or a wicket) is added.
      * This pushes the new event to the online database.
      *
-     * Note: Since MatchFirebaseRepository doesn't have a specialized addEvent method,
-     * we trigger a full match update. In a real implementation, you might create
-     * a separate EventRepository for more efficient event syncing.
+     * CRITICAL FIX: Now actually triggers a Firebase write.
+     * Events are stored within the Match object, so we need to update the entire match.
+     * For better performance in production, consider creating a separate EventRepository.
      *
      * @param event The new MatchEvent.
      */
@@ -60,11 +60,17 @@ public class FirebaseMatchObserver implements MatchObserver {
         if (matchFirebaseRepository != null && event != null) {
             // Check that the event's matchId matches this observer's matchId
             if (event.getMatchId() != null && event.getMatchId().equals(this.matchId)) {
-                // Events are stored within the Match object
-                // A full match update will sync all events
-                // For better performance, consider creating a separate EventRepository
-                // and storing events in a sub-collection
-                // For now, events sync as part of the full match object via onMatchUpdated
+                // CRITICAL FIX: Fetch the match and update it to persist the new event
+                matchFirebaseRepository.getById(matchId).observeForever(match -> {
+                    if (match != null) {
+                        // The match object already contains the new event (added by processEvent)
+                        // Now persist it to Firebase
+                        matchFirebaseRepository.update(match)
+                            .addOnFailureListener(e -> 
+                                System.err.println("FirebaseMatchObserver: Failed to sync event - " + e.getMessage())
+                            );
+                    }
+                });
             } else {
                 // Log an error or handle mismatch
                 System.err.println("FirebaseMatchObserver: Event matchId does not match observer's matchId.");
@@ -74,19 +80,31 @@ public class FirebaseMatchObserver implements MatchObserver {
 
     /**
      * Called when the match's status changes (e.g., SCHEDULED -> LIVE).
-     * This method updates the match in Firebase. Since the repository doesn't have
-     * a partial update method, the full match object is updated via onMatchUpdated.
+     * This method updates the match in Firebase.
+     *
+     * CRITICAL FIX: Now actually triggers a Firebase write using updateMatchStatus.
+     * We use the partial update method for efficiency.
      *
      * @param newStatus The new status (e.g., from MatchStatus enum).
      */
     @Override
     public void onMatchStatusChanged(String newStatus) {
         if (matchFirebaseRepository != null && this.matchId != null && newStatus != null) {
-            // Status changes are part of the Match object
-            // The full match update (triggered via onMatchUpdated) will sync the status
-            // For better performance, you could add a partial update method to the repository
-            // that uses Firestore's field-level update: .update("matchStatus", newStatus)
-            // For now, status syncs as part of the full match object
+            // CRITICAL FIX: Use the partial update method for efficiency
+            matchFirebaseRepository.updateMatchStatus(matchId, newStatus)
+                .addOnFailureListener(e -> 
+                    System.err.println("FirebaseMatchObserver: Failed to sync status change - " + e.getMessage())
+                );
+                
+            // Also trigger a full match update to ensure all related changes (innings, etc.) are synced
+            matchFirebaseRepository.getById(matchId).observeForever(match -> {
+                if (match != null) {
+                    matchFirebaseRepository.update(match)
+                        .addOnFailureListener(e -> 
+                            System.err.println("FirebaseMatchObserver: Failed to sync full match after status change - " + e.getMessage())
+                        );
+                }
+            });
         }
     }
 }
