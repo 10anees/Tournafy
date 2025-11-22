@@ -175,6 +175,17 @@ public class MatchViewModel extends ViewModel {
         Match match = offlineMatch.getValue();
         if (match instanceof CricketMatch) {
             CricketMatch cm = (CricketMatch) match;
+            Innings currentInnings = cm.getCurrentInnings();
+            if (currentInnings != null && cm.getTeams() != null) {
+                // Return the batting team name for current innings
+                String battingTeamId = currentInnings.getBattingTeamId();
+                for (com.example.tournafy.domain.models.team.MatchTeam team : cm.getTeams()) {
+                    if (battingTeamId.equals(team.getTeamId())) {
+                        return team.getTeamName();
+                    }
+                }
+            }
+            // Fallback to first team if no innings yet
             if (cm.getTeams() != null && !cm.getTeams().isEmpty()) {
                 return cm.getTeams().get(0).getTeamName();
             }
@@ -186,6 +197,17 @@ public class MatchViewModel extends ViewModel {
         Match match = offlineMatch.getValue();
         if (match instanceof CricketMatch) {
             CricketMatch cm = (CricketMatch) match;
+            Innings currentInnings = cm.getCurrentInnings();
+            if (currentInnings != null && cm.getTeams() != null) {
+                // Return the bowling team name for current innings
+                String bowlingTeamId = currentInnings.getBowlingTeamId();
+                for (com.example.tournafy.domain.models.team.MatchTeam team : cm.getTeams()) {
+                    if (bowlingTeamId.equals(team.getTeamId())) {
+                        return team.getTeamName();
+                    }
+                }
+            }
+            // Fallback to second team if no innings yet
             if (cm.getTeams() != null && cm.getTeams().size() > 1) {
                 return cm.getTeams().get(1).getTeamName();
             }
@@ -364,8 +386,6 @@ public class MatchViewModel extends ViewModel {
         // No need to persist Ball, Over, Innings separately
         
         offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
-            _isLoading.setValue(false);
-            
             if (matchTask.isSuccessful()) {
                 // Trigger LiveData update to refresh UI by re-fetching from database
                 // Add small delay to ensure Firestore write is fully committed
@@ -374,9 +394,11 @@ public class MatchViewModel extends ViewModel {
                     if (currentId != null) {
                         _offlineMatchId.setValue(currentId);
                     }
+                    _isLoading.setValue(false);
                 }, 100); // 100ms delay
             } else {
                 _errorMessage.setValue("Failed to save match update");
+                _isLoading.setValue(false);
             }
         });
     }
@@ -451,8 +473,6 @@ public class MatchViewModel extends ViewModel {
         // All nested data (innings, overs, balls) is stored within the match document
         
         offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
-            _isLoading.setValue(false);
-            
             if (matchTask.isSuccessful()) {
                 // Trigger LiveData update to refresh UI by re-fetching from database
                 // Add small delay to ensure Firestore write is fully committed
@@ -461,9 +481,11 @@ public class MatchViewModel extends ViewModel {
                     if (currentId != null) {
                         _offlineMatchId.setValue(currentId);
                     }
+                    _isLoading.setValue(false);
                 }, 100); // 100ms delay
             } else {
                 _errorMessage.setValue("Failed to save match update");
+                _isLoading.setValue(false);
             }
         });
     }
@@ -554,8 +576,6 @@ public class MatchViewModel extends ViewModel {
         // All nested data (innings, overs, balls) is stored within the match document
         
         offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
-            _isLoading.setValue(false);
-            
             if (matchTask.isSuccessful()) {
                 // Trigger LiveData update to refresh UI by re-fetching from database
                 // Add small delay to ensure Firestore write is fully committed
@@ -564,9 +584,11 @@ public class MatchViewModel extends ViewModel {
                     if (currentId != null) {
                         _offlineMatchId.setValue(currentId);
                     }
+                    _isLoading.setValue(false);
                 }, 100); // 100ms delay
             } else {
                 _errorMessage.setValue("Failed to save match update");
+                _isLoading.setValue(false);
             }
         });
     }
@@ -677,8 +699,57 @@ public class MatchViewModel extends ViewModel {
                     _errorMessage.setValue("Failed to start match");
                 }
             });
+        } else if (currentMatch instanceof com.example.tournafy.domain.models.match.football.FootballMatch) {
+            // Football match
+            com.example.tournafy.domain.models.match.football.FootballMatch footballMatch = 
+                (com.example.tournafy.domain.models.match.football.FootballMatch) currentMatch;
+            
+            // Handle DRAFT status - convert to SCHEDULED
+            String currentStatus = footballMatch.getMatchStatus();
+            if (currentStatus == null || currentStatus.equals("DRAFT")) {
+                footballMatch.setMatchStatus(com.example.tournafy.domain.enums.MatchStatus.SCHEDULED.name());
+            }
+            
+            // Validate match can start
+            if (footballMatch.getTeams() == null || footballMatch.getTeams().size() < 2) {
+                _errorMessage.setValue("Cannot start match: Need at least 2 teams");
+                _isLoading.setValue(false);
+                return;
+            }
+            
+            if (footballMatch.getMatchConfig() == null) {
+                _errorMessage.setValue("Cannot start match: Match configuration is missing");
+                _isLoading.setValue(false);
+                return;
+            }
+            
+            if (!footballMatch.getMatchStatus().equals(com.example.tournafy.domain.enums.MatchStatus.SCHEDULED.name())) {
+                _errorMessage.setValue("Cannot start match: Match status is " + footballMatch.getMatchStatus() + " (must be SCHEDULED)");
+                _isLoading.setValue(false);
+                return;
+            }
+            
+            // NOTE: Online sync is disabled for offline-first performance
+            // Football doesn't need online sync registration like cricket's complex innings/over structure
+            
+            // Start the match (sets status to LIVE)
+            try {
+                footballMatch.startMatch();
+            } catch (IllegalStateException e) {
+                _errorMessage.setValue(e.getMessage());
+                _isLoading.setValue(false);
+                return;
+            }
+            
+            // Persist match to Firestore
+            offlineMatchRepo.update(footballMatch).addOnCompleteListener(task -> {
+                _isLoading.setValue(false);
+                if (!task.isSuccessful()) {
+                    _errorMessage.setValue("Failed to start match");
+                }
+            });
         } else {
-            // Football or other sport
+            // Other sport types
             currentMatch.startMatch();
             offlineMatchRepo.update(currentMatch).addOnCompleteListener(task -> {
                 _isLoading.setValue(false);
@@ -908,11 +979,242 @@ public class MatchViewModel extends ViewModel {
 
     // --- Football Action Methods ---
 
-    public void addFootballEvent() {
-        // Placeholder for football event creation
-        // FootballEvent event = new FootballEvent(...);
-        // fm.processEvent(event);
-        // persistOfflineMatch(fm);
+    /**
+     * Adds a football goal event to the current match.
+     * Uses Command Pattern for undo/redo functionality.
+     * 
+     * @param teamId The ID of the team that scored
+     * @param scorerId The ID of the player who scored
+     * @param goalType The type of goal (OPEN_PLAY, PENALTY, FREE_KICK, etc.)
+     * @param minute The match minute when the goal was scored
+     */
+    public void addFootballGoal(String teamId, String scorerId, String goalType, int minute) {
+        _isLoading.setValue(true);
+        
+        Match currentMatch = offlineMatch.getValue();
+        if (!(currentMatch instanceof com.example.tournafy.domain.models.match.football.FootballMatch)) {
+            _errorMessage.setValue("Not a football match");
+            _isLoading.setValue(false);
+            return;
+        }
+        
+        com.example.tournafy.domain.models.match.football.FootballMatch footballMatch = 
+            (com.example.tournafy.domain.models.match.football.FootballMatch) currentMatch;
+        
+        // Create FootballEvent
+        com.example.tournafy.domain.models.match.football.FootballEvent event = 
+            new com.example.tournafy.domain.models.match.football.FootballEvent();
+        event.setEventId(java.util.UUID.randomUUID().toString());
+        event.setMatchId(footballMatch.getEntityId());
+        event.setTeamId(teamId);
+        event.setPlayerId(scorerId);
+        event.setEventType("GOAL");
+        event.setEventCategory("GOAL");
+        event.setMatchMinute(minute);
+        event.setMatchPeriod(footballMatch.getMatchPeriod());
+        event.setEventTime(new java.util.Date());
+        
+        // Create GoalDetail
+        com.example.tournafy.domain.models.match.football.FootballGoalDetail goalDetail = 
+            new com.example.tournafy.domain.models.match.football.FootballGoalDetail();
+        goalDetail.setEventId(event.getEventId());
+        goalDetail.setScorerId(scorerId);
+        goalDetail.setGoalType(goalType);
+        goalDetail.setMinuteScored(minute);
+        goalDetail.setPenalty(goalType.equals("PENALTY"));
+        goalDetail.setOwnGoal(false);
+        
+        // Create and execute Command
+        com.example.tournafy.command.football.AddGoalCommand command = 
+            new com.example.tournafy.command.football.AddGoalCommand(footballMatch, event, goalDetail);
+        commandManager.executeCommand(command);
+        
+        // Persist event and match
+        offlineFootballEventRepo.add(event).addOnCompleteListener(eventTask -> {
+            if (eventTask.isSuccessful()) {
+                offlineMatchRepo.update(footballMatch).addOnCompleteListener(matchTask -> {
+                    if (matchTask.isSuccessful()) {
+                        // Trigger LiveData refresh
+                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                            String currentId = _offlineMatchId.getValue();
+                            if (currentId != null) {
+                                _offlineMatchId.setValue(currentId);
+                            }
+                            _isLoading.setValue(false);
+                        }, 100);
+                    } else {
+                        _errorMessage.setValue("Failed to save match update");
+                        _isLoading.setValue(false);
+                    }
+                });
+            } else {
+                _errorMessage.setValue("Failed to save goal event");
+                _isLoading.setValue(false);
+            }
+        });
+    }
+
+    /**
+     * Adds a football card event (yellow or red card) to the current match.
+     * Uses Command Pattern for undo/redo functionality.
+     * 
+     * @param teamId The ID of the team receiving the card
+     * @param playerId The ID of the player receiving the card
+     * @param cardType The type of card ("YELLOW" or "RED")
+     * @param cardReason The reason for the card (FOUL, DISSENT, etc.)
+     * @param minute The match minute when the card was issued
+     */
+    public void addFootballCard(String teamId, String playerId, String cardType, String cardReason, int minute) {
+        _isLoading.setValue(true);
+        
+        Match currentMatch = offlineMatch.getValue();
+        if (!(currentMatch instanceof com.example.tournafy.domain.models.match.football.FootballMatch)) {
+            _errorMessage.setValue("Not a football match");
+            _isLoading.setValue(false);
+            return;
+        }
+        
+        com.example.tournafy.domain.models.match.football.FootballMatch footballMatch = 
+            (com.example.tournafy.domain.models.match.football.FootballMatch) currentMatch;
+        
+        // Create FootballEvent
+        com.example.tournafy.domain.models.match.football.FootballEvent event = 
+            new com.example.tournafy.domain.models.match.football.FootballEvent();
+        event.setEventId(java.util.UUID.randomUUID().toString());
+        event.setMatchId(footballMatch.getEntityId());
+        event.setTeamId(teamId);
+        event.setPlayerId(playerId);
+        event.setEventType("CARD");
+        event.setEventCategory("CARD");
+        event.setMatchMinute(minute);
+        event.setMatchPeriod(footballMatch.getMatchPeriod());
+        event.setEventTime(new java.util.Date());
+        
+        // Create CardDetail
+        com.example.tournafy.domain.models.match.football.FootballCardDetail cardDetail = 
+            new com.example.tournafy.domain.models.match.football.FootballCardDetail();
+        cardDetail.setEventId(event.getEventId());
+        cardDetail.setPlayerId(playerId);
+        cardDetail.setCardType(cardType);
+        cardDetail.setCardReason(cardReason);
+        cardDetail.setMinuteIssued(minute);
+        cardDetail.setSecondYellow(false); // TODO: Track yellow cards per player
+        
+        // Create and execute Command
+        com.example.tournafy.command.football.AddCardCommand command = 
+            new com.example.tournafy.command.football.AddCardCommand(footballMatch, event, cardDetail);
+        commandManager.executeCommand(command);
+        
+        // Persist event and match
+        offlineFootballEventRepo.add(event).addOnCompleteListener(eventTask -> {
+            if (eventTask.isSuccessful()) {
+                offlineMatchRepo.update(footballMatch).addOnCompleteListener(matchTask -> {
+                    if (matchTask.isSuccessful()) {
+                        // Trigger LiveData refresh
+                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                            String currentId = _offlineMatchId.getValue();
+                            if (currentId != null) {
+                                _offlineMatchId.setValue(currentId);
+                            }
+                            _isLoading.setValue(false);
+                        }, 100);
+                    } else {
+                        _errorMessage.setValue("Failed to save match update");
+                        _isLoading.setValue(false);
+                    }
+                });
+            } else {
+                _errorMessage.setValue("Failed to save card event");
+                _isLoading.setValue(false);
+            }
+        });
+    }
+
+    /**
+     * Adds a football substitution event to the current match.
+     * Uses Command Pattern for undo/redo functionality.
+     * 
+     * @param teamId The ID of the team making the substitution
+     * @param playerOutId The ID of the player leaving the field
+     * @param playerInId The ID of the player entering the field
+     * @param minute The match minute when the substitution occurred
+     */
+    public void addFootballSubstitution(String teamId, String playerOutId, String playerInId, int minute) {
+        _isLoading.setValue(true);
+        
+        Match currentMatch = offlineMatch.getValue();
+        if (!(currentMatch instanceof com.example.tournafy.domain.models.match.football.FootballMatch)) {
+            _errorMessage.setValue("Not a football match");
+            _isLoading.setValue(false);
+            return;
+        }
+        
+        com.example.tournafy.domain.models.match.football.FootballMatch footballMatch = 
+            (com.example.tournafy.domain.models.match.football.FootballMatch) currentMatch;
+        
+        // Create FootballEvent
+        com.example.tournafy.domain.models.match.football.FootballEvent event = 
+            new com.example.tournafy.domain.models.match.football.FootballEvent();
+        event.setEventId(java.util.UUID.randomUUID().toString());
+        event.setMatchId(footballMatch.getEntityId());
+        event.setTeamId(teamId);
+        event.setPlayerId(playerOutId); // Primary player is the one going out
+        event.setEventType("SUBSTITUTION");
+        event.setEventCategory("SUBSTITUTION");
+        event.setMatchMinute(minute);
+        event.setMatchPeriod(footballMatch.getMatchPeriod());
+        event.setEventTime(new java.util.Date());
+        
+        // Create SubstitutionDetail
+        com.example.tournafy.domain.models.match.football.FootballSubstitutionDetail subDetail = 
+            new com.example.tournafy.domain.models.match.football.FootballSubstitutionDetail();
+        subDetail.setEventId(event.getEventId());
+        subDetail.setPlayerOutId(playerOutId);
+        subDetail.setPlayerInId(playerInId);
+        subDetail.setTeamId(teamId);
+        subDetail.setMinuteSubstituted(minute);
+        subDetail.setSubstitutionReason("TACTICAL"); // Default to tactical
+        
+        // Create and execute Command
+        com.example.tournafy.command.football.SubstitutePlayerCommand command = 
+            new com.example.tournafy.command.football.SubstitutePlayerCommand(footballMatch, event, subDetail);
+        commandManager.executeCommand(command);
+        
+        // Persist event and match
+        offlineFootballEventRepo.add(event).addOnCompleteListener(eventTask -> {
+            if (eventTask.isSuccessful()) {
+                offlineMatchRepo.update(footballMatch).addOnCompleteListener(matchTask -> {
+                    if (matchTask.isSuccessful()) {
+                        // Trigger LiveData refresh
+                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                            String currentId = _offlineMatchId.getValue();
+                            if (currentId != null) {
+                                _offlineMatchId.setValue(currentId);
+                            }
+                            _isLoading.setValue(false);
+                        }, 100);
+                    } else {
+                        _errorMessage.setValue("Failed to save match update");
+                        _isLoading.setValue(false);
+                    }
+                });
+            } else {
+                _errorMessage.setValue("Failed to save substitution event");
+                _isLoading.setValue(false);
+            }
+        });
+    }
+
+    /**
+     * Helper method to parse current minute from timer text "MM:SS"
+     */
+    private int parseCurrentMinute(String timerText) {
+        try {
+            String[] parts = timerText.split(":");
+            return Integer.parseInt(parts[0]);
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     // --- Common Persistence ---

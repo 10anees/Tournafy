@@ -48,6 +48,10 @@ public class ScoreboardView extends FrameLayout {
     }
 
     public void updateCricketScore(String teamA, String teamB, int runs, int wickets, String overs, float runRate) {
+        updateCricketScore(teamA, teamB, runs, wickets, overs, runRate, null);
+    }
+
+    public void updateCricketScore(String teamA, String teamB, int runs, int wickets, String overs, float runRate, String teamBScore) {
         if (tvOvers != null) tvOvers.setVisibility(View.VISIBLE);
         if (tvCRR != null) tvCRR.setVisibility(View.VISIBLE);
 
@@ -59,8 +63,12 @@ public class ScoreboardView extends FrameLayout {
         }
 
         if (tvTeamBScore != null) {
-            // In a real app, show target or "Yet to bat"
-            tvTeamBScore.setText("");
+            // Show the bowling team's score if provided (completed innings), otherwise "Yet to bat"
+            if (teamBScore != null && !teamBScore.isEmpty()) {
+                tvTeamBScore.setText(teamBScore);
+            } else {
+                tvTeamBScore.setText("");
+            }
         }
 
         if (tvOvers != null) {

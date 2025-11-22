@@ -385,6 +385,224 @@ public class MatchFirestoreRepository extends FirestoreRepository<Match> {
                 }
             }
         }
+        
+        // CRITICAL FIX: Populate football-specific fields if this is a FootballMatch
+        if (match instanceof FootballMatch) {
+            FootballMatch footballMatch = (FootballMatch) match;
+            
+            // Populate teams with players
+            if (data.containsKey("teams")) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> teamsData = (List<Map<String, Object>>) data.get("teams");
+                if (teamsData != null) {
+                    List<com.example.tournafy.domain.models.team.MatchTeam> teams = new ArrayList<>();
+                    for (Map<String, Object> teamMap : teamsData) {
+                        com.example.tournafy.domain.models.team.MatchTeam team = 
+                            new com.example.tournafy.domain.models.team.MatchTeam();
+                        if (teamMap.containsKey("teamId")) 
+                            team.setTeamId((String) teamMap.get("teamId"));
+                        if (teamMap.containsKey("teamName")) 
+                            team.setTeamName((String) teamMap.get("teamName"));
+                        if (teamMap.containsKey("homeTeam"))
+                            team.setHomeTeam((Boolean) teamMap.get("homeTeam"));
+                        
+                        // Deserialize players list
+                        if (teamMap.containsKey("players")) {
+                            @SuppressWarnings("unchecked")
+                            List<Map<String, Object>> playersData = (List<Map<String, Object>>) teamMap.get("players");
+                            if (playersData != null) {
+                                List<com.example.tournafy.domain.models.team.Player> players = new ArrayList<>();
+                                for (Map<String, Object> playerMap : playersData) {
+                                    com.example.tournafy.domain.models.team.Player player = 
+                                        new com.example.tournafy.domain.models.team.Player();
+                                    if (playerMap.containsKey("playerId")) 
+                                        player.setPlayerId((String) playerMap.get("playerId"));
+                                    if (playerMap.containsKey("playerName")) 
+                                        player.setPlayerName((String) playerMap.get("playerName"));
+                                    if (playerMap.containsKey("jerseyNumber")) 
+                                        player.setJerseyNumber(((Long) playerMap.get("jerseyNumber")).intValue());
+                                    players.add(player);
+                                }
+                                team.setPlayers(players);
+                                android.util.Log.d("MatchFirestoreRepository", "Deserialized " + players.size() + 
+                                    " players for football team " + team.getTeamName());
+                            }
+                        }
+                        
+                        teams.add(team);
+                    }
+                    footballMatch.setTeams(teams);
+                    android.util.Log.d("MatchFirestoreRepository", "Deserialized " + teams.size() + 
+                        " teams for football match " + match.getEntityId());
+                }
+            }
+            
+            // Populate football events
+            if (data.containsKey("footballEvents")) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> eventsData = (List<Map<String, Object>>) data.get("footballEvents");
+                if (eventsData != null) {
+                    List<com.example.tournafy.domain.models.match.football.FootballEvent> events = new ArrayList<>();
+                    
+                    // Deserialize each event
+                    for (Map<String, Object> eventMap : eventsData) {
+                        try {
+                            com.example.tournafy.domain.models.match.football.FootballEvent event = 
+                                new com.example.tournafy.domain.models.match.football.FootballEvent();
+                            
+                            // Basic fields
+                            if (eventMap.containsKey("eventId")) 
+                                event.setEventId((String) eventMap.get("eventId"));
+                            if (eventMap.containsKey("matchId")) 
+                                event.setMatchId((String) eventMap.get("matchId"));
+                            if (eventMap.containsKey("teamId")) 
+                                event.setTeamId((String) eventMap.get("teamId"));
+                            if (eventMap.containsKey("playerId")) 
+                                event.setPlayerId((String) eventMap.get("playerId"));
+                            if (eventMap.containsKey("eventType")) 
+                                event.setEventType((String) eventMap.get("eventType"));
+                            if (eventMap.containsKey("eventCategory")) 
+                                event.setEventCategory((String) eventMap.get("eventCategory"));
+                            if (eventMap.containsKey("description")) 
+                                event.setDescription((String) eventMap.get("description"));
+                            if (eventMap.containsKey("matchMinute")) 
+                                event.setMatchMinute(((Long) eventMap.get("matchMinute")).intValue());
+                            if (eventMap.containsKey("addedTimeMinute")) 
+                                event.setAddedTimeMinute(((Long) eventMap.get("addedTimeMinute")).intValue());
+                            if (eventMap.containsKey("matchPeriod")) 
+                                event.setMatchPeriod((String) eventMap.get("matchPeriod"));
+                            if (eventMap.containsKey("homeScoreAtEvent")) 
+                                event.setHomeScoreAtEvent(((Long) eventMap.get("homeScoreAtEvent")).intValue());
+                            if (eventMap.containsKey("awayScoreAtEvent")) 
+                                event.setAwayScoreAtEvent(((Long) eventMap.get("awayScoreAtEvent")).intValue());
+                            if (eventMap.containsKey("locationOnPitch")) 
+                                event.setLocationOnPitch((String) eventMap.get("locationOnPitch"));
+                            
+                            // Deserialize GoalDetail if present
+                            if (eventMap.containsKey("goalDetail")) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> goalMap = (Map<String, Object>) eventMap.get("goalDetail");
+                                if (goalMap != null) {
+                                    com.example.tournafy.domain.models.match.football.FootballGoalDetail goalDetail = 
+                                        new com.example.tournafy.domain.models.match.football.FootballGoalDetail();
+                                    
+                                    if (goalMap.containsKey("eventId")) 
+                                        goalDetail.setEventId((String) goalMap.get("eventId"));
+                                    if (goalMap.containsKey("scorerId")) 
+                                        goalDetail.setScorerId((String) goalMap.get("scorerId"));
+                                    if (goalMap.containsKey("assistPlayerId")) 
+                                        goalDetail.setAssistPlayerId((String) goalMap.get("assistPlayerId"));
+                                    if (goalMap.containsKey("goalType")) 
+                                        goalDetail.setGoalType((String) goalMap.get("goalType"));
+                                    if (goalMap.containsKey("minuteScored")) 
+                                        goalDetail.setMinuteScored(((Long) goalMap.get("minuteScored")).intValue());
+                                    if (goalMap.containsKey("penalty") && goalMap.get("penalty") instanceof Boolean) 
+                                        goalDetail.setPenalty((Boolean) goalMap.get("penalty"));
+                                    if (goalMap.containsKey("ownGoal") && goalMap.get("ownGoal") instanceof Boolean) 
+                                        goalDetail.setOwnGoal((Boolean) goalMap.get("ownGoal"));
+                                    
+                                    event.setGoalDetail(goalDetail);
+                                }
+                            }
+                            
+                            // Deserialize CardDetail if present
+                            if (eventMap.containsKey("cardDetail")) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> cardMap = (Map<String, Object>) eventMap.get("cardDetail");
+                                if (cardMap != null) {
+                                    com.example.tournafy.domain.models.match.football.FootballCardDetail cardDetail = 
+                                        new com.example.tournafy.domain.models.match.football.FootballCardDetail();
+                                    
+                                    if (cardMap.containsKey("eventId")) 
+                                        cardDetail.setEventId((String) cardMap.get("eventId"));
+                                    if (cardMap.containsKey("playerId")) 
+                                        cardDetail.setPlayerId((String) cardMap.get("playerId"));
+                                    if (cardMap.containsKey("cardType")) 
+                                        cardDetail.setCardType((String) cardMap.get("cardType"));
+                                    if (cardMap.containsKey("cardReason")) 
+                                        cardDetail.setCardReason((String) cardMap.get("cardReason"));
+                                    if (cardMap.containsKey("minuteIssued")) 
+                                        cardDetail.setMinuteIssued(((Long) cardMap.get("minuteIssued")).intValue());
+                                    if (cardMap.containsKey("secondYellow") && cardMap.get("secondYellow") instanceof Boolean) 
+                                        cardDetail.setSecondYellow((Boolean) cardMap.get("secondYellow"));
+                                    
+                                    event.setCardDetail(cardDetail);
+                                }
+                            }
+                            
+                            // Deserialize SubstitutionDetail if present
+                            if (eventMap.containsKey("substitutionDetail")) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> subMap = (Map<String, Object>) eventMap.get("substitutionDetail");
+                                if (subMap != null) {
+                                    com.example.tournafy.domain.models.match.football.FootballSubstitutionDetail subDetail = 
+                                        new com.example.tournafy.domain.models.match.football.FootballSubstitutionDetail();
+                                    
+                                    if (subMap.containsKey("eventId")) 
+                                        subDetail.setEventId((String) subMap.get("eventId"));
+                                    if (subMap.containsKey("playerOutId")) 
+                                        subDetail.setPlayerOutId((String) subMap.get("playerOutId"));
+                                    if (subMap.containsKey("playerInId")) 
+                                        subDetail.setPlayerInId((String) subMap.get("playerInId"));
+                                    if (subMap.containsKey("minuteSubstituted")) 
+                                        subDetail.setMinuteSubstituted(((Long) subMap.get("minuteSubstituted")).intValue());
+                                    if (subMap.containsKey("substitutionReason")) 
+                                        subDetail.setSubstitutionReason((String) subMap.get("substitutionReason"));
+                                    
+                                    event.setSubstitutionDetail(subDetail);
+                                }
+                            }
+                            
+                            events.add(event);
+                        } catch (Exception e) {
+                            android.util.Log.e("MatchFirestoreRepository", "Failed to deserialize FootballEvent", e);
+                        }
+                    }
+                    
+                    footballMatch.setFootballEvents(events);
+                    android.util.Log.d("MatchFirestoreRepository", "Deserialized " + events.size() + " football events");
+                }
+            }
+            
+            // Populate scores
+            if (data.containsKey("homeScore")) {
+                Object homeScoreObj = data.get("homeScore");
+                if (homeScoreObj instanceof Long) {
+                    footballMatch.setHomeScore(((Long) homeScoreObj).intValue());
+                }
+            }
+            if (data.containsKey("awayScore")) {
+                Object awayScoreObj = data.get("awayScore");
+                if (awayScoreObj instanceof Long) {
+                    footballMatch.setAwayScore(((Long) awayScoreObj).intValue());
+                }
+            }
+            
+            // Populate match period and minute
+            if (data.containsKey("matchPeriod")) {
+                // Set via reflection since matchPeriod is private
+                try {
+                    java.lang.reflect.Field field = FootballMatch.class.getDeclaredField("matchPeriod");
+                    field.setAccessible(true);
+                    field.set(footballMatch, (String) data.get("matchPeriod"));
+                } catch (Exception e) {
+                    android.util.Log.e("MatchFirestoreRepository", "Failed to set matchPeriod", e);
+                }
+            }
+            if (data.containsKey("currentMatchMinute")) {
+                Object minuteObj = data.get("currentMatchMinute");
+                if (minuteObj instanceof Long) {
+                    // Set via reflection if field is private
+                    try {
+                        java.lang.reflect.Field field = FootballMatch.class.getDeclaredField("currentMatchMinute");
+                        field.setAccessible(true);
+                        field.set(footballMatch, ((Long) minuteObj).intValue());
+                    } catch (Exception e) {
+                        android.util.Log.e("MatchFirestoreRepository", "Failed to set currentMatchMinute", e);
+                    }
+                }
+            }
+        }
     }
     
     /**

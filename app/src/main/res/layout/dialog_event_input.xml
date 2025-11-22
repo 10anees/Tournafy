@@ -55,28 +55,106 @@
             android:inputType="none"/>
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Goal Type Selection (shown for goals only) -->
+    <TextView
+        android:id="@+id/tvGoalTypeLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Goal Type"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"/>
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipGroupGoalType"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
+        app:singleSelection="true">
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipOpenPlay"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Open Play"
+            android:checked="true"/>
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipPenalty"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Penalty"/>
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipFreeKick"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Free Kick"/>
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipHeader"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Header"/>
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipOwnGoal"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Own Goal"/>
+    </com.google.android.material.chip.ChipGroup>
+
+    <!-- Card Type Selection (shown for cards only) -->
+    <TextView
+        android:id="@+id/tvCardTypeLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Card Type"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"/>
+
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/chipGroupCardType"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:visibility="gone"
-        app:singleSelection="true">
+        app:singleSelection="true"
+        app:selectionRequired="true">
         <com.google.android.material.chip.Chip
             android:id="@+id/chipYellow"
             style="@style/Widget.Material3.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Yellow Card"
-            android:textColor="#FBC02D"/>
+            android:text="🟨 Yellow Card"
+            android:textColor="#F9A825"/>
         <com.google.android.material.chip.Chip
             android:id="@+id/chipRed"
             style="@style/Widget.Material3.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Red Card"
+            android:text="🟥 Red Card"
             android:textColor="#C62828"/>
     </com.google.android.material.chip.ChipGroup>
+
+    <!-- Player In Selection (shown for substitutions only) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilPlayerIn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:hint="Select Substitute (Player In)"
+        android:visibility="gone">
+
+        <AutoCompleteTextView
+            android:id="@+id/actvPlayerIn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="none"/>
+    </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSaveEvent"

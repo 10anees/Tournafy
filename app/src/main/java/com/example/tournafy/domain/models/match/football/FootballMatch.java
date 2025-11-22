@@ -198,7 +198,7 @@ public class FootballMatch extends Match {
     @Override
     public void startMatch() {
         setMatchStatus(MatchStatus.LIVE.name());
-        this.status = "ACTIVE";
+        this.status = MatchStatus.LIVE.name(); // Keep status in sync with matchStatus
         this.matchPeriod = MatchPeriod.FIRST_HALF.name();
         this.currentMatchMinute = 0;
         
@@ -208,7 +208,7 @@ public class FootballMatch extends Match {
     @Override
     public void endMatch() {
         setMatchStatus(MatchStatus.COMPLETED.name());
-        this.status = "COMPLETED";
+        this.status = MatchStatus.COMPLETED.name(); // Keep status in sync with matchStatus
         
         if (this.matchResult == null) determineWinner();
         

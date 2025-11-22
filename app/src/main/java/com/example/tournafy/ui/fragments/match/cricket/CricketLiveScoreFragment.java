@@ -6,7 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,7 +36,6 @@ public class CricketLiveScoreFragment extends Fragment {
     // UI Components from new Layout
     private MaterialButton btnStartMatch;
     private ScoreboardView scoreboardView;
-    private ProgressBar progressBar;
     private TextView tvStriker, tvNonStriker, tvBowler;
     private LinearLayout llRecentBalls;
 
@@ -84,7 +82,6 @@ public class CricketLiveScoreFragment extends Fragment {
         // Main Views
         btnStartMatch = view.findViewById(R.id.btnStartMatch);
         scoreboardView = view.findViewById(R.id.scoreboardView);
-        progressBar = scoreboardView.findViewById(R.id.progressBar);
         tvStriker = view.findViewById(R.id.tvStriker);
         tvNonStriker = view.findViewById(R.id.tvNonStriker);
         tvBowler = view.findViewById(R.id.tvBowler);
@@ -162,13 +159,6 @@ public class CricketLiveScoreFragment extends Fragment {
             }
         });
         
-        // Observe loading state
-        matchViewModel.isLoading.observe(getViewLifecycleOwner(), isLoading -> {
-            if (progressBar != null) {
-                progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
-            }
-        });
-        
         // Observe errors
         matchViewModel.errorMessage.observe(getViewLifecycleOwner(), error -> {
             if (error != null && !error.isEmpty()) {
@@ -186,6 +176,11 @@ public class CricketLiveScoreFragment extends Fragment {
         } catch (IllegalArgumentException | NullPointerException e) {
             status = MatchStatus.SCHEDULED;
         }
+        
+        // Disable all input buttons if match is completed
+        boolean isMatchLive = status == MatchStatus.LIVE;
+        setInputButtonsEnabled(isMatchLive);
+        
         Innings currentInnings = match.getCurrentInnings();
 
         if (currentInnings != null) {
@@ -193,13 +188,23 @@ public class CricketLiveScoreFragment extends Fragment {
             String oversText = matchViewModel.getCurrentOversText();
             float currentRunRate = matchViewModel.getCurrentRunRate();
             
+            // Get completed innings score for Team B display
+            String teamBScore = null;
+            if (match.getCurrentInningsNumber() == 2 && match.getInnings() != null && match.getInnings().size() > 0) {
+                // Second innings is active, show first innings (Team A's) completed score
+                Innings firstInnings = match.getInnings().get(0);
+                teamBScore = String.format(java.util.Locale.getDefault(), "%d/%d", 
+                    firstInnings.getTotalRuns(), firstInnings.getWicketsFallen());
+            }
+            
             scoreboardView.updateCricketScore(
                     matchViewModel.getTeamAName(),
                     matchViewModel.getTeamBName(),
                     currentInnings.getTotalRuns(),
                     currentInnings.getWicketsFallen(),
                     oversText,
-                    currentRunRate
+                    currentRunRate,
+                    teamBScore
             );
 
             // 2. Update Players - Now shows actual player names from team roster
@@ -212,7 +217,32 @@ public class CricketLiveScoreFragment extends Fragment {
         updateRecentBalls(match);
         
         // 4. Update button states
-        btnUndo.setEnabled(matchViewModel.canUndo());
+        btnUndo.setEnabled(isMatchLive && matchViewModel.canUndo());
+    }
+    
+    /**
+     * Enable or disable all input buttons (runs, extras, wicket).
+     */
+    private void setInputButtonsEnabled(boolean enabled) {
+        // Run buttons
+        btnZero.setEnabled(enabled);
+        btnOne.setEnabled(enabled);
+        btnTwo.setEnabled(enabled);
+        btnThree.setEnabled(enabled);
+        btnFour.setEnabled(enabled);
+        btnFive.setEnabled(enabled);
+        btnSix.setEnabled(enabled);
+        
+        // Extras buttons
+        btnWide.setEnabled(enabled);
+        btnNoBall.setEnabled(enabled);
+        btnBye.setEnabled(enabled);
+        btnLegBye.setEnabled(enabled);
+        
+        // Action buttons
+        btnWicket.setEnabled(enabled);
+        btnRetire.setEnabled(enabled);
+        btnSwap.setEnabled(enabled);
     }
 
     private void updateRecentBalls(CricketMatch match) {

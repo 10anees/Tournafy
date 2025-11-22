@@ -15,15 +15,22 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Tournafy">
+        
+        <!-- Splash Screen Activity -->
         <activity
-            android:name=".ui.activities.MainActivity"
-            android:exported="true">
+            android:name=".ui.activities.SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Tournafy.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <!-- Main Activity -->
+        <activity
+            android:name=".ui.activities.MainActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

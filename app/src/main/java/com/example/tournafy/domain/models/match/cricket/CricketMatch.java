@@ -187,6 +187,28 @@ public class CricketMatch extends Match {
                 // Create first over for second innings
                 Innings secondInnings = this.innings.get(1);
                 createNewOver(secondInnings);
+                
+                // CRITICAL FIX: Reinitialize players for second innings
+                // Find the batting team for second innings
+                MatchTeam battingTeam = null;
+                MatchTeam bowlingTeam = null;
+                if (teams != null && teams.size() >= 2) {
+                    for (MatchTeam team : teams) {
+                        if (team.getTeamId().equals(secondInnings.getBattingTeamId())) {
+                            battingTeam = team;
+                        } else if (team.getTeamId().equals(secondInnings.getBowlingTeamId())) {
+                            bowlingTeam = team;
+                        }
+                    }
+                    // Initialize strikers from new batting team
+                    if (battingTeam != null) {
+                        initializeStrikers(battingTeam);
+                    }
+                    // Initialize bowler from new bowling team
+                    if (bowlingTeam != null) {
+                        initializeBowler(bowlingTeam);
+                    }
+                }
             } else {
                 determineWinner();
             }

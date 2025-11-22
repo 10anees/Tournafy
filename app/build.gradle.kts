@@ -70,4 +70,7 @@ dependencies {
     
     // Ensure you also have ViewModel (likely already there, but good to verify)
     implementation ("androidx.lifecycle:lifecycle-viewmodel:2.7.0")
+    
+    // Splash Screen API
+    implementation ("androidx.core:core-splashscreen:1.0.1")
 }

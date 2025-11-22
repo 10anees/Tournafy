@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout 
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
     android:background="?attr/colorSurface">
+
+<androidx.constraintlayout.widget.ConstraintLayout 
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
 
     <com.example.tournafy.ui.components.ScoreboardView
         android:id="@+id/scoreboardView"
@@ -43,23 +48,69 @@
             style="@style/Widget.Material3.Button.OutlinedButton"/>
     </LinearLayout>
 
+    <!-- Event Timeline Section -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardTimeline"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_margin="16dp"
+        app:cardElevation="2dp"
+        app:cardCornerRadius="12dp"
+        app:layout_constraintTop_toBottomOf="@id/llTimerControls">
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+            
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="⚽ Match Events"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:padding="12dp"
+                android:background="?attr/colorPrimaryContainer"
+                android:textColor="?attr/colorOnPrimaryContainer"/>
+            
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvEventTimeline"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:padding="8dp"
+                android:clipToPadding="false"/>
+            
+            <TextView
+                android:id="@+id/tvEmptyTimeline"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="No events yet\nStart the match and add events!"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textAlignment="center"
+                android:visibility="gone"/>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
     <GridLayout
         android:id="@+id/gridActions"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="24dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
         android:columnCount="2"
         android:rowCount="2"
         android:padding="16dp"
-        app:layout_constraintTop_toBottomOf="@id/llTimerControls"
+        app:layout_constraintTop_toBottomOf="@id/cardTimeline"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardGoal"
             android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:layout_height="120dp"
             android:layout_columnWeight="1"
-            android:layout_rowWeight="1"
             android:layout_margin="8dp"
             app:cardBackgroundColor="#E8F5E9"
             android:clickable="true"
@@ -87,9 +138,8 @@
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardCard"
             android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:layout_height="120dp"
             android:layout_columnWeight="1"
-            android:layout_rowWeight="1"
             android:layout_margin="8dp"
             app:cardBackgroundColor="#FFF3E0"
             android:clickable="true"
@@ -117,9 +167,8 @@
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardSub"
             android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:layout_height="120dp"
             android:layout_columnWeight="1"
-            android:layout_rowWeight="1"
             android:layout_margin="8dp"
             app:cardBackgroundColor="#E3F2FD"
             android:clickable="true"
@@ -147,9 +196,8 @@
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardUndo"
             android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:layout_height="120dp"
             android:layout_columnWeight="1"
-            android:layout_rowWeight="1"
             android:layout_margin="8dp"
             app:cardBackgroundColor="#F5F5F5"
             android:clickable="true"
@@ -177,3 +225,5 @@
     </GridLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

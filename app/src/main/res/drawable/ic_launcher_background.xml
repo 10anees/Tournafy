@@ -4,15 +4,15 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Minimal background (dark gray instead of harsh pure black) -->
+    <!-- Modern Gradient Background -->
     <path
-        android:fillColor="#1D211B"
+        android:fillColor="#005138"
         android:pathData="M0,0h108v108h-108z" />
-
-    <!-- Very subtle border -->
+    
+    <!-- Gradient Overlay Effect -->
     <path
-        android:strokeColor="#191C1A"
-        android:strokeWidth="1"
-        android:fillColor="@android:color/transparent"
-        android:pathData="M1,1 L107,1 L107,107 L1,107 Z"/>
+        android:fillColor="#00664A"
+        android:pathData="M0,0 L108,0 L108,54 L0,108 Z"
+        android:fillAlpha="0.5"/>
+
 </vector>
