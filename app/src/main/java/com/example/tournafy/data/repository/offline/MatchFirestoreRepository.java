@@ -141,6 +141,16 @@ public class MatchFirestoreRepository extends FirestoreRepository<Match> {
         if (match instanceof CricketMatch) {
             CricketMatch cricketMatch = (CricketMatch) match;
             
+            // Populate toss fields
+            if (data.containsKey("tossWinner")) {
+                cricketMatch.setTossWinner((String) data.get("tossWinner"));
+                android.util.Log.d("MatchFirestoreRepository", "Deserialized tossWinner: " + data.get("tossWinner"));
+            }
+            if (data.containsKey("tossDecision")) {
+                cricketMatch.setTossDecision((String) data.get("tossDecision"));
+                android.util.Log.d("MatchFirestoreRepository", "Deserialized tossDecision: " + data.get("tossDecision"));
+            }
+            
             // Populate innings
             if (data.containsKey("innings")) {
                 @SuppressWarnings("unchecked")
@@ -384,17 +394,106 @@ public class MatchFirestoreRepository extends FirestoreRepository<Match> {
                     }
                 }
             }
+            
+            // CRITICAL FIX: Populate batsmanStatsMap
+            if (data.containsKey("batsmanStatsMap")) {
+                android.util.Log.d("MatchFirestoreRepository", "Deserializing batsmanStatsMap");
+                @SuppressWarnings("unchecked")
+                Map<String, Object> batsmanStatsData = (Map<String, Object>) data.get("batsmanStatsMap");
+                if (batsmanStatsData != null) {
+                    Map<String, com.example.tournafy.domain.models.match.cricket.BatsmanStats> batsmanStats = new java.util.HashMap<>();
+                    for (Map.Entry<String, Object> entry : batsmanStatsData.entrySet()) {
+                        String playerId = entry.getKey();
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> statsMap = (Map<String, Object>) entry.getValue();
+                        if (statsMap != null) {
+                            // Get playerName from stats map, or use empty string as fallback
+                            String playerName = statsMap.containsKey("playerName") ? (String) statsMap.get("playerName") : "";
+                            
+                            com.example.tournafy.domain.models.match.cricket.BatsmanStats stats = 
+                                new com.example.tournafy.domain.models.match.cricket.BatsmanStats(playerId, playerName);
+                            
+                            if (statsMap.containsKey("runsScored")) 
+                                stats.setRunsScored(((Long) statsMap.get("runsScored")).intValue());
+                            if (statsMap.containsKey("ballsFaced")) 
+                                stats.setBallsFaced(((Long) statsMap.get("ballsFaced")).intValue());
+                            if (statsMap.containsKey("fours")) 
+                                stats.setFours(((Long) statsMap.get("fours")).intValue());
+                            if (statsMap.containsKey("sixes")) 
+                                stats.setSixes(((Long) statsMap.get("sixes")).intValue());
+                            if (statsMap.containsKey("out")) 
+                                stats.setOut((Boolean) statsMap.get("out"));
+                            if (statsMap.containsKey("dismissalType")) 
+                                stats.setDismissalType((String) statsMap.get("dismissalType"));
+                            // Note: strikeRate is calculated automatically in getStrikeRate()
+                            
+                            batsmanStats.put(playerId, stats);
+                            android.util.Log.d("MatchFirestoreRepository", "Deserialized batsman stats for player " + playerId + 
+                                ": " + stats.getRunsScored() + "(" + stats.getBallsFaced() + ")");
+                        }
+                    }
+                    cricketMatch.setBatsmanStatsMap(batsmanStats);
+                    android.util.Log.d("MatchFirestoreRepository", "Set batsmanStatsMap with " + batsmanStats.size() + " entries");
+                }
+            }
+            
+            // CRITICAL FIX: Populate bowlerStatsMap
+            if (data.containsKey("bowlerStatsMap")) {
+                android.util.Log.d("MatchFirestoreRepository", "Deserializing bowlerStatsMap");
+                @SuppressWarnings("unchecked")
+                Map<String, Object> bowlerStatsData = (Map<String, Object>) data.get("bowlerStatsMap");
+                if (bowlerStatsData != null) {
+                    Map<String, com.example.tournafy.domain.models.match.cricket.BowlerStats> bowlerStats = new java.util.HashMap<>();
+                    for (Map.Entry<String, Object> entry : bowlerStatsData.entrySet()) {
+                        String playerId = entry.getKey();
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> statsMap = (Map<String, Object>) entry.getValue();
+                        if (statsMap != null) {
+                            // Get playerName from stats map, or use empty string as fallback
+                            String playerName = statsMap.containsKey("playerName") ? (String) statsMap.get("playerName") : "";
+                            
+                            com.example.tournafy.domain.models.match.cricket.BowlerStats stats = 
+                                new com.example.tournafy.domain.models.match.cricket.BowlerStats(playerId, playerName);
+                            
+                            if (statsMap.containsKey("ballsBowled")) 
+                                stats.setBallsBowled(((Long) statsMap.get("ballsBowled")).intValue());
+                            if (statsMap.containsKey("runsConceded")) 
+                                stats.setRunsConceded(((Long) statsMap.get("runsConceded")).intValue());
+                            if (statsMap.containsKey("wicketsTaken")) 
+                                stats.setWicketsTaken(((Long) statsMap.get("wicketsTaken")).intValue());
+                            if (statsMap.containsKey("maidenOvers")) 
+                                stats.setMaidenOvers(((Long) statsMap.get("maidenOvers")).intValue());
+                            if (statsMap.containsKey("wides")) 
+                                stats.setWides(((Long) statsMap.get("wides")).intValue());
+                            if (statsMap.containsKey("noBalls")) 
+                                stats.setNoBalls(((Long) statsMap.get("noBalls")).intValue());
+                            // Note: oversBowled and economyRate are calculated automatically
+                            
+                            bowlerStats.put(playerId, stats);
+                            android.util.Log.d("MatchFirestoreRepository", "Deserialized bowler stats for player " + playerId + 
+                                ": " + stats.getOversBowled() + "-" + stats.getWicketsTaken() + "-" + stats.getRunsConceded());
+                        }
+                    }
+                    cricketMatch.setBowlerStatsMap(bowlerStats);
+                    android.util.Log.d("MatchFirestoreRepository", "Set bowlerStatsMap with " + bowlerStats.size() + " entries");
+                }
+            }
         }
         
         // CRITICAL FIX: Populate football-specific fields if this is a FootballMatch
         if (match instanceof FootballMatch) {
             FootballMatch footballMatch = (FootballMatch) match;
             
+            android.util.Log.d("MatchFirestoreRepository", "=== DESERIALIZING FOOTBALL MATCH ===");
+            android.util.Log.d("MatchFirestoreRepository", "Match ID: " + match.getEntityId());
+            
             // Populate teams with players
             if (data.containsKey("teams")) {
+                android.util.Log.d("MatchFirestoreRepository", "Found 'teams' key in data");
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> teamsData = (List<Map<String, Object>>) data.get("teams");
                 if (teamsData != null) {
+                    android.util.Log.d("MatchFirestoreRepository", "teamsData is NOT null, size: " + teamsData.size());
                     List<com.example.tournafy.domain.models.team.MatchTeam> teams = new ArrayList<>();
                     for (Map<String, Object> teamMap : teamsData) {
                         com.example.tournafy.domain.models.team.MatchTeam team = 
@@ -406,11 +505,15 @@ public class MatchFirestoreRepository extends FirestoreRepository<Match> {
                         if (teamMap.containsKey("homeTeam"))
                             team.setHomeTeam((Boolean) teamMap.get("homeTeam"));
                         
+                        android.util.Log.d("MatchFirestoreRepository", "Processing team: " + team.getTeamName());
+                        
                         // Deserialize players list
                         if (teamMap.containsKey("players")) {
+                            android.util.Log.d("MatchFirestoreRepository", "Found 'players' key in team data");
                             @SuppressWarnings("unchecked")
                             List<Map<String, Object>> playersData = (List<Map<String, Object>>) teamMap.get("players");
                             if (playersData != null) {
+                                android.util.Log.d("MatchFirestoreRepository", "playersData is NOT null, size: " + playersData.size());
                                 List<com.example.tournafy.domain.models.team.Player> players = new ArrayList<>();
                                 for (Map<String, Object> playerMap : playersData) {
                                     com.example.tournafy.domain.models.team.Player player = 
@@ -421,20 +524,49 @@ public class MatchFirestoreRepository extends FirestoreRepository<Match> {
                                         player.setPlayerName((String) playerMap.get("playerName"));
                                     if (playerMap.containsKey("jerseyNumber")) 
                                         player.setJerseyNumber(((Long) playerMap.get("jerseyNumber")).intValue());
+                                    
+                                    // CRITICAL FIX: Read isStartingXI field from Firestore
+                                    if (playerMap.containsKey("startingXI")) {
+                                        player.setStartingXI((Boolean) playerMap.get("startingXI"));
+                                    }
+                                    
+                                    android.util.Log.d("MatchFirestoreRepository", "  Deserialized player: " + 
+                                        player.getPlayerName() + " (ID: " + player.getPlayerId() + "), Starting XI: " + player.isStartingXI());
                                     players.add(player);
                                 }
                                 team.setPlayers(players);
-                                android.util.Log.d("MatchFirestoreRepository", "Deserialized " + players.size() + 
+                                android.util.Log.d("MatchFirestoreRepository", "Set " + players.size() + 
                                     " players for football team " + team.getTeamName());
+                            } else {
+                                android.util.Log.d("MatchFirestoreRepository", "playersData is NULL for team " + team.getTeamName());
                             }
+                        } else {
+                            android.util.Log.d("MatchFirestoreRepository", "No 'players' key in team data for " + team.getTeamName());
                         }
                         
                         teams.add(team);
                     }
                     footballMatch.setTeams(teams);
-                    android.util.Log.d("MatchFirestoreRepository", "Deserialized " + teams.size() + 
+                    android.util.Log.d("MatchFirestoreRepository", "Set " + teams.size() + 
                         " teams for football match " + match.getEntityId());
+                    
+                    // Verify teams were actually set
+                    List<com.example.tournafy.domain.models.team.MatchTeam> verifyTeams = footballMatch.getTeams();
+                    if (verifyTeams != null) {
+                        android.util.Log.d("MatchFirestoreRepository", "VERIFICATION: getTeams() returns " + verifyTeams.size() + " teams");
+                        for (int i = 0; i < verifyTeams.size(); i++) {
+                            com.example.tournafy.domain.models.team.MatchTeam t = verifyTeams.get(i);
+                            android.util.Log.d("MatchFirestoreRepository", "  Team " + i + ": " + t.getTeamName() + 
+                                " with " + (t.getPlayers() != null ? t.getPlayers().size() : 0) + " players");
+                        }
+                    } else {
+                        android.util.Log.d("MatchFirestoreRepository", "VERIFICATION FAILED: getTeams() returns NULL!");
+                    }
+                } else {
+                    android.util.Log.d("MatchFirestoreRepository", "teamsData is NULL");
                 }
+            } else {
+                android.util.Log.d("MatchFirestoreRepository", "No 'teams' key in data");
             }
             
             // Populate football events
@@ -602,6 +734,23 @@ public class MatchFirestoreRepository extends FirestoreRepository<Match> {
                     }
                 }
             }
+            
+            // CRITICAL: Deserialize timer state for persistence across navigation
+            if (data.containsKey("elapsedTimeMillis")) {
+                Object elapsedObj = data.get("elapsedTimeMillis");
+                if (elapsedObj instanceof Long) {
+                    footballMatch.setElapsedTimeMillis((Long) elapsedObj);
+                    android.util.Log.d("MatchFirestoreRepository", "Deserialized elapsedTimeMillis: " + elapsedObj + "ms");
+                }
+            }
+            
+            if (data.containsKey("timerRunning")) {
+                Object timerRunningObj = data.get("timerRunning");
+                if (timerRunningObj instanceof Boolean) {
+                    footballMatch.setTimerRunning((Boolean) timerRunningObj);
+                    android.util.Log.d("MatchFirestoreRepository", "Deserialized timerRunning: " + timerRunningObj);
+                }
+            }
         }
     }
     
@@ -609,9 +758,76 @@ public class MatchFirestoreRepository extends FirestoreRepository<Match> {
      * Helper method to populate MatchConfig fields from a data map.
      */
     private void populateConfigFields(com.example.tournafy.domain.models.base.MatchConfig config, Map<String, Object> data) {
+        // Populate base MatchConfig fields
         if (data.containsKey("configId")) config.setConfigId((String) data.get("configId"));
         if (data.containsKey("matchId")) config.setMatchId((String) data.get("matchId"));
-        // Add other MatchConfig fields as needed
+        
+        // Populate FootballMatchConfig specific fields
+        if (config instanceof com.example.tournafy.domain.models.match.football.FootballMatchConfig) {
+            com.example.tournafy.domain.models.match.football.FootballMatchConfig footballConfig = 
+                (com.example.tournafy.domain.models.match.football.FootballMatchConfig) config;
+            
+            if (data.containsKey("matchDuration")) {
+                Object durationObj = data.get("matchDuration");
+                if (durationObj instanceof Long) {
+                    footballConfig.setMatchDuration(((Long) durationObj).intValue());
+                    android.util.Log.d("MatchFirestoreRepository", "Deserialized matchDuration: " + ((Long) durationObj).intValue());
+                }
+            }
+            
+            if (data.containsKey("playersPerSide")) {
+                Object playersObj = data.get("playersPerSide");
+                if (playersObj instanceof Long) {
+                    footballConfig.setPlayersPerSide(((Long) playersObj).intValue());
+                    android.util.Log.d("MatchFirestoreRepository", "Deserialized playersPerSide: " + ((Long) playersObj).intValue());
+                }
+            }
+            
+            if (data.containsKey("offsideOn")) {
+                Object offsideObj = data.get("offsideOn");
+                if (offsideObj instanceof Boolean) {
+                    footballConfig.setOffsideOn((Boolean) offsideObj);
+                    android.util.Log.d("MatchFirestoreRepository", "Deserialized offsideOn: " + offsideObj);
+                }
+            }
+        }
+        
+        // Populate CricketMatchConfig specific fields
+        if (config instanceof com.example.tournafy.domain.models.match.cricket.CricketMatchConfig) {
+            com.example.tournafy.domain.models.match.cricket.CricketMatchConfig cricketConfig = 
+                (com.example.tournafy.domain.models.match.cricket.CricketMatchConfig) config;
+            
+            if (data.containsKey("numberOfOvers")) {
+                Object oversObj = data.get("numberOfOvers");
+                if (oversObj instanceof Long) {
+                    cricketConfig.setNumberOfOvers(((Long) oversObj).intValue());
+                    android.util.Log.d("MatchFirestoreRepository", "Deserialized numberOfOvers: " + oversObj);
+                }
+            }
+            
+            if (data.containsKey("playersPerSide")) {
+                Object playersObj = data.get("playersPerSide");
+                if (playersObj instanceof Long) {
+                    cricketConfig.setPlayersPerSide(((Long) playersObj).intValue());
+                    android.util.Log.d("MatchFirestoreRepository", "Deserialized cricket playersPerSide: " + playersObj);
+                }
+            }
+            
+            if (data.containsKey("wideOn")) {
+                Object wideObj = data.get("wideOn");
+                if (wideObj instanceof Boolean) {
+                    cricketConfig.setWideOn((Boolean) wideObj);
+                }
+            }
+            
+            if (data.containsKey("lastManStanding")) {
+                Object lastManObj = data.get("lastManStanding");
+                if (lastManObj instanceof Boolean) {
+                    cricketConfig.setLastManStanding((Boolean) lastManObj);
+                    android.util.Log.d("MatchFirestoreRepository", "Deserialized lastManStanding: " + lastManObj);
+                }
+            }
+        }
     }
     
     /**

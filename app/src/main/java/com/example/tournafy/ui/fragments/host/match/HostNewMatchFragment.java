@@ -170,15 +170,23 @@ public class HostNewMatchFragment extends Fragment {
             }
             
             hostViewModel.createCricketMatch(builder);
-        } else {
+        } else if (selectedSport == SportTypeEnum.FOOTBALL) {
             FootballMatch.Builder builder = new FootballMatch.Builder(matchName, hostId);
             
             // Add teams
             builder.addTeam(convertToMatchTeam(teamA, true));
             builder.addTeam(convertToMatchTeam(teamB, false));
             
-            // Add football configuration if needed
-            // TODO: Implement getFootballConfig() in AddMatchDetailsFragment if required
+            // Add football configuration
+            if (detailsFragment instanceof AddMatchDetailsFragment) {
+                AddMatchDetailsFragment detailsFragmentInstance = (AddMatchDetailsFragment) detailsFragment;
+                com.example.tournafy.domain.models.match.football.FootballMatchConfig config = 
+                    detailsFragmentInstance.getFootballConfig();
+                builder.withConfig(config);
+            } else {
+                // Use default config if fragment not found
+                builder.withConfig(new com.example.tournafy.domain.models.match.football.FootballMatchConfig());
+            }
             
             hostViewModel.createFootballMatch(builder);
         }
@@ -195,8 +203,19 @@ public class HostNewMatchFragment extends Fragment {
         matchTeam.setTeamName(team.getTeamName());
         matchTeam.setHomeTeam(isHomeTeam);
         matchTeam.setScore(0);
+        
         // Copy players list from Team to MatchTeam
         matchTeam.setPlayers(team.getPlayers());
+        
+        // Debug logging
+        android.util.Log.d("HostNewMatch", "Converting team: " + team.getTeamName());
+        if (team.getPlayers() != null) {
+            for (com.example.tournafy.domain.models.team.Player player : team.getPlayers()) {
+                android.util.Log.d("HostNewMatch", "  Player: " + player.getPlayerName() + 
+                    ", Starting XI: " + player.isStartingXI());
+            }
+        }
+        
         return matchTeam;
     }
 
@@ -223,7 +242,8 @@ public class HostNewMatchFragment extends Fragment {
                 NavController navController = Navigation.findNavController(requireView());
                 
                 if (selectedSport == SportTypeEnum.CRICKET) {
-                    navController.navigate(R.id.action_hostNewMatch_to_cricketLiveScore, args);
+                    // Navigate to toss fragment first for cricket
+                    navController.navigate(R.id.action_hostNewMatch_to_cricketToss, args);
                 } else {
                     navController.navigate(R.id.action_hostNewMatch_to_footballLiveScore, args);
                 }
@@ -245,8 +265,11 @@ public class HostNewMatchFragment extends Fragment {
     }
 
     private static class MatchWizardAdapter extends FragmentStateAdapter {
+        private final HostNewMatchFragment parentFragment;
+        
         public MatchWizardAdapter(Fragment fragment) {
             super(fragment);
+            this.parentFragment = (HostNewMatchFragment) fragment;
         }
 
         @NonNull
@@ -255,7 +278,8 @@ public class HostNewMatchFragment extends Fragment {
             if (position == 0) {
                 return new AddMatchDetailsFragment();
             } else {
-                return new AddMatchTeamsFragment();
+                // Pass sport type to teams fragment
+                return AddMatchTeamsFragment.newInstance(parentFragment.selectedSport.name());
             }
         }
 

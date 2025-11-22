@@ -93,4 +93,12 @@
     <color name="live_red">#D32F2F</color>
     <color name="scheduled_blue">#1976D2</color>
     <color name="completed_grey">#616161</color>
+    
+    <!-- Player Status Colors -->
+    <color name="playing_green">#4CAF50</color>
+    <color name="playing_green_bg">#E8F5E9</color>
+    <color name="playing_green_text">#1B5E20</color>
+    <color name="substitute_orange">#FF9800</color>
+    <color name="substitute_orange_bg">#FFF3E0</color>
+    <color name="substitute_orange_text">#E65100</color>
 </resources>

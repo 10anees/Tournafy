@@ -55,11 +55,13 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
     
     // UI Views
     private ScoreboardView scoreboardView;
-    private MaterialButton btnStartTimer, btnPauseTimer;
+    private MaterialButton btnStartTimer, btnPauseTimer, btnHalfTime, btnEndMatch, btnToggleSquad;
     private MaterialCardView cardGoal, cardCard, cardSub, cardUndo;
-    private androidx.recyclerview.widget.RecyclerView rvEventTimeline;
-    private TextView tvEmptyTimeline;
+    private androidx.recyclerview.widget.RecyclerView rvEventTimeline, rvTeamAPlayers, rvTeamBPlayers;
+    private android.widget.LinearLayout tvEmptyTimeline, llSquadContent;
+    private android.widget.TextView tvTeamAName, tvTeamBName;
     private com.example.tournafy.ui.adapters.FootballEventAdapter eventAdapter;
+    private com.example.tournafy.ui.adapters.PlayerStatusAdapter teamAPlayerAdapter, teamBPlayerAdapter;
 
     // Timer State
     private final Handler timerHandler = new Handler(Looper.getMainLooper());
@@ -88,13 +90,15 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
             currentMinute = mins;
             currentTimerText = String.format(Locale.getDefault(), "%02d:%02d", mins, secs);
             
-            // Check for period changes
-            checkPeriodTransition(mins);
-            
             // Update match time in domain model
             if (matchViewModel != null && matchViewModel.offlineMatch.getValue() instanceof FootballMatch) {
                 FootballMatch fm = (FootballMatch) matchViewModel.offlineMatch.getValue();
                 fm.updateMatchTime(mins);
+            }
+            
+            // Auto-save timer state every 10 seconds for persistence
+            if (secs % 10 == 0) {
+                saveTimerState();
             }
             
             // Update UI
@@ -138,6 +142,15 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
     }
     
     @Override
+    public void onPause() {
+        super.onPause();
+        // Save timer state when navigating away
+        if (matchStarted) {
+            saveTimerState();
+        }
+    }
+    
+    @Override
     public void onDestroyView() {
         super.onDestroyView();
         // Prevent memory leaks by stopping the handler callbacks when view is destroyed
@@ -148,18 +161,31 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
         scoreboardView = view.findViewById(R.id.scoreboardView);
         btnStartTimer = view.findViewById(R.id.btnStartTimer);
         btnPauseTimer = view.findViewById(R.id.btnPauseTimer);
+        btnHalfTime = view.findViewById(R.id.btnHalfTime);
+        btnEndMatch = view.findViewById(R.id.btnEndMatch);
+        btnToggleSquad = view.findViewById(R.id.btnToggleSquad);
         cardGoal = view.findViewById(R.id.cardGoal);
         cardCard = view.findViewById(R.id.cardCard);
         cardSub = view.findViewById(R.id.cardSub);
         cardUndo = view.findViewById(R.id.cardUndo);
         rvEventTimeline = view.findViewById(R.id.rvEventTimeline);
         tvEmptyTimeline = view.findViewById(R.id.tvEmptyTimeline);
+        llSquadContent = view.findViewById(R.id.llSquadContent);
+        tvTeamAName = view.findViewById(R.id.tvTeamAName);
+        tvTeamBName = view.findViewById(R.id.tvTeamBName);
+        rvTeamAPlayers = view.findViewById(R.id.rvTeamAPlayers);
+        rvTeamBPlayers = view.findViewById(R.id.rvTeamBPlayers);
         
-        // Initially disable pause button
+        // Initially disable pause, half time, and end match buttons
         btnPauseTimer.setEnabled(false);
+        btnHalfTime.setEnabled(false);
+        btnEndMatch.setEnabled(false);
         
         // Setup RecyclerView for event timeline
         setupEventTimeline();
+        
+        // Setup player status views
+        setupPlayerStatusViews();
     }
     
     /**
@@ -174,12 +200,41 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
         // Optional: Add item decoration for spacing
         int spacing = (int) (8 * getResources().getDisplayMetrics().density);
         rvEventTimeline.addItemDecoration(new androidx.recyclerview.widget.DividerItemDecoration(
-            getContext(), androidx.recyclerview.widget.DividerItemDecoration.VERTICAL));
+                requireContext(), androidx.recyclerview.widget.DividerItemDecoration.VERTICAL));
+    }
+    
+    /**
+     * Initializes the player status views to show who's playing vs substitutes.
+     */
+    private void setupPlayerStatusViews() {
+        // Initialize adapters
+        teamAPlayerAdapter = new com.example.tournafy.ui.adapters.PlayerStatusAdapter();
+        teamBPlayerAdapter = new com.example.tournafy.ui.adapters.PlayerStatusAdapter();
+        
+        // Setup RecyclerViews
+        rvTeamAPlayers.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(getContext()));
+        rvTeamAPlayers.setAdapter(teamAPlayerAdapter);
+        
+        rvTeamBPlayers.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(getContext()));
+        rvTeamBPlayers.setAdapter(teamBPlayerAdapter);
+        
+        // Toggle button for showing/hiding squad
+        btnToggleSquad.setOnClickListener(v -> {
+            if (llSquadContent.getVisibility() == View.GONE) {
+                llSquadContent.setVisibility(View.VISIBLE);
+                btnToggleSquad.setText("Hide");
+            } else {
+                llSquadContent.setVisibility(View.GONE);
+                btnToggleSquad.setText("Show");
+            }
+        });
     }
 
     private void setupListeners() {
         btnStartTimer.setOnClickListener(v -> startTimer());
         btnPauseTimer.setOnClickListener(v -> pauseTimer());
+        btnHalfTime.setOnClickListener(v -> transitionToHalfTime());
+        btnEndMatch.setOnClickListener(v -> endMatch());
 
         cardGoal.setOnClickListener(v -> showEventDialog(EventInputDialog.EventType.GOAL));
         cardCard.setOnClickListener(v -> showEventDialog(EventInputDialog.EventType.CARD));
@@ -223,6 +278,17 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
         // Update event timeline
         updateEventTimeline(match);
         
+        // Update player status displays
+        updatePlayerStatusDisplay(match);
+        
+        // Restore timer state on first load or when coming back to fragment
+        // Check if we need to restore timer state (elapsed time exists but timer not started locally)
+        if (match.getElapsedTimeMillis() > 0 && !matchStarted) {
+            android.util.Log.d("FootballLiveScore", "Restoring timer state - elapsed: " + match.getElapsedTimeMillis() + 
+                ", running: " + match.isTimerRunning());
+            restoreTimerState();
+        }
+        
         // Check if match is completed and disable inputs
         // Handle DRAFT status (fallback to SCHEDULED)
         String statusString = match.getMatchStatus();
@@ -236,7 +302,7 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
                 setInputButtonsEnabled(false);
                 btnStartTimer.setEnabled(false);
                 btnPauseTimer.setEnabled(false);
-                Toast.makeText(getContext(), "Match Completed!", Toast.LENGTH_SHORT).show();
+                // Don't toast here - already shown in endMatch()
             } else if (status == MatchStatus.LIVE) {
                 // Match is live, ensure buttons are enabled
                 setInputButtonsEnabled(true);
@@ -248,6 +314,29 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
         
         // Update period state from match
         currentPeriod = match.getMatchPeriod();
+    }
+    
+    /**
+     * Updates the player status displays showing who's playing and who's on the bench.
+     */
+    private void updatePlayerStatusDisplay(FootballMatch match) {
+        if (match == null || match.getTeams() == null || match.getTeams().isEmpty()) {
+            return;
+        }
+        
+        // Update Team A
+        if (match.getTeams().size() > 0) {
+            com.example.tournafy.domain.models.team.MatchTeam teamA = match.getTeams().get(0);
+            tvTeamAName.setText(teamA.getTeamName());
+            teamAPlayerAdapter.setPlayers(teamA.getPlayers());
+        }
+        
+        // Update Team B
+        if (match.getTeams().size() > 1) {
+            com.example.tournafy.domain.models.team.MatchTeam teamB = match.getTeams().get(1);
+            tvTeamBName.setText(teamB.getTeamName());
+            teamBPlayerAdapter.setPlayers(teamB.getPlayers());
+        }
     }
     
     /**
@@ -275,13 +364,17 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
             
             android.util.Log.d("FootballTimeline", "Showing " + events.size() + " events");
             
-            // Set team names for the adapter
+            // Set team names and IDs for the adapter
             String homeTeam = match.getTeams().size() > 0 ? 
                 match.getTeams().get(0).getTeamName() : "Home";
             String awayTeam = match.getTeams().size() > 1 ? 
                 match.getTeams().get(1).getTeamName() : "Away";
+            String homeTeamId = match.getTeams().size() > 0 ? 
+                match.getTeams().get(0).getTeamId() : null;
+            String awayTeamId = match.getTeams().size() > 1 ? 
+                match.getTeams().get(1).getTeamId() : null;
             
-            eventAdapter.setTeamNames(homeTeam, awayTeam);
+            eventAdapter.setTeamNames(homeTeam, awayTeam, homeTeamId, awayTeamId);
             eventAdapter.setEvents(events);
             
             // Scroll to bottom to show latest event
@@ -334,13 +427,47 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
      */
     private void startTimer() {
         if (!isRunning) {
-            // CRITICAL: Start match on first timer start
+            // CRITICAL: Start match on first timer start (only if not already started)
             if (!matchStarted) {
-                // Start the match via ViewModel (handles validation, DRAFT conversion, and Firestore save)
-                matchViewModel.startMatch();
-                matchStarted = true;
-                
-                Toast.makeText(getContext(), "⚽ Match Started!", Toast.LENGTH_SHORT).show();
+                // Check if match is already LIVE (restored from database)
+                if (matchViewModel.offlineMatch.getValue() instanceof FootballMatch) {
+                    FootballMatch fm = (FootballMatch) matchViewModel.offlineMatch.getValue();
+                    
+                    // If match is already LIVE, just mark as started and resume timer
+                    String statusString = fm.getMatchStatus();
+                    if (statusString != null && statusString.equals(com.example.tournafy.domain.enums.MatchStatus.LIVE.name())) {
+                        android.util.Log.d("FootballTimer", "Match already LIVE, skipping startMatch() call");
+                        matchStarted = true;
+                        // Fall through to start timer
+                    } else {
+                        // Validate teams and players before starting
+                        if (fm.getTeams() == null || fm.getTeams().size() < 2) {
+                            Toast.makeText(getContext(), "Cannot start match! Need at least 2 teams.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        
+                        if (fm.getMatchConfig() instanceof com.example.tournafy.domain.models.match.football.FootballMatchConfig) {
+                            com.example.tournafy.domain.models.match.football.FootballMatchConfig config = 
+                                (com.example.tournafy.domain.models.match.football.FootballMatchConfig) fm.getMatchConfig();
+                            int minPlayers = config.getPlayersPerSide();
+                            
+                            // Check each team has minimum players
+                            for (com.example.tournafy.domain.models.team.MatchTeam team : fm.getTeams()) {
+                                if (team.getPlayers() == null || team.getPlayers().size() < minPlayers) {
+                                    String errorMsg = "Cannot start match! Each team needs at least " + minPlayers + " players.";
+                                    Toast.makeText(getContext(), errorMsg, Toast.LENGTH_LONG).show();
+                                    return;
+                                }
+                            }
+                        }
+                        
+                        // Start the match via ViewModel (handles validation, DRAFT→SCHEDULED→LIVE, and Firestore save)
+                        matchViewModel.startMatch();
+                        matchStarted = true;
+                        
+                        Toast.makeText(getContext(), "⚽ Match Started!", Toast.LENGTH_SHORT).show();
+                    }
+                }
             }
             
             startTime = System.currentTimeMillis();
@@ -348,6 +475,11 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
             isRunning = true;
             btnStartTimer.setEnabled(false);
             btnPauseTimer.setEnabled(true);
+            btnHalfTime.setEnabled(true);
+            btnEndMatch.setEnabled(true);
+            
+            // Save timer state to match
+            saveTimerState();
         }
     }
 
@@ -362,50 +494,52 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
             isRunning = false;
             btnStartTimer.setEnabled(true);
             btnPauseTimer.setEnabled(false);
+            
+            // Save timer state to match
+            saveTimerState();
         }
     }
     
     /**
-     * Checks if the match period should transition (e.g., First Half to Second Half).
-     * Called every second by the timer thread.
+     * Manually transitions to half time.
+     * User clicks "Half Time" button to transition.
      */
-    private void checkPeriodTransition(int currentMinutes) {
+    private void transitionToHalfTime() {
         if (matchViewModel.offlineMatch.getValue() instanceof FootballMatch) {
             FootballMatch match = (FootballMatch) matchViewModel.offlineMatch.getValue();
             
-            // Get match configuration for duration
-            if (match.getMatchConfig() instanceof com.example.tournafy.domain.models.match.football.FootballMatchConfig) {
-                com.example.tournafy.domain.models.match.football.FootballMatchConfig config = 
-                    (com.example.tournafy.domain.models.match.football.FootballMatchConfig) match.getMatchConfig();
+            if (currentPeriod.equals("FIRST_HALF")) {
+                currentPeriod = "SECOND_HALF";
+                match.setMatchStatus("SECOND_HALF");
+                Toast.makeText(getContext(), "⚽ Second Half Started", Toast.LENGTH_SHORT).show();
                 
-                int halfDuration = config.getMatchDuration() / 2;
-                int fullDuration = config.getMatchDuration();
-                
-                // Transition to second half
-                if (currentPeriod.equals("FIRST_HALF") && currentMinutes >= halfDuration && currentMinutes < fullDuration) {
-                    currentPeriod = "SECOND_HALF";
-                    Toast.makeText(getContext(), "Second Half Started", Toast.LENGTH_SHORT).show();
-                }
-                
-                // End match when full duration is reached
-                if (currentPeriod.equals("SECOND_HALF") && currentMinutes >= fullDuration) {
-                    endMatch();
-                }
+                // Save the period change
+                matchViewModel.updateTimerState(timeSwapBuff + timeInMilliseconds, isRunning);
+                updateScoreboard();
+            } else {
+                Toast.makeText(getContext(), "Already in second half", Toast.LENGTH_SHORT).show();
             }
         }
     }
     
     /**
-     * Ends the match.
-     * Called automatically when timer reaches full duration.
+     * Ends the match manually.
+     * Called when user clicks "End Match" button.
      * Disables all inputs and shows final result.
      */
     private void endMatch() {
         if (matchViewModel.offlineMatch.getValue() instanceof FootballMatch) {
             FootballMatch match = (FootballMatch) matchViewModel.offlineMatch.getValue();
             
-            // Stop timer
-            pauseTimer();
+            // Check if already completed to avoid duplicate calls
+            if (match.getMatchStatus().equals("COMPLETED")) {
+                Toast.makeText(getContext(), "Match is already completed", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Stop timer completely - remove all callbacks
+            timerHandler.removeCallbacks(updateTimerThread);
+            isRunning = false;
             
             // End match in domain model
             match.endMatch();
@@ -414,6 +548,8 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
             setInputButtonsEnabled(false);
             btnStartTimer.setEnabled(false);
             btnPauseTimer.setEnabled(false);
+            btnHalfTime.setEnabled(false);
+            btnEndMatch.setEnabled(false);
             
             // Show result
             String result;
@@ -427,10 +563,79 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
                 result = "Match Drawn " + match.getHomeScore() + "-" + match.getAwayScore();
             }
             
-            Toast.makeText(getContext(), "Match Completed! " + result, Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(), "🏁 Match Completed! " + result, Toast.LENGTH_LONG).show();
             
-            // Trigger repository update to save match result
-            matchViewModel.loadOfflineMatch(matchId);
+            // Save final match state
+            matchViewModel.updateTimerState(timeSwapBuff + timeInMilliseconds, false);
+        }
+    }
+
+    /**
+     * Saves the current timer state to the match object and persists to Firestore.
+     * Called when timer is started, paused, or fragment lifecycle changes.
+     */
+    private void saveTimerState() {
+        if (matchViewModel.offlineMatch.getValue() instanceof FootballMatch) {
+            long elapsedTime = timeSwapBuff + timeInMilliseconds;
+            android.util.Log.d("FootballTimer", "SAVING timer state - Elapsed: " + elapsedTime + 
+                "ms (" + (elapsedTime/1000) + "s), Running: " + isRunning);
+            matchViewModel.updateTimerState(elapsedTime, isRunning);
+        }
+    }
+
+    /**
+     * Restores timer state from the match object.
+     * Called when fragment is created to maintain timer across navigation.
+     */
+    private void restoreTimerState() {
+        if (matchViewModel.offlineMatch.getValue() instanceof FootballMatch) {
+            FootballMatch match = (FootballMatch) matchViewModel.offlineMatch.getValue();
+            
+            long savedTime = match.getElapsedTimeMillis();
+            boolean wasRunning = match.isTimerRunning();
+            
+            android.util.Log.d("FootballTimer", "RESTORING timer state - Saved: " + savedTime + 
+                "ms (" + (savedTime/1000) + "s), WasRunning: " + wasRunning);
+            
+            if (savedTime > 0) {
+                // Restore elapsed time
+                timeSwapBuff = savedTime;
+                timeInMilliseconds = 0;
+                matchStarted = true; // Mark match as already started to prevent startMatch() being called again
+                
+                // Update display
+                int seconds = (int) (savedTime / 1000);
+                int minutes = seconds / 60;
+                seconds = seconds % 60;
+                currentTimerText = String.format("%02d:%02d", minutes, seconds);
+                currentMinute = minutes;
+                
+                android.util.Log.d("FootballTimer", "Restored display time: " + currentTimerText);
+                
+                // Update scoreboard with restored time
+                updateScoreboard();
+                
+                // Resume timer if it was running
+                if (wasRunning) {
+                    startTime = System.currentTimeMillis();
+                    timerHandler.postDelayed(updateTimerThread, 0);
+                    isRunning = true;
+                    btnStartTimer.setEnabled(false);
+                    btnPauseTimer.setEnabled(true);
+                    btnHalfTime.setEnabled(true); // Enable half time button
+                    btnEndMatch.setEnabled(true); // Enable end match button
+                    android.util.Log.d("FootballTimer", "Timer automatically resumed");
+                } else {
+                    // Timer was paused - still allow resume
+                    btnStartTimer.setEnabled(true);
+                    btnPauseTimer.setEnabled(false);
+                    btnHalfTime.setEnabled(true); // Enable half time button even when paused
+                    btnEndMatch.setEnabled(true); // Enable end match button even when paused
+                    android.util.Log.d("FootballTimer", "Timer restored in paused state");
+                }
+            } else {
+                android.util.Log.d("FootballTimer", "No saved timer state found (savedTime = 0)");
+            }
         }
     }
 
@@ -470,20 +675,70 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
             String teamAName = fm.getTeams().size() > 0 ? fm.getTeams().get(0).getTeamName() : "Team A";
             String teamBName = fm.getTeams().size() > 1 ? fm.getTeams().get(1).getTeamName() : "Team B";
             
-            // Extract real players from teams
+            // Extract real players from teams - separate starting XI and substitutes
             ArrayList<String> playersA = new ArrayList<>();
             ArrayList<String> playersB = new ArrayList<>();
+            ArrayList<String> startingPlayersA = new ArrayList<>();
+            ArrayList<String> startingPlayersB = new ArrayList<>();
+            ArrayList<String> subPlayersA = new ArrayList<>();
+            ArrayList<String> subPlayersB = new ArrayList<>();
             
+            // Team A
             if (fm.getTeams().size() > 0 && fm.getTeams().get(0).getPlayers() != null) {
+                android.util.Log.d("FootballLiveScore", "Loading Team A players:");
                 for (com.example.tournafy.domain.models.team.Player player : fm.getTeams().get(0).getPlayers()) {
-                    playersA.add(player.getPlayerName());
+                    playersA.add(player.getPlayerName()); // All players
+                    android.util.Log.d("FootballLiveScore", "  " + player.getPlayerName() + 
+                        " - Starting XI: " + player.isStartingXI());
+                    if (player.isStartingXI()) {
+                        startingPlayersA.add(player.getPlayerName());
+                    } else {
+                        subPlayersA.add(player.getPlayerName());
+                    }
                 }
             }
             
+            // Team B
             if (fm.getTeams().size() > 1 && fm.getTeams().get(1).getPlayers() != null) {
+                android.util.Log.d("FootballLiveScore", "Loading Team B players:");
                 for (com.example.tournafy.domain.models.team.Player player : fm.getTeams().get(1).getPlayers()) {
-                    playersB.add(player.getPlayerName());
+                    playersB.add(player.getPlayerName()); // All players
+                    android.util.Log.d("FootballLiveScore", "  " + player.getPlayerName() + 
+                        " - Starting XI: " + player.isStartingXI());
+                    if (player.isStartingXI()) {
+                        startingPlayersB.add(player.getPlayerName());
+                    } else {
+                        subPlayersB.add(player.getPlayerName());
+                    }
                 }
+            }
+            
+            // Debug logging
+            android.util.Log.d("FootballLiveScore", "Team A - Total: " + playersA.size() + 
+                ", Starting: " + startingPlayersA.size() + ", Subs: " + subPlayersA.size());
+            android.util.Log.d("FootballLiveScore", "Team B - Total: " + playersB.size() + 
+                ", Starting: " + startingPlayersB.size() + ", Subs: " + subPlayersB.size());
+            
+            // For GOAL and CARD: use starting XI ONLY if they exist, otherwise show error
+            ArrayList<String> displayPlayersA;
+            ArrayList<String> displayPlayersB;
+            
+            if (type == EventInputDialog.EventType.GOAL || type == EventInputDialog.EventType.CARD) {
+                // Check if starting XI is properly configured
+                if (startingPlayersA.isEmpty() || startingPlayersB.isEmpty()) {
+                    // If no starting XI designated, use all players (backward compatibility)
+                    android.util.Log.w("FootballLiveScore", "No starting XI found, using all players");
+                    displayPlayersA = playersA;
+                    displayPlayersB = playersB;
+                } else {
+                    // Use only starting XI
+                    displayPlayersA = startingPlayersA;
+                    displayPlayersB = startingPlayersB;
+                }
+            } else {
+                // For SUB: will use separate lists in dialog (starting for out, subs for in)
+                displayPlayersA = playersA;
+                displayPlayersB = playersB;
             }
             
             // Validate teams have players
@@ -491,13 +746,29 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
                 Toast.makeText(getContext(), "Teams must have players to add events", Toast.LENGTH_SHORT).show();
                 return;
             }
+            
+            // Validate SUB has both starting and subs
+            if (type == EventInputDialog.EventType.SUB) {
+                if (startingPlayersA.isEmpty() || startingPlayersB.isEmpty()) {
+                    Toast.makeText(getContext(), "No starting XI players found for substitution", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (subPlayersA.isEmpty() && subPlayersB.isEmpty()) {
+                    Toast.makeText(getContext(), "No substitute players available", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
 
             EventInputDialog dialog = EventInputDialog.newInstance(
                 type, 
                 teamAName, 
                 teamBName, 
-                playersA, 
-                playersB
+                displayPlayersA, 
+                displayPlayersB,
+                startingPlayersA,
+                subPlayersA,
+                startingPlayersB,
+                subPlayersB
             );
             dialog.setListener(this);
             dialog.show(getChildFragmentManager(), "EventInput");
@@ -582,6 +853,57 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
         }
     }
     
+    @Override
+    public void onGoalCreated(String teamName, String scorerName, String assisterName, String goalType) {
+        if (matchViewModel.offlineMatch.getValue() instanceof FootballMatch) {
+            FootballMatch fm = (FootballMatch) matchViewModel.offlineMatch.getValue();
+            
+            // Validate inputs
+            if (teamName == null || teamName.isEmpty() || scorerName == null || scorerName.isEmpty()) {
+                Toast.makeText(getContext(), "Please select team and scorer", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Resolve team ID and scorer ID
+            String teamId = null;
+            String scorerId = null;
+            String assisterId = null;
+            
+            for (com.example.tournafy.domain.models.team.MatchTeam team : fm.getTeams()) {
+                if (team.getTeamName().equals(teamName)) {
+                    teamId = team.getTeamId();
+                    
+                    if (team.getPlayers() != null) {
+                        for (com.example.tournafy.domain.models.team.Player player : team.getPlayers()) {
+                            if (player.getPlayerName().equals(scorerName)) {
+                                scorerId = player.getPlayerId();
+                            }
+                            if (!assisterName.isEmpty() && player.getPlayerName().equals(assisterName)) {
+                                assisterId = player.getPlayerId();
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+            
+            if (teamId == null || scorerId == null) {
+                Toast.makeText(getContext(), "Error: Team or player not found", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Call ViewModel with assister
+            matchViewModel.addFootballGoal(teamId, scorerId, assisterId, goalType, currentMinute);
+            
+            String toastMsg = "⚽ Goal! " + scorerName;
+            if (assisterId != null) {
+                toastMsg += " (Assist: " + assisterName + ")";
+            }
+            toastMsg += " (" + currentMinute + "')";
+            Toast.makeText(getContext(), toastMsg, Toast.LENGTH_SHORT).show();
+        }
+    }
+    
     /**
      * Handles goal event creation.
      * Supports different goal types (OPEN_PLAY, PENALTY, FREE_KICK, HEADER, OWN_GOAL).
@@ -589,7 +911,7 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
     private void handleGoalEvent(String teamId, String playerId, String playerName, String detail, int minute) {
         String goalType = (detail != null && !detail.isEmpty()) ? detail : "OPEN_PLAY";
         
-        matchViewModel.addFootballGoal(teamId, playerId, goalType, minute);
+        matchViewModel.addFootballGoal(teamId, playerId, null, goalType, minute);
         Toast.makeText(getContext(), "⚽ Goal! " + playerName + " (" + minute + "')", Toast.LENGTH_SHORT).show();
     }
     

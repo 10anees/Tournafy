@@ -28,21 +28,43 @@ import java.util.List;
 
 public class AddMatchTeamsFragment extends Fragment implements AddPlayerDialog.AddPlayerListener {
 
+    private static final String ARG_SPORT_TYPE = "sport_type";
+
     private HostViewModel hostViewModel;
 
     // UI Components
     private TextInputEditText etTeamAName, etTeamBName;
     private RecyclerView rvTeamAPlayers, rvTeamBPlayers;
     private TextView tvTeamAPlayersCount, tvTeamBPlayersCount;
+    private TextView tvTeamAStartingCount, tvTeamASubsCount;
+    private TextView tvTeamBStartingCount, tvTeamBSubsCount;
     private MaterialButton btnAddPlayerA, btnAddPlayerB;
 
     // Local State
     private Team teamA;
     private Team teamB;
     private PlayerListAdapter adapterA, adapterB;
+    private String sportType = "FOOTBALL"; // Default to football
+    private int requiredStartingPlayers = 11; // Default, will be updated from config
 
     public AddMatchTeamsFragment() {
         // Required empty public constructor
+    }
+    
+    public static AddMatchTeamsFragment newInstance(String sportType) {
+        AddMatchTeamsFragment fragment = new AddMatchTeamsFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_SPORT_TYPE, sportType);
+        fragment.setArguments(args);
+        return fragment;
+    }
+    
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            sportType = getArguments().getString(ARG_SPORT_TYPE, "FOOTBALL");
+        }
     }
 
     @Override
@@ -69,6 +91,7 @@ public class AddMatchTeamsFragment extends Fragment implements AddPlayerDialog.A
         initViews(view);
         setupRecyclerViews();
         setupListeners();
+        observeViewModel();
     }
 
     private void initViews(View view) {
@@ -78,17 +101,47 @@ public class AddMatchTeamsFragment extends Fragment implements AddPlayerDialog.A
         rvTeamBPlayers = view.findViewById(R.id.rvTeamBPlayers);
         tvTeamAPlayersCount = view.findViewById(R.id.tvTeamAPlayersCount);
         tvTeamBPlayersCount = view.findViewById(R.id.tvTeamBPlayersCount);
+        tvTeamAStartingCount = view.findViewById(R.id.tvTeamAStartingCount);
+        tvTeamASubsCount = view.findViewById(R.id.tvTeamASubsCount);
+        tvTeamBStartingCount = view.findViewById(R.id.tvTeamBStartingCount);
+        tvTeamBSubsCount = view.findViewById(R.id.tvTeamBSubsCount);
         btnAddPlayerA = view.findViewById(R.id.btnAddPlayerA);
         btnAddPlayerB = view.findViewById(R.id.btnAddPlayerB);
     }
 
     private void setupRecyclerViews() {
-        // Adapter needs a callback for remove/edit. Using lambda for now.
-        adapterA = new PlayerListAdapter(player -> removePlayerFromTeam(player, true));
+        // Adapter with callbacks for remove and starting XI toggle
+        adapterA = new PlayerListAdapter(new PlayerListAdapter.OnPlayerActionListener() {
+            @Override
+            public void onRemove(Player player) {
+                removePlayerFromTeam(player, true);
+            }
+
+            @Override
+            public void onStartingXIChanged(Player player, boolean isStartingXI) {
+                android.util.Log.d("AddMatchTeams", "Team A - Player: " + player.getPlayerName() + 
+                    " Starting XI changed to: " + isStartingXI);
+                player.setStartingXI(isStartingXI);
+                updateTeamCounts(true);
+            }
+        });
         rvTeamAPlayers.setLayoutManager(new LinearLayoutManager(getContext()));
         rvTeamAPlayers.setAdapter(adapterA);
 
-        adapterB = new PlayerListAdapter(player -> removePlayerFromTeam(player, false));
+        adapterB = new PlayerListAdapter(new PlayerListAdapter.OnPlayerActionListener() {
+            @Override
+            public void onRemove(Player player) {
+                removePlayerFromTeam(player, false);
+            }
+
+            @Override
+            public void onStartingXIChanged(Player player, boolean isStartingXI) {
+                android.util.Log.d("AddMatchTeams", "Team B - Player: " + player.getPlayerName() + 
+                    " Starting XI changed to: " + isStartingXI);
+                player.setStartingXI(isStartingXI);
+                updateTeamCounts(false);
+            }
+        });
         rvTeamBPlayers.setLayoutManager(new LinearLayoutManager(getContext()));
         rvTeamBPlayers.setAdapter(adapterB);
     }
@@ -97,10 +150,23 @@ public class AddMatchTeamsFragment extends Fragment implements AddPlayerDialog.A
         btnAddPlayerA.setOnClickListener(v -> showAddPlayerDialog(true));
         btnAddPlayerB.setOnClickListener(v -> showAddPlayerDialog(false));
     }
+    
+    private void observeViewModel() {
+        // Observe players per side configuration
+        hostViewModel.playersPerSide.observe(getViewLifecycleOwner(), players -> {
+            if (players != null) {
+                requiredStartingPlayers = players;
+                android.util.Log.d("AddMatchTeams", "Required starting players updated to: " + players);
+                // Update UI to show the requirement
+                updateTeamCounts(true);
+                updateTeamCounts(false);
+            }
+        });
+    }
 
     private void showAddPlayerDialog(boolean isTeamA) {
         // This Dialog handles inputting a player name and role
-        AddPlayerDialog dialog = AddPlayerDialog.newInstance(isTeamA);
+        AddPlayerDialog dialog = AddPlayerDialog.newInstance(isTeamA, sportType);
         dialog.setListener(this); // Callback to this fragment
         dialog.show(getChildFragmentManager(), "AddPlayerDialog");
     }
@@ -110,11 +176,11 @@ public class AddMatchTeamsFragment extends Fragment implements AddPlayerDialog.A
         if (isTeamA) {
             teamA.getPlayers().add(player);
             adapterA.submitList(new ArrayList<>(teamA.getPlayers())); // Refresh list
-            tvTeamAPlayersCount.setText("Players: " + teamA.getPlayers().size());
+            updateTeamCounts(true);
         } else {
             teamB.getPlayers().add(player);
             adapterB.submitList(new ArrayList<>(teamB.getPlayers())); // Refresh list
-            tvTeamBPlayersCount.setText("Players: " + teamB.getPlayers().size());
+            updateTeamCounts(false);
         }
     }
 
@@ -122,11 +188,62 @@ public class AddMatchTeamsFragment extends Fragment implements AddPlayerDialog.A
         if (isTeamA) {
             teamA.getPlayers().remove(player);
             adapterA.submitList(new ArrayList<>(teamA.getPlayers()));
-            tvTeamAPlayersCount.setText("Players: " + teamA.getPlayers().size());
+            updateTeamCounts(true);
         } else {
             teamB.getPlayers().remove(player);
             adapterB.submitList(new ArrayList<>(teamB.getPlayers()));
-            tvTeamBPlayersCount.setText("Players: " + teamB.getPlayers().size());
+            updateTeamCounts(false);
+        }
+    }
+
+    /**
+     * Updates the player count displays for a team
+     */
+    private void updateTeamCounts(boolean isTeamA) {
+        List<Player> players = isTeamA ? teamA.getPlayers() : teamB.getPlayers();
+        
+        int totalCount = players.size();
+        int startingCount = 0;
+        int subsCount = 0;
+        
+        for (Player player : players) {
+            if (player.isStartingXI()) {
+                startingCount++;
+            } else {
+                subsCount++;
+            }
+        }
+        
+        if (isTeamA) {
+            tvTeamAPlayersCount.setText("Players: " + totalCount);
+            
+            // Highlight starting count based on requirement
+            String startingText = "Starting XI: " + startingCount + "/" + requiredStartingPlayers;
+            tvTeamAStartingCount.setText(startingText);
+            if (startingCount == requiredStartingPlayers) {
+                tvTeamAStartingCount.setTextColor(getResources().getColor(com.google.android.material.R.color.design_default_color_primary, null));
+            } else if (startingCount < requiredStartingPlayers) {
+                tvTeamAStartingCount.setTextColor(getResources().getColor(com.google.android.material.R.color.design_default_color_error, null));
+            } else {
+                tvTeamAStartingCount.setTextColor(getResources().getColor(com.google.android.material.R.color.material_on_surface_emphasis_medium, null));
+            }
+            
+            tvTeamASubsCount.setText("Subs: " + subsCount);
+        } else {
+            tvTeamBPlayersCount.setText("Players: " + totalCount);
+            
+            // Highlight starting count based on requirement
+            String startingText = "Starting XI: " + startingCount + "/" + requiredStartingPlayers;
+            tvTeamBStartingCount.setText(startingText);
+            if (startingCount == requiredStartingPlayers) {
+                tvTeamBStartingCount.setTextColor(getResources().getColor(com.google.android.material.R.color.design_default_color_primary, null));
+            } else if (startingCount < requiredStartingPlayers) {
+                tvTeamBStartingCount.setTextColor(getResources().getColor(com.google.android.material.R.color.design_default_color_error, null));
+            } else {
+                tvTeamBStartingCount.setTextColor(getResources().getColor(com.google.android.material.R.color.material_on_surface_emphasis_medium, null));
+            }
+            
+            tvTeamBSubsCount.setText("Subs: " + subsCount);
         }
     }
 
@@ -150,6 +267,40 @@ public class AddMatchTeamsFragment extends Fragment implements AddPlayerDialog.A
             valid = false;
         }
 
+        // Count starting XI players for each team
+        int teamAStarting = countStartingPlayers(teamA.getPlayers());
+        int teamBStarting = countStartingPlayers(teamB.getPlayers());
+
+        // Validation: Must have EXACTLY the required number of starting XI players
+        if (teamAStarting != requiredStartingPlayers) {
+            android.widget.Toast.makeText(getContext(), 
+                "Team A must have exactly " + requiredStartingPlayers + " Starting XI players (currently: " + teamAStarting + ")", 
+                android.widget.Toast.LENGTH_LONG).show();
+            valid = false;
+        }
+
+        if (teamBStarting != requiredStartingPlayers) {
+            android.widget.Toast.makeText(getContext(), 
+                "Team B must have exactly " + requiredStartingPlayers + " Starting XI players (currently: " + teamBStarting + ")", 
+                android.widget.Toast.LENGTH_LONG).show();
+            valid = false;
+        }
+        
+        // Validation: Ensure teams have at least the minimum players total
+        if (teamA.getPlayers().size() < requiredStartingPlayers) {
+            android.widget.Toast.makeText(getContext(), 
+                "Team A must have at least " + requiredStartingPlayers + " players total", 
+                android.widget.Toast.LENGTH_LONG).show();
+            valid = false;
+        }
+        
+        if (teamB.getPlayers().size() < requiredStartingPlayers) {
+            android.widget.Toast.makeText(getContext(), 
+                "Team B must have at least " + requiredStartingPlayers + " players total", 
+                android.widget.Toast.LENGTH_LONG).show();
+            valid = false;
+        }
+
         if (valid) {
             // Update the ViewModel or Builder with the final data
             teamA.setTeamName(nameA);
@@ -162,6 +313,19 @@ public class AddMatchTeamsFragment extends Fragment implements AddPlayerDialog.A
         }
 
         return valid;
+    }
+
+    /**
+     * Counts how many players are marked as starting XI
+     */
+    private int countStartingPlayers(List<Player> players) {
+        int count = 0;
+        for (Player player : players) {
+            if (player.isStartingXI()) {
+                count++;
+            }
+        }
+        return count;
     }
     
     public Team getTeamA() {

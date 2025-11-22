@@ -13,16 +13,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tournafy.R;
 import com.example.tournafy.domain.models.team.Player;
+import com.google.android.material.chip.Chip;
 
 public class PlayerListAdapter extends ListAdapter<Player, PlayerListAdapter.PlayerViewHolder> {
 
-    private final OnPlayerRemoveListener listener;
+    private final OnPlayerActionListener listener;
 
-    public interface OnPlayerRemoveListener {
+    public interface OnPlayerActionListener {
         void onRemove(Player player);
+        void onStartingXIChanged(Player player, boolean isStartingXI);
     }
 
-    public PlayerListAdapter(OnPlayerRemoveListener listener) {
+    public PlayerListAdapter(OnPlayerActionListener listener) {
         super(new DiffCallback());
         this.listener = listener;
     }
@@ -42,18 +44,20 @@ public class PlayerListAdapter extends ListAdapter<Player, PlayerListAdapter.Pla
 
     static class PlayerViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvRole;
+        Chip chipStartingXI;
         ImageButton btnRemove;
 
         public PlayerViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tvPlayerName);
             tvRole = itemView.findViewById(R.id.tvPlayerRole);
+            chipStartingXI = itemView.findViewById(R.id.chipStartingXI);
             btnRemove = itemView.findViewById(R.id.btnRemove);
         }
 
-        public void bind(Player player, OnPlayerRemoveListener listener) {
+        public void bind(Player player, OnPlayerActionListener listener) {
             tvName.setText(player.getPlayerName());
-            
+
             if (player.getRole() != null && !player.getRole().isEmpty()) {
                 tvRole.setText(player.getRole());
                 tvRole.setVisibility(View.VISIBLE);
@@ -61,26 +65,47 @@ public class PlayerListAdapter extends ListAdapter<Player, PlayerListAdapter.Pla
                 tvRole.setVisibility(View.GONE);
             }
 
-            btnRemove.setOnClickListener(v -> listener.onRemove(player));
+            // Update chip state
+            chipStartingXI.setOnCheckedChangeListener(null); // prevent loop
+            chipStartingXI.setChecked(player.isStartingXI());
+
+            if (player.isStartingXI()) {
+                chipStartingXI.setText("Starting XI");
+                chipStartingXI.setChipBackgroundColorResource(R.color.md_theme_dark_primaryContainer);
+                chipStartingXI.setTextColor(itemView.getResources().getColor(android.R.color.white));
+            } else {
+                chipStartingXI.setText("Substitute");
+                chipStartingXI.setChipBackgroundColorResource(android.R.color.transparent);
+                chipStartingXI.setTextColor(itemView.getResources().getColor(R.color.black));
+            }
+
+            // Handle chip toggle
+            chipStartingXI.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (listener != null) {
+                    listener.onStartingXIChanged(player, isChecked);
+                }
+            });
+
+            btnRemove.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onRemove(player);
+                }
+            });
         }
     }
 
     static class DiffCallback extends DiffUtil.ItemCallback<Player> {
         @Override
         public boolean areItemsTheSame(@NonNull Player oldItem, @NonNull Player newItem) {
-            // Assuming Player has a unique ID. If creating new players locally,
-            // ensure they have a temporary ID or compare by object reference for now.
-            if (oldItem.getPlayerId() != null && newItem.getPlayerId() != null) {
-                return oldItem.getPlayerId().equals(newItem.getPlayerId());
-            }
-            // Fallback for new objects without IDs
-            return oldItem == newItem; 
+            return oldItem.getPlayerId() != null && oldItem.getPlayerId().equals(newItem.getPlayerId());
         }
 
         @Override
         public boolean areContentsTheSame(@NonNull Player oldItem, @NonNull Player newItem) {
             return oldItem.getPlayerName().equals(newItem.getPlayerName()) &&
-                   (oldItem.getRole() == null ? newItem.getRole() == null : oldItem.getRole().equals(newItem.getRole()));
+                    ((oldItem.getRole() == null && newItem.getRole() == null) ||
+                            (oldItem.getRole() != null && oldItem.getRole().equals(newItem.getRole()))) &&
+                    oldItem.isStartingXI() == newItem.isStartingXI();
         }
     }
 }

@@ -46,13 +46,42 @@
                         android:inputType="textCapWords" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <TextView
-                    android:id="@+id/tvTeamAPlayersCount"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Players: 0"
-                    android:layout_marginTop="12dp"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp">
+                    
+                    <TextView
+                        android:id="@+id/tvTeamAPlayersCount"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Players: 0"
+                        android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    
+                    <TextView
+                        android:id="@+id/tvTeamAStartingCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Starting XI: 0"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorPrimary" />
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=" | "
+                        android:textAppearance="?attr/textAppearanceBodySmall" />
+                    
+                    <TextView
+                        android:id="@+id/tvTeamASubsCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Subs: 0"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorSecondary" />
+                </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvTeamAPlayers"
@@ -106,13 +135,42 @@
                         android:inputType="textCapWords" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <TextView
-                    android:id="@+id/tvTeamBPlayersCount"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Players: 0"
-                    android:layout_marginTop="12dp"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp">
+                    
+                    <TextView
+                        android:id="@+id/tvTeamBPlayersCount"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Players: 0"
+                        android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    
+                    <TextView
+                        android:id="@+id/tvTeamBStartingCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Starting XI: 0"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorPrimary" />
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=" | "
+                        android:textAppearance="?attr/textAppearanceBodySmall" />
+                    
+                    <TextView
+                        android:id="@+id/tvTeamBSubsCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Subs: 0"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorSecondary" />
+                </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvTeamBPlayers"

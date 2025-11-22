@@ -17,13 +17,27 @@ import androidx.navigation.Navigation;
 
 import com.example.tournafy.R;
 import com.example.tournafy.domain.models.match.cricket.Ball;
+import com.example.tournafy.domain.models.match.cricket.BatsmanStats;
+import com.example.tournafy.domain.models.match.cricket.BowlerStats;
 import com.example.tournafy.domain.models.match.cricket.CricketMatch;
 import com.example.tournafy.domain.models.match.cricket.Innings;
 import com.example.tournafy.domain.models.match.cricket.Over;
 import com.example.tournafy.domain.enums.MatchStatus;
+import com.example.tournafy.domain.models.team.MatchTeam;
+import com.example.tournafy.domain.models.team.Player;
 import com.example.tournafy.ui.components.ScoreboardView;
 import com.example.tournafy.ui.viewmodels.MatchViewModel;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
+import com.example.tournafy.ui.adapters.PlayingXIAdapter;
+
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -35,6 +49,8 @@ public class CricketLiveScoreFragment extends Fragment {
 
     // UI Components from new Layout
     private MaterialButton btnStartMatch;
+    private MaterialButton btnSelectNextBatsman;
+    private MaterialButton btnSelectNextBowler;
     private ScoreboardView scoreboardView;
     private TextView tvStriker, tvNonStriker, tvBowler;
     private LinearLayout llRecentBalls;
@@ -43,6 +59,21 @@ public class CricketLiveScoreFragment extends Fragment {
     private Button btnZero, btnOne, btnTwo, btnThree, btnFour, btnFive, btnSix;
     private Button btnWide, btnNoBall, btnBye, btnLegBye;
     private Button btnWicket, btnUndo, btnRetire, btnSwap;
+    
+    // Playing XI Components
+    private MaterialCardView cardBattingTeam, cardBowlingTeam;
+    private LinearLayout headerBattingTeam, headerBowlingTeam;
+    private TextView tvBattingTeamName, tvBowlingTeamName;
+    private TextView tvBattingTeamExpand, tvBowlingTeamExpand;
+    private RecyclerView recyclerBattingTeam, recyclerBowlingTeam;
+    private PlayingXIAdapter battingTeamAdapter, bowlingTeamAdapter;
+    
+    private boolean isBattingTeamExpanded = false;
+    private boolean isBowlingTeamExpanded = false;
+    
+    private CricketMatch currentMatch;
+    private Map<String, BatsmanStats> batsmanStatsMap = new HashMap<>();
+    private Map<String, BowlerStats> bowlerStatsMap = new HashMap<>();
 
     public CricketLiveScoreFragment() {
         // Required empty public constructor
@@ -81,6 +112,8 @@ public class CricketLiveScoreFragment extends Fragment {
     private void initViews(View view) {
         // Main Views
         btnStartMatch = view.findViewById(R.id.btnStartMatch);
+        btnSelectNextBatsman = view.findViewById(R.id.btnSelectNextBatsman);
+        btnSelectNextBowler = view.findViewById(R.id.btnSelectNextBowler);
         scoreboardView = view.findViewById(R.id.scoreboardView);
         tvStriker = view.findViewById(R.id.tvStriker);
         tvNonStriker = view.findViewById(R.id.tvNonStriker);
@@ -106,6 +139,28 @@ public class CricketLiveScoreFragment extends Fragment {
         btnUndo = view.findViewById(R.id.btnUndo);
         btnRetire = view.findViewById(R.id.btnRetire);
         btnSwap = view.findViewById(R.id.btnSwap);
+        
+        // Playing XI Components
+        cardBattingTeam = view.findViewById(R.id.cardBattingTeam);
+        cardBowlingTeam = view.findViewById(R.id.cardBowlingTeam);
+        headerBattingTeam = view.findViewById(R.id.headerBattingTeam);
+        headerBowlingTeam = view.findViewById(R.id.headerBowlingTeam);
+        tvBattingTeamName = view.findViewById(R.id.tvBattingTeamName);
+        tvBowlingTeamName = view.findViewById(R.id.tvBowlingTeamName);
+        tvBattingTeamExpand = view.findViewById(R.id.tvBattingTeamExpand);
+        tvBowlingTeamExpand = view.findViewById(R.id.tvBowlingTeamExpand);
+        recyclerBattingTeam = view.findViewById(R.id.recyclerBattingTeam);
+        recyclerBowlingTeam = view.findViewById(R.id.recyclerBowlingTeam);
+        
+        // Setup RecyclerViews
+        recyclerBattingTeam.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerBowlingTeam.setLayoutManager(new LinearLayoutManager(getContext()));
+        
+        battingTeamAdapter = new PlayingXIAdapter(true);
+        bowlingTeamAdapter = new PlayingXIAdapter(false);
+        
+        recyclerBattingTeam.setAdapter(battingTeamAdapter);
+        recyclerBowlingTeam.setAdapter(bowlingTeamAdapter);
     }
 
     private void setupListeners() {
@@ -149,13 +204,32 @@ public class CricketLiveScoreFragment extends Fragment {
 
         btnRetire.setOnClickListener(v -> Toast.makeText(getContext(), "Retire Player", Toast.LENGTH_SHORT).show());
         btnSwap.setOnClickListener(v -> Toast.makeText(getContext(), "Swap Strike", Toast.LENGTH_SHORT).show());
+        
+        // Player Selection Buttons
+        btnSelectNextBatsman.setOnClickListener(v -> showNextBatsmanDialog());
+        btnSelectNextBowler.setOnClickListener(v -> showNextBowlerDialog());
+        
+        // Expand/Collapse Batting Team
+        headerBattingTeam.setOnClickListener(v -> {
+            isBattingTeamExpanded = !isBattingTeamExpanded;
+            recyclerBattingTeam.setVisibility(isBattingTeamExpanded ? View.VISIBLE : View.GONE);
+            tvBattingTeamExpand.setText(isBattingTeamExpanded ? "▲" : "▼");
+        });
+        
+        // Expand/Collapse Bowling Team
+        headerBowlingTeam.setOnClickListener(v -> {
+            isBowlingTeamExpanded = !isBowlingTeamExpanded;
+            recyclerBowlingTeam.setVisibility(isBowlingTeamExpanded ? View.VISIBLE : View.GONE);
+            tvBowlingTeamExpand.setText(isBowlingTeamExpanded ? "▲" : "▼");
+        });
     }
 
     private void observeViewModel() {
         // Observe match updates
         matchViewModel.offlineMatch.observe(getViewLifecycleOwner(), match -> {
             if (match instanceof CricketMatch) {
-                updateUI((CricketMatch) match);
+                currentMatch = (CricketMatch) match;
+                updateUI(currentMatch);
             }
         });
         
@@ -164,6 +238,20 @@ public class CricketLiveScoreFragment extends Fragment {
             if (error != null && !error.isEmpty()) {
                 Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
                 matchViewModel.clearErrorMessage();
+            }
+        });
+        
+        // Observe wicket fall events
+        matchViewModel.wicketFallEvent.observe(getViewLifecycleOwner(), wicketFall -> {
+            if (wicketFall != null && wicketFall) {
+                handleWicketFall();
+            }
+        });
+        
+        // Observe over completion events
+        matchViewModel.overCompletionEvent.observe(getViewLifecycleOwner(), overCompleted -> {
+            if (overCompleted != null && overCompleted) {
+                handleOverCompletion();
             }
         });
     }
@@ -206,6 +294,9 @@ public class CricketLiveScoreFragment extends Fragment {
                     currentRunRate,
                     teamBScore
             );
+            
+            // Update match status on scoreboard
+            scoreboardView.setMatchStatus(status.name());
 
             // 2. Update Players - Now shows actual player names from team roster
             tvStriker.setText(matchViewModel.getStrikerId() + " *");
@@ -218,6 +309,9 @@ public class CricketLiveScoreFragment extends Fragment {
         
         // 4. Update button states
         btnUndo.setEnabled(isMatchLive && matchViewModel.canUndo());
+        
+        // 5. Update Playing XI display
+        updatePlayingXI(match);
     }
     
     /**
@@ -291,5 +385,237 @@ public class CricketLiveScoreFragment extends Fragment {
         ballView.setLayoutParams(params);
 
         llRecentBalls.addView(ballView);
+    }
+    
+    private void updatePlayingXI(CricketMatch match) {
+        if (match == null || match.getTeams() == null || match.getTeams().size() < 2) {
+            return;
+        }
+
+        // Get stats from match
+        Map<String, BatsmanStats> matchBatsmanStats = match.getBatsmanStatsMap();
+        Map<String, BowlerStats> matchBowlerStats = match.getBowlerStatsMap();
+        
+        android.util.Log.d("CricketLiveScore", "Batsman stats from match: " + 
+            (matchBatsmanStats != null ? matchBatsmanStats.size() : "null") + " players");
+        android.util.Log.d("CricketLiveScore", "Bowler stats from match: " + 
+            (matchBowlerStats != null ? matchBowlerStats.size() : "null") + " players");
+
+        // Determine batting and bowling teams
+        String battingTeamId = null;
+        String bowlingTeamId = null;
+        
+        if (match.getInnings() != null && !match.getInnings().isEmpty()) {
+            Innings currentInnings = match.getCurrentInnings();
+            if (currentInnings != null) {
+                battingTeamId = currentInnings.getBattingTeamId();
+                bowlingTeamId = currentInnings.getBowlingTeamId();
+            }
+        }
+
+        MatchTeam battingTeam = null;
+        MatchTeam bowlingTeam = null;
+        
+        for (MatchTeam team : match.getTeams()) {
+            if (team.getTeamId().equals(battingTeamId)) {
+                battingTeam = team;
+            } else if (team.getTeamId().equals(bowlingTeamId)) {
+                bowlingTeam = team;
+            }
+        }
+
+        // Update batting team
+        if (battingTeam != null) {
+            tvBattingTeamName.setText(battingTeam.getTeamName() + " (Batting)");
+            List<Player> battingPlayers = getStartingXIPlayers(battingTeam);
+            battingTeamAdapter.setPlayers(battingPlayers);
+            battingTeamAdapter.setBatsmanStats(matchBatsmanStats);
+            battingTeamAdapter.setCurrentPlayers(
+                    match.getCurrentStrikerId(),
+                    match.getCurrentNonStrikerId(),
+                    match.getCurrentBowlerId()
+            );
+        }
+
+        // Update bowling team
+        if (bowlingTeam != null) {
+            tvBowlingTeamName.setText(bowlingTeam.getTeamName() + " (Bowling)");
+            List<Player> bowlingPlayers = getStartingXIPlayers(bowlingTeam);
+            bowlingTeamAdapter.setPlayers(bowlingPlayers);
+            bowlingTeamAdapter.setBowlerStats(matchBowlerStats);
+            bowlingTeamAdapter.setCurrentPlayers(
+                    match.getCurrentStrikerId(),
+                    match.getCurrentNonStrikerId(),
+                    match.getCurrentBowlerId()
+            );
+        }
+    }
+    
+    private List<Player> getStartingXIPlayers(MatchTeam team) {
+        List<Player> startingXI = new ArrayList<>();
+        if (team != null && team.getPlayers() != null) {
+            for (Player player : team.getPlayers()) {
+                if (player.isStartingXI()) {
+                    startingXI.add(player);
+                }
+            }
+            // If no starting XI is set, return all players
+            if (startingXI.isEmpty()) {
+                startingXI.addAll(team.getPlayers());
+            }
+        }
+        return startingXI;
+    }
+    
+    private void showNextBatsmanDialog() {
+        showNextBatsmanDialog(false); // false = immediate replacement
+    }
+    
+    private void showNextBatsmanDialog(boolean isForQueue) {
+        if (currentMatch == null) {
+            Toast.makeText(getContext(), "Match not loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        com.example.tournafy.ui.dialogs.SelectNextBatsmanDialog dialog =
+                com.example.tournafy.ui.dialogs.SelectNextBatsmanDialog.newInstance(
+                        currentMatch,
+                        isForQueue,
+                        player -> {
+                            if (isForQueue) {
+                                // Add to batting order queue
+                                currentMatch.addToBattingOrder(player.getPlayerId());
+                                matchViewModel.updateMatch(currentMatch);
+                                Toast.makeText(getContext(), 
+                                        player.getPlayerName() + " added to batting order", 
+                                        Toast.LENGTH_SHORT).show();
+                            } else {
+                                // Immediate replacement - set as striker
+                                currentMatch.setCurrentStrikerId(player.getPlayerId());
+                                matchViewModel.updateMatch(currentMatch);
+                                Toast.makeText(getContext(), 
+                                        player.getPlayerName() + " is now batting", 
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                );
+        dialog.show(getParentFragmentManager(), "SelectNextBatsmanDialog");
+    }
+    
+    private void showNextBowlerDialog() {
+        showNextBowlerDialog(false); // false = immediate replacement
+    }
+    
+    private void showNextBowlerDialog(boolean isForQueue) {
+        if (currentMatch == null) {
+            Toast.makeText(getContext(), "Match not loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        com.example.tournafy.ui.dialogs.SelectNextBowlerDialog dialog =
+                com.example.tournafy.ui.dialogs.SelectNextBowlerDialog.newInstance(
+                        currentMatch,
+                        isForQueue,
+                        player -> {
+                            if (isForQueue) {
+                                // Add to bowling order queue
+                                currentMatch.addToBowlingOrder(player.getPlayerId());
+                                matchViewModel.updateMatch(currentMatch);
+                                Toast.makeText(getContext(), 
+                                        player.getPlayerName() + " added to bowling order", 
+                                        Toast.LENGTH_SHORT).show();
+                            } else {
+                                // Immediate replacement - set as current bowler
+                                currentMatch.setCurrentBowlerId(player.getPlayerId());
+                                matchViewModel.updateMatch(currentMatch);
+                                Toast.makeText(getContext(), 
+                                        player.getPlayerName() + " is now bowling", 
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                );
+        dialog.show(getParentFragmentManager(), "SelectNextBowlerDialog");
+    }
+    
+    /**
+     * Check if wicket was just taken and automatically bring next batsman from queue,
+     * or show dialog if queue is empty
+     */
+    private void handleWicketFall() {
+        if (currentMatch == null) {
+            matchViewModel.clearWicketFallEvent();
+            return;
+        }
+        
+        if (currentMatch.hasBatsmanInQueue()) {
+            // Get next batsman from queue
+            String nextBatsmanId = currentMatch.getNextBatsmanFromQueue();
+            if (nextBatsmanId != null) {
+                currentMatch.setCurrentStrikerId(nextBatsmanId);
+                matchViewModel.updateMatch(currentMatch);
+                
+                String playerName = getPlayerName(nextBatsmanId);
+                Toast.makeText(getContext(), 
+                        playerName + " is now batting (from queue)", 
+                        Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            // Queue is empty, show dialog
+            showNextBatsmanDialog(false);
+        }
+        
+        // Clear the event flag
+        matchViewModel.clearWicketFallEvent();
+    }
+    
+    /**
+     * Check if over completed and automatically bring next bowler from queue,
+     * or show dialog if queue is empty
+     */
+    private void handleOverCompletion() {
+        if (currentMatch == null) {
+            matchViewModel.clearOverCompletionEvent();
+            return;
+        }
+        
+        if (currentMatch.hasBowlerInQueue()) {
+            // Get next bowler from queue
+            String nextBowlerId = currentMatch.getNextBowlerFromQueue();
+            if (nextBowlerId != null) {
+                currentMatch.setCurrentBowlerId(nextBowlerId);
+                matchViewModel.updateMatch(currentMatch);
+                
+                String playerName = getPlayerName(nextBowlerId);
+                Toast.makeText(getContext(), 
+                        playerName + " is now bowling (from queue)", 
+                        Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            // Queue is empty, show dialog
+            showNextBowlerDialog(false);
+        }
+        
+        // Clear the event flag
+        matchViewModel.clearOverCompletionEvent();
+    }
+    
+    /**
+     * Helper method to get player name by ID
+     */
+    private String getPlayerName(String playerId) {
+        if (currentMatch == null || currentMatch.getTeams() == null) {
+            return "Unknown Player";
+        }
+        
+        for (com.example.tournafy.domain.models.team.MatchTeam team : currentMatch.getTeams()) {
+            if (team.getPlayers() != null) {
+                for (com.example.tournafy.domain.models.team.Player player : team.getPlayers()) {
+                    if (player.getPlayerId().equals(playerId)) {
+                        return player.getPlayerName();
+                    }
+                }
+            }
+        }
+        return "Unknown Player";
     }
 }

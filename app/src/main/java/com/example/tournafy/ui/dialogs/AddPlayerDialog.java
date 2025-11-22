@@ -23,13 +23,16 @@ import java.util.UUID;
 public class AddPlayerDialog extends BottomSheetDialogFragment {
 
     private static final String ARG_IS_TEAM_A = "is_team_a";
+    private static final String ARG_SPORT_TYPE = "sport_type";
 
     private boolean isTeamA;
+    private String sportType = "FOOTBALL"; // Default to football
     private AddPlayerListener listener;
     
     private TextInputLayout tilPlayerName;
     private TextInputEditText etPlayerName;
     private ChipGroup chipGroupRole;
+    private com.google.android.material.materialswitch.MaterialSwitch switchStartingXI;
     private Button btnAdd, btnCancel;
 
     public interface AddPlayerListener {
@@ -37,9 +40,14 @@ public class AddPlayerDialog extends BottomSheetDialogFragment {
     }
 
     public static AddPlayerDialog newInstance(boolean isTeamA) {
+        return newInstance(isTeamA, "FOOTBALL");
+    }
+
+    public static AddPlayerDialog newInstance(boolean isTeamA, String sportType) {
         AddPlayerDialog fragment = new AddPlayerDialog();
         Bundle args = new Bundle();
         args.putBoolean(ARG_IS_TEAM_A, isTeamA);
+        args.putString(ARG_SPORT_TYPE, sportType);
         fragment.setArguments(args);
         return fragment;
     }
@@ -49,6 +57,7 @@ public class AddPlayerDialog extends BottomSheetDialogFragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             isTeamA = getArguments().getBoolean(ARG_IS_TEAM_A);
+            sportType = getArguments().getString(ARG_SPORT_TYPE, "FOOTBALL");
         }
     }
 
@@ -69,10 +78,44 @@ public class AddPlayerDialog extends BottomSheetDialogFragment {
         tilPlayerName = view.findViewById(R.id.tilPlayerName);
         etPlayerName = view.findViewById(R.id.etPlayerName);
         chipGroupRole = view.findViewById(R.id.chipGroupRole);
+        switchStartingXI = view.findViewById(R.id.switchStartingXI);
         btnAdd = view.findViewById(R.id.btnAdd);
         btnCancel = view.findViewById(R.id.btnCancel);
 
+        setupRoleChips();
         setupListeners();
+    }
+    
+    private void setupRoleChips() {
+        // Remove all existing chips
+        chipGroupRole.removeAllViews();
+        
+        // Add sport-specific chips
+        if ("CRICKET".equalsIgnoreCase(sportType)) {
+            addRoleChip("Batsman");
+            addRoleChip("Bowler");
+            addRoleChip("All-Rounder");
+            addRoleChip("Wicket Keeper");
+        } else if ("FOOTBALL".equalsIgnoreCase(sportType)) {
+            addRoleChip("Goalkeeper");
+            addRoleChip("Defender");
+            addRoleChip("Midfielder");
+            addRoleChip("Forward");
+        } else {
+            // Default/generic role
+            addRoleChip("Player");
+        }
+    }
+    
+    private void addRoleChip(String text) {
+        com.google.android.material.chip.Chip chip = new com.google.android.material.chip.Chip(requireContext());
+        chip.setId(View.generateViewId());
+        chip.setText(text);
+        chip.setCheckable(true);
+        chip.setChipBackgroundColorResource(android.R.color.transparent);
+        chip.setChipStrokeWidth(2f);
+        chip.setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium);
+        chipGroupRole.addView(chip);
     }
 
     private void setupListeners() {
@@ -87,6 +130,7 @@ public class AddPlayerDialog extends BottomSheetDialogFragment {
             }
 
             String role = getSelectedRole();
+            boolean isStartingXI = switchStartingXI.isChecked();
             
             // Create a new Player object
             // Note: Generating a random UUID for local ID if not provided by backend
@@ -94,6 +138,7 @@ public class AddPlayerDialog extends BottomSheetDialogFragment {
             player.setPlayerId(UUID.randomUUID().toString()); 
             player.setPlayerName(name);
             player.setRole(role);
+            player.setStartingXI(isStartingXI);
 
             if (listener != null) {
                 listener.onPlayerAdded(player, isTeamA);
@@ -104,10 +149,17 @@ public class AddPlayerDialog extends BottomSheetDialogFragment {
 
     private String getSelectedRole() {
         int selectedId = chipGroupRole.getCheckedChipId();
-        if (selectedId == R.id.chipBatsman) return "Batsman";
-        if (selectedId == R.id.chipBowler) return "Bowler";
-        if (selectedId == R.id.chipAllRounder) return "All-Rounder";
-        if (selectedId == R.id.chipWicketKeeper) return "Wicket Keeper";
+        
+        if (selectedId == View.NO_ID || selectedId == -1) {
+            return "Player"; // Default if nothing selected
+        }
+        
+        // Find the selected chip and get its text
+        com.google.android.material.chip.Chip selectedChip = chipGroupRole.findViewById(selectedId);
+        if (selectedChip != null) {
+            return selectedChip.getText().toString();
+        }
+        
         return "Player"; // Default
     }
 }

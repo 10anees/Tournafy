@@ -41,6 +41,16 @@
             android:text="Team B"/>
     </com.google.android.material.chip.ChipGroup>
 
+    <!-- Player label to show context -->
+    <TextView
+        android:id="@+id/tvPlayerLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Player"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp"/>
+
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilPlayer"
         android:layout_width="match_parent"
@@ -50,6 +60,25 @@
 
         <AutoCompleteTextView
             android:id="@+id/actvPlayer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="none"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Assister Selection (shown for goals only - optional) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilAssister"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:hint="Assister (Optional)"
+        app:helperText="Who provided the assist?"
+        app:helperTextEnabled="true"
+        android:visibility="gone">
+
+        <AutoCompleteTextView
+            android:id="@+id/actvAssister"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="none"/>
@@ -144,9 +173,11 @@
         android:id="@+id/tilPlayerIn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="12dp"
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-        android:hint="Select Substitute (Player In)"
+        android:hint="Substitute Coming In"
+        app:helperText="Player replacing the selected player"
+        app:helperTextEnabled="true"
         android:visibility="gone">
 
         <AutoCompleteTextView

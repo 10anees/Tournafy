@@ -30,6 +30,7 @@ public class HostViewModel extends ViewModel {
     // --- Shared State for Match Wizard ---
     // FIX: Added this field so AddMatchDetailsFragment can pass the name to HostNewMatchFragment
     public final MutableLiveData<String> matchNameInput = new MutableLiveData<>("");
+    public final MutableLiveData<Integer> playersPerSide = new MutableLiveData<>(11); // Default 11 players
 
     // --- Creation State ---
     private final MutableLiveData<Boolean> _isLoading = new MutableLiveData<>(false);

@@ -13,83 +13,26 @@
         android:layout_height="wrap_content"
         android:paddingBottom="16dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnStartMatch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Start Match"
-            android:layout_margin="16dp"
-            app:icon="@android:drawable/ic_media_play"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
-
         <com.example.tournafy.ui.components.ScoreboardView
             android:id="@+id/scoreboardView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@id/btnStartMatch"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardCurrentAction"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="8dp"
-            app:cardBackgroundColor="?attr/colorSurfaceVariant"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="0dp"
-            app:layout_constraintTop_toBottomOf="@id/scoreboardView">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="12dp">
-
-                <TextView
-                    android:id="@+id/tvStriker"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Striker *"
-                    android:textStyle="bold"
-                    android:textColor="?attr/colorOnSurfaceVariant"/>
-
-                <TextView
-                    android:id="@+id/tvNonStriker"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Non-Striker"
-                    android:gravity="center"
-                    android:textColor="?attr/colorOnSurfaceVariant"/>
-
-                <TextView
-                    android:id="@+id/tvBowler"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Bowler"
-                    android:gravity="end"
-                    android:textColor="?attr/colorOnSurfaceVariant"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-        
         <TextView
             android:id="@+id/tvThisOver"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="This Over:"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             android:textAppearance="?attr/textAppearanceLabelLarge"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/cardCurrentAction"/>
+            app:layout_constraintTop_toBottomOf="@id/scoreboardView"
+            app:layout_constraintStart_toStartOf="parent"/>
 
         <LinearLayout
             android:id="@+id/llRecentBalls"
@@ -102,20 +45,34 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/tvThisOver"
             app:layout_constraintBottom_toBottomOf="@id/tvThisOver">
+
             <TextView android:text="." style="@style/BallCircleStyle"/>
+            <TextView android:text="1" style="@style/BallCircleStyle"/>
+            <TextView android:text="4" style="@style/BallCircleStyle.Boundary"/>
         </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStartMatch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start Match"
+            android:layout_marginTop="16dp"
+            app:icon="@android:drawable/ic_media_play"
+            app:layout_constraintTop_toBottomOf="@id/tvThisOver"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
 
         <GridLayout
             android:id="@+id/gridKeypad"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:layout_marginHorizontal="8dp"
             android:columnCount="4"
             android:rowCount="5"
-            app:layout_constraintTop_toBottomOf="@id/llRecentBalls"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintVertical_bias="0.0">
+            app:layout_constraintTop_toBottomOf="@id/btnStartMatch"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
             <Button android:id="@+id/btnZero"  android:text="0" style="@style/KeypadButtonStyle.Secondary"/>
             <Button android:id="@+id/btnOne"   android:text="1" style="@style/KeypadButtonStyle"/>
@@ -132,17 +89,208 @@
             <Button android:id="@+id/btnBye"    android:text="BYE" style="@style/KeypadButtonStyle.Secondary"/>
             <Button android:id="@+id/btnLegBye" android:text="LB" style="@style/KeypadButtonStyle.Secondary"/>
 
-            <Button 
+            <Button
                 android:id="@+id/btnWicket"
-                android:text="WICKET" 
-                android:layout_columnSpan="4" 
+                android:text="WICKET"
+                android:layout_columnSpan="4"
                 android:layout_gravity="fill"
                 style="@style/KeypadButtonStyle.Wicket"/>
-            
+
             <Button android:id="@+id/btnRetire" android:text="Retire" style="@style/KeypadButtonStyle.Secondary" android:layout_columnSpan="2" android:layout_gravity="fill"/>
             <Button android:id="@+id/btnSwap"   android:text="Swap"   style="@style/KeypadButtonStyle.Secondary" android:layout_columnSpan="2" android:layout_gravity="fill"/>
 
         </GridLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardCurrentAction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="0dp"
+            app:layout_constraintTop_toBottomOf="@id/gridKeypad"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvStriker"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Striker *"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurfaceVariant"/>
+
+                    <TextView
+                        android:id="@+id/tvNonStriker"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Non-Striker"
+                        android:gravity="center"
+                        android:textColor="?attr/colorOnSurfaceVariant"/>
+
+                    <TextView
+                        android:id="@+id/tvBowler"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Bowler"
+                        android:gravity="end"
+                        android:textColor="?attr/colorOnSurfaceVariant"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSelectNextBatsman"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Next Batsman"
+                        android:textSize="12sp"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_marginEnd="8dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSelectNextBowler"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Next Bowler"
+                        android:textSize="12sp"
+                        style="@style/Widget.Material3.Button.OutlinedButton"/>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardBattingTeam"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp"
+            app:layout_constraintTop_toBottomOf="@id/cardCurrentAction">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/headerBattingTeam"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="12dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:id="@+id/tvBattingTeamName"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Batting Team"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary" />
+
+                    <TextView
+                        android:id="@+id/tvBattingTeamExpand"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="▼"
+                        android:textSize="14sp"
+                        android:textColor="?attr/colorOnSurface" />
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerBattingTeam"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    android:nestedScrollingEnabled="false"
+                    tools:listitem="@layout/item_playing_xi"
+                    tools:itemCount="3"
+                    tools:visibility="visible" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardBowlingTeam"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp"
+            app:layout_constraintTop_toBottomOf="@id/cardBattingTeam">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/headerBowlingTeam"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="12dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:id="@+id/tvBowlingTeamName"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Bowling Team"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorSecondary" />
+
+                    <TextView
+                        android:id="@+id/tvBowlingTeamExpand"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="▼"
+                        android:textSize="14sp"
+                        android:textColor="?attr/colorOnSurface" />
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerBowlingTeam"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    android:nestedScrollingEnabled="false"
+                    tools:listitem="@layout/item_playing_xi"
+                    tools:itemCount="3"
+                    tools:visibility="visible" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

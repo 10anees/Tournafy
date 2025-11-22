@@ -107,11 +107,33 @@
                     android:text="20" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Players Per Side"
+                android:layout_marginTop="12dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etCricketPlayersPerSide"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:text="11" />
+            </com.google.android.material.textfield.TextInputLayout>
+
             <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/switchWideBall"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Wide/No Ball Adds Run?"
+                android:checked="true"
+                android:layout_marginTop="8dp"/>
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchLastManStanding"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Last Man Standing (Standard: Players-1 wickets)"
                 android:checked="true"
                 android:layout_marginTop="8dp"/>
         </LinearLayout>

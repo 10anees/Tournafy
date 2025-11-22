@@ -25,7 +25,7 @@ public class AddMatchDetailsFragment extends Fragment {
     
     private ChipGroup chipGroupSport;
     private LinearLayout grpCricketConfig, grpFootballConfig;
-    private TextInputEditText etMatchName, etVenue, etOvers, etDuration, etPlayersPerSide;
+    private TextInputEditText etMatchName, etVenue, etOvers, etDuration, etPlayersPerSide, etCricketPlayersPerSide;
 
     public AddMatchDetailsFragment() {
         // Required empty public constructor
@@ -58,6 +58,7 @@ public class AddMatchDetailsFragment extends Fragment {
         etOvers = view.findViewById(R.id.etOvers);
         etDuration = view.findViewById(R.id.etDuration);
         etPlayersPerSide = view.findViewById(R.id.etPlayersPerSide);
+        etCricketPlayersPerSide = view.findViewById(R.id.etCricketPlayersPerSide);
     }
 
     private void setupListeners() {
@@ -69,6 +70,38 @@ public class AddMatchDetailsFragment extends Fragment {
             @Override
             public void afterTextChanged(Editable s) {
                 hostViewModel.matchNameInput.setValue(s.toString());
+            }
+        });
+        
+        // Listen for football players per side changes
+        etPlayersPerSide.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(Editable s) {
+                try {
+                    int players = Integer.parseInt(s.toString());
+                    hostViewModel.playersPerSide.setValue(players);
+                } catch (NumberFormatException e) {
+                    hostViewModel.playersPerSide.setValue(11); // Default
+                }
+            }
+        });
+        
+        // Listen for cricket players per side changes
+        etCricketPlayersPerSide.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(Editable s) {
+                try {
+                    int players = Integer.parseInt(s.toString());
+                    hostViewModel.playersPerSide.setValue(players);
+                } catch (NumberFormatException e) {
+                    hostViewModel.playersPerSide.setValue(11); // Default
+                }
             }
         });
         
@@ -123,12 +156,74 @@ public class AddMatchDetailsFragment extends Fragment {
             config.setNumberOfOvers(20); // Default
         }
         
+        // Get players per side
+        String playersText = etCricketPlayersPerSide.getText() != null ? etCricketPlayersPerSide.getText().toString() : "11";
+        try {
+            int players = Integer.parseInt(playersText);
+            config.setPlayersPerSide(players);
+            android.util.Log.d("CricketConfig", "Players per side set to: " + players);
+        } catch (NumberFormatException e) {
+            config.setPlayersPerSide(11); // Default to 11 players
+            android.util.Log.w("CricketConfig", "Invalid players count, using default: 11");
+        }
+        
         // Get wide/no ball setting
         com.google.android.material.materialswitch.MaterialSwitch switchWideBall = 
             getView().findViewById(R.id.switchWideBall);
         if (switchWideBall != null) {
             config.setWideOn(switchWideBall.isChecked());
         }
+        
+        // Get last man standing setting
+        com.google.android.material.materialswitch.MaterialSwitch switchLastManStanding = 
+            getView().findViewById(R.id.switchLastManStanding);
+        if (switchLastManStanding != null) {
+            config.setLastManStanding(switchLastManStanding.isChecked());
+            android.util.Log.d("CricketConfig", "Last Man Standing set to: " + switchLastManStanding.isChecked());
+        }
+        
+        return config;
+    }
+    
+    /**
+     * Gets the football configuration from the UI inputs
+     */
+    public com.example.tournafy.domain.models.match.football.FootballMatchConfig getFootballConfig() {
+        com.example.tournafy.domain.models.match.football.FootballMatchConfig config = 
+            new com.example.tournafy.domain.models.match.football.FootballMatchConfig();
+        
+        // Get match duration
+        String durationText = etDuration.getText() != null ? etDuration.getText().toString() : "90";
+        try {
+            int duration = Integer.parseInt(durationText);
+            config.setMatchDuration(duration);
+            android.util.Log.d("FootballConfig", "Match duration set to: " + duration);
+        } catch (NumberFormatException e) {
+            config.setMatchDuration(90); // Default to 90 minutes
+            android.util.Log.w("FootballConfig", "Invalid duration, using default: 90");
+        }
+        
+        // Get players per side
+        String playersText = etPlayersPerSide.getText() != null ? etPlayersPerSide.getText().toString() : "11";
+        try {
+            int players = Integer.parseInt(playersText);
+            config.setPlayersPerSide(players);
+            android.util.Log.d("FootballConfig", "Players per side set to: " + players);
+        } catch (NumberFormatException e) {
+            config.setPlayersPerSide(11); // Default to 11 players
+            android.util.Log.w("FootballConfig", "Invalid players count, using default: 11");
+        }
+        
+        // Get offside setting
+        com.google.android.material.materialswitch.MaterialSwitch switchOffside = 
+            getView().findViewById(R.id.switchOffside);
+        if (switchOffside != null) {
+            config.setOffsideOn(switchOffside.isChecked());
+            android.util.Log.d("FootballConfig", "Offside set to: " + switchOffside.isChecked());
+        }
+        
+        android.util.Log.d("FootballConfig", "Final config - Duration: " + config.getMatchDuration() + 
+                          ", Players: " + config.getPlayersPerSide() + ", Offside: " + config.isOffsideOn());
         
         return config;
     }

@@ -12,6 +12,7 @@ public class Player {
     private String playerName;
     private String role; // e.g., "Batsman", "Bowler", "Goalkeeper"
     private int jerseyNumber;
+    private boolean isStartingXI; // true if player is in starting lineup, false if substitute
 
     // No-arg constructor for Firestore
     public Player() {}
@@ -55,5 +56,13 @@ public class Player {
 
     public void setJerseyNumber(int jerseyNumber) {
         this.jerseyNumber = jerseyNumber;
+    }
+
+    public boolean isStartingXI() {
+        return isStartingXI;
+    }
+
+    public void setStartingXI(boolean startingXI) {
+        isStartingXI = startingXI;
     }
 }

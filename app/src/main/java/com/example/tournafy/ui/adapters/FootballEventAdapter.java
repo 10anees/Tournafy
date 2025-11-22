@@ -37,6 +37,8 @@ public class FootballEventAdapter extends RecyclerView.Adapter<FootballEventAdap
     private List<FootballEvent> events = new ArrayList<>();
     private String homeTeamName = "Home";
     private String awayTeamName = "Away";
+    private String homeTeamId;
+    private String awayTeamId;
 
     /**
      * Sets the list of events to display in the timeline.
@@ -51,14 +53,18 @@ public class FootballEventAdapter extends RecyclerView.Adapter<FootballEventAdap
     }
 
     /**
-     * Sets the team names for display in event details.
+     * Sets the team names and IDs for display in event details.
      * 
      * @param homeTeam Name of the home team
      * @param awayTeam Name of the away team
+     * @param homeId ID of the home team
+     * @param awayId ID of the away team
      */
-    public void setTeamNames(String homeTeam, String awayTeam) {
+    public void setTeamNames(String homeTeam, String awayTeam, String homeId, String awayId) {
         this.homeTeamName = homeTeam;
         this.awayTeamName = awayTeam;
+        this.homeTeamId = homeId;
+        this.awayTeamId = awayId;
     }
 
     @NonNull
@@ -143,8 +149,10 @@ public class FootballEventAdapter extends RecyclerView.Adapter<FootballEventAdap
             tvMinute.setBackgroundColor(badgeColor);
 
             // Set event icon (using placeholder - replace with actual icons)
-            ivEventIcon.setImageResource(R.drawable.ic_launcher_foreground);
-            ivEventIcon.setColorFilter(badgeColor);
+            if (ivEventIcon != null) {
+                ivEventIcon.setImageResource(R.drawable.ic_launcher_foreground);
+                ivEventIcon.setColorFilter(badgeColor);
+            }
 
             // Build event title and details
             String title = "";
@@ -152,11 +160,14 @@ public class FootballEventAdapter extends RecyclerView.Adapter<FootballEventAdap
             String teamBadge = "";
             int teamColor = Color.GRAY;
 
-            // Determine if home or away team (using base class fields)
-            boolean isHomeTeam = true; // Default to home, could be enhanced with team ID check
+            // Determine if home or away team by comparing event's teamId with stored team IDs
+            boolean isHomeTeam = (homeTeamId != null && homeTeamId.equals(event.getTeamId()));
             String teamName = isHomeTeam ? homeTeamName : awayTeamName;
             teamBadge = isHomeTeam ? "HOME" : "AWAY";
             teamColor = isHomeTeam ? Color.parseColor("#2E7D32") : Color.parseColor("#1565C0");
+            
+            // Also show the score at the time of the event
+            String scoreAtEvent = event.getHomeScoreAtEvent() + " - " + event.getAwayScoreAtEvent();
 
             switch (category) {
                 case GOAL:
@@ -169,27 +180,61 @@ public class FootballEventAdapter extends RecyclerView.Adapter<FootballEventAdap
                             // Invalid goal type, just show GOAL
                         }
                     }
-                    // Use description field from base class which should contain player name
-                    details = (event.getDescription() != null ? event.getDescription() : "Goal scored") + 
-                              " • " + teamName;
+                    
+                    // Build detailed description with scorer and assister
+                    if (event.getDescription() != null) {
+                        // Description format: "Scorer (Assist: Assister)" or just "Scorer"
+                        details = event.getDescription() + "\n" + teamName + " • " + scoreAtEvent;
+                    } else {
+                        details = "Goal scored • " + teamName + " • " + scoreAtEvent;
+                    }
                     break;
 
                 case CARD:
                     if (event.getCardDetail() != null && "RED".equals(event.getCardDetail().getCardType())) {
                         title = "🟥 RED CARD";
+                        teamColor = Color.parseColor("#C62828"); // Red for red card
                     } else {
                         title = "🟨 YELLOW CARD";
+                        teamColor = Color.parseColor("#F9A825"); // Yellow-ish for yellow card
                     }
-                    // Use description field from base class
-                    details = (event.getDescription() != null ? event.getDescription() : "Card issued") + 
-                              " • " + teamName;
+                    
+                    // Build description with player and reason
+                    StringBuilder cardDetails = new StringBuilder();
+                    if (event.getDescription() != null) {
+                        cardDetails.append(event.getDescription());
+                    } else {
+                        cardDetails.append("Card issued");
+                    }
+                    
+                    // Add card reason if available
+                    if (event.getCardDetail() != null && event.getCardDetail().getCardReason() != null) {
+                        cardDetails.append(" (").append(formatCardReason(event.getCardDetail().getCardReason())).append(")");
+                    }
+                    cardDetails.append("\n").append(teamName);
+                    details = cardDetails.toString();
                     break;
 
                 case SUBSTITUTION:
                     title = "🔄 SUBSTITUTION";
-                    // Use description field from base class which should contain both player names
-                    details = (event.getDescription() != null ? event.getDescription() : "Substitution made") + 
-                              " • " + teamName;
+                    
+                    // Description format: "PlayerOut → PlayerIn"
+                    if (event.getDescription() != null) {
+                        // Make it more readable with labels
+                        String subDesc = event.getDescription();
+                        if (subDesc.contains("→")) {
+                            String[] parts = subDesc.split("→");
+                            if (parts.length == 2) {
+                                details = "OUT: " + parts[0].trim() + "\nIN: " + parts[1].trim() + " • " + teamName;
+                            } else {
+                                details = subDesc + "\n" + teamName;
+                            }
+                        } else {
+                            details = subDesc + "\n" + teamName;
+                        }
+                    } else {
+                        details = "Substitution made\n" + teamName;
+                    }
                     break;
 
                 default:
@@ -218,6 +263,28 @@ public class FootballEventAdapter extends RecyclerView.Adapter<FootballEventAdap
                 case HEADER: return "Header";
                 case OWN_GOAL: return "Own Goal";
                 default: return goalType.name();
+            }
+        }
+        
+        /**
+         * Formats a card reason into a human-readable string.
+         * 
+         * @param reason The card reason string
+         * @return Formatted string (e.g., "Foul", "Dissent")
+         */
+        private String formatCardReason(String reason) {
+            if (reason == null) return "";
+            
+            switch (reason.toUpperCase()) {
+                case "FOUL": return "Foul";
+                case "DISSENT": return "Dissent";
+                case "SIMULATION": return "Simulation";
+                case "TIMEWASTING": return "Time Wasting";
+                case "UNSPORTING": return "Unsporting Behavior";
+                case "HANDBALL": return "Handball";
+                case "VIOLENT_CONDUCT": return "Violent Conduct";
+                case "DANGEROUS_PLAY": return "Dangerous Play";
+                default: return reason.substring(0, 1).toUpperCase() + reason.substring(1).toLowerCase();
             }
         }
     }

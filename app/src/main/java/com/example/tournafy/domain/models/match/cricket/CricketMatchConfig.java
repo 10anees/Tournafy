@@ -14,6 +14,8 @@ public class CricketMatchConfig extends MatchConfig {
     private boolean wideOn;
     private int numberOfBouncersInOneOver;
     private String formatType; // e.g., "T20", "ODI", "Custom"
+    private int playersPerSide; // Number of players per team (default 11)
+    private boolean lastManStanding; // If true, innings ends at (players-1) wickets. If false, all players can be dismissed
 
     /**
      * Default constructor.
@@ -25,6 +27,8 @@ public class CricketMatchConfig extends MatchConfig {
         this.wideOn = true;
         this.numberOfBouncersInOneOver = 1;
         this.formatType = "Custom";
+        this.playersPerSide = 11; // Standard cricket team size
+        this.lastManStanding = true; // Default: standard cricket rules (need 2 batsmen)
     }
 
     // --- Getters and Setters ---
@@ -59,5 +63,21 @@ public class CricketMatchConfig extends MatchConfig {
 
     public void setFormatType(String formatType) {
         this.formatType = formatType;
+    }
+
+    public int getPlayersPerSide() {
+        return playersPerSide;
+    }
+
+    public void setPlayersPerSide(int playersPerSide) {
+        this.playersPerSide = playersPerSide;
+    }
+
+    public boolean isLastManStanding() {
+        return lastManStanding;
+    }
+
+    public void setLastManStanding(boolean lastManStanding) {
+        this.lastManStanding = lastManStanding;
     }
 }

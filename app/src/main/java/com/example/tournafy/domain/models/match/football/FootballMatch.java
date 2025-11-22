@@ -8,7 +8,7 @@ import com.example.tournafy.domain.models.base.MatchEvent;
 import com.example.tournafy.domain.models.match.MatchResult;
 import com.example.tournafy.domain.models.sport.SportTypeEnum;
 import com.example.tournafy.domain.models.team.MatchTeam;
-
+import com.example.tournafy.domain.models.team.Player;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -27,6 +27,10 @@ public class FootballMatch extends Match {
     private int awayScore;
     private int currentMatchMinute;
     private String matchPeriod; 
+    
+    // Timer state for persistence
+    private long elapsedTimeMillis; // Total elapsed time in milliseconds
+    private boolean timerRunning; // Whether timer is currently running
     
     private List<MatchObserver> observers; 
     
@@ -222,9 +226,61 @@ public class FootballMatch extends Match {
 
     @Override
     public boolean canStartMatch() {
-        return teams != null && teams.size() >= 2 && 
-               matchConfig != null &&
-               getMatchStatus().equals(MatchStatus.SCHEDULED.name());
+        android.util.Log.d("FootballMatch", "=== canStartMatch() START ===");
+        android.util.Log.d("FootballMatch", "Match ID: " + getEntityId());
+        android.util.Log.d("FootballMatch", "Match Status: " + getMatchStatus());
+        
+        // Log teams object reference
+        android.util.Log.d("FootballMatch", "teams object: " + (teams != null ? teams.toString() : "NULL"));
+        
+        if (teams == null || teams.size() < 2 || matchConfig == null) {
+            android.util.Log.d("FootballMatch", "Basic validation failed - teams: " + (teams != null ? teams.size() : "null") + 
+                              ", config: " + (matchConfig != null ? "present" : "null"));
+            return false;
+        }
+        
+        if (!getMatchStatus().equals(MatchStatus.SCHEDULED.name())) {
+            android.util.Log.d("FootballMatch", "Match status is not SCHEDULED: " + getMatchStatus());
+            return false;
+        }
+        
+        // Check minimum players requirement
+        if (matchConfig instanceof FootballMatchConfig) {
+            FootballMatchConfig config = (FootballMatchConfig) matchConfig;
+            int minPlayers = config.getPlayersPerSide();
+            
+            android.util.Log.d("FootballMatch", "Minimum players required: " + minPlayers);
+            
+            // Verify each team has minimum required players
+            int teamIndex = 0;
+            for (MatchTeam team : teams) {
+                android.util.Log.d("FootballMatch", "Checking team " + teamIndex);
+                android.util.Log.d("FootballMatch", "  - Team ID: " + team.getTeamId());
+                android.util.Log.d("FootballMatch", "  - Team Name: " + team.getTeamName());
+                android.util.Log.d("FootballMatch", "  - Players list: " + (team.getPlayers() != null ? "NOT NULL" : "NULL"));
+                
+                int playerCount = (team.getPlayers() != null) ? team.getPlayers().size() : 0;
+                android.util.Log.d("FootballMatch", "  - Player count: " + playerCount);
+                
+                // Log each player
+                if (team.getPlayers() != null) {
+                    for (int i = 0; i < team.getPlayers().size(); i++) {
+                        Player p = team.getPlayers().get(i);
+                        android.util.Log.d("FootballMatch", "    Player " + i + ": " + 
+                            (p != null ? (p.getPlayerName() + " (ID: " + p.getPlayerId() + ")") : "NULL"));
+                    }
+                }
+                
+                if (team.getPlayers() == null || team.getPlayers().size() < minPlayers) {
+                    android.util.Log.d("FootballMatch", "Team " + teamIndex + " does not have enough players (need " + minPlayers + ", have " + playerCount + ")");
+                    return false;
+                }
+                teamIndex++;
+            }
+        }
+        
+        android.util.Log.d("FootballMatch", "=== canStartMatch() returning TRUE ===");
+        return true;
     }
 
     // =========================================================================
@@ -318,6 +374,12 @@ public class FootballMatch extends Match {
     public int getCurrentMatchMinute() { return currentMatchMinute; }
     public String getMatchPeriod() { return matchPeriod; }
     public MatchResult getMatchResult() { return matchResult; }
+    
+    // Timer state getters/setters
+    public long getElapsedTimeMillis() { return elapsedTimeMillis; }
+    public void setElapsedTimeMillis(long elapsedTimeMillis) { this.elapsedTimeMillis = elapsedTimeMillis; }
+    public boolean isTimerRunning() { return timerRunning; }
+    public void setTimerRunning(boolean timerRunning) { this.timerRunning = timerRunning; }
 
 
     public static class Builder extends Match.Builder<Builder> {

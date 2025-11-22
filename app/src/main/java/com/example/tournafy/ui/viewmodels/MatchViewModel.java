@@ -65,6 +65,12 @@ public class MatchViewModel extends ViewModel {
     public final LiveData<String> errorMessage = _errorMessage;
     private final MutableLiveData<Boolean> _isLoading = new MutableLiveData<>(false);
     public final LiveData<Boolean> isLoading = _isLoading;
+    
+    // Events for wicket fall and over completion
+    private final MutableLiveData<Boolean> _wicketFallEvent = new MutableLiveData<>();
+    public final LiveData<Boolean> wicketFallEvent = _wicketFallEvent;
+    private final MutableLiveData<Boolean> _overCompletionEvent = new MutableLiveData<>();
+    public final LiveData<Boolean> overCompletionEvent = _overCompletionEvent;
 
     @Inject
     public MatchViewModel(
@@ -163,6 +169,29 @@ public class MatchViewModel extends ViewModel {
 
     public void loadOnlineBallStream(String overId) {
         _onlineOverId.setValue(overId);
+    }
+
+    /**
+     * Load match by ID - automatically loads from offline repository
+     */
+    public void loadMatchById(String matchId) {
+        loadOfflineMatch(matchId);
+    }
+
+    /**
+     * Get current match as LiveData for observing
+     */
+    public LiveData<Match> getCurrentMatch() {
+        return offlineMatch;
+    }
+
+    /**
+     * Update/save match to offline repository
+     */
+    public void updateMatch(Match match) {
+        if (match != null) {
+            offlineMatchRepo.update(match);
+        }
     }
 
     public Match getOfflineMatch() {
@@ -368,6 +397,9 @@ public class MatchViewModel extends ViewModel {
         // --- STEP 2: Process event to update in-memory state (score) ---
         cricketMatch.processEvent(event);
         
+        // --- STEP 2.5: Update player statistics ---
+        updatePlayerStatsAfterBall(cricketMatch, event, runs);
+        
         // --- Get current over AFTER processEvent (it may have created it) ---
         Over finalCurrentOver = cricketMatch.getCurrentOver();
         if (finalCurrentOver == null) {
@@ -381,6 +413,9 @@ public class MatchViewModel extends ViewModel {
             (finalCurrentOver.getBalls() != null ? finalCurrentOver.getBalls().size() : 0));
         android.util.Log.d("MatchViewModel", "Before save - Total runs: " + currentInnings.getTotalRuns());
         
+        // Check if over was completed (6 legal balls)
+        final boolean overCompleted = finalCurrentOver.isCompleted();
+        
         // --- SIMPLIFIED PERSISTENCE: Only update Match document ---
         // All nested data (innings, overs, balls) is stored within the match document
         // No need to persist Ball, Over, Innings separately
@@ -393,6 +428,10 @@ public class MatchViewModel extends ViewModel {
                     String currentId = _offlineMatchId.getValue();
                     if (currentId != null) {
                         _offlineMatchId.setValue(currentId);
+                    }
+                    // Trigger over completion event if over completed
+                    if (overCompleted) {
+                        _overCompletionEvent.setValue(true);
                     }
                     _isLoading.setValue(false);
                 }, 100); // 100ms delay
@@ -461,6 +500,9 @@ public class MatchViewModel extends ViewModel {
         // --- Process event ---
         cricketMatch.processEvent(event);
         
+        // --- Update stats for wicket ---
+        updatePlayerStatsAfterWicket(cricketMatch, event, wicketType);
+        
         // --- Get current over AFTER processEvent ---
         Over finalCurrentOver = cricketMatch.getCurrentOver();
         if (finalCurrentOver == null) {
@@ -481,6 +523,8 @@ public class MatchViewModel extends ViewModel {
                     if (currentId != null) {
                         _offlineMatchId.setValue(currentId);
                     }
+                    // Trigger wicket fall event for fragment to handle
+                    _wicketFallEvent.setValue(true);
                     _isLoading.setValue(false);
                 }, 100); // 100ms delay
             } else {
@@ -546,6 +590,9 @@ public class MatchViewModel extends ViewModel {
         
         // --- Process event ---
         cricketMatch.processEvent(event);
+        
+        // --- Update stats for extras ---
+        updatePlayerStatsAfterExtra(cricketMatch, event, extrasType, isLegal);
         
         // --- Get current over AFTER processEvent ---
         Over finalCurrentOver = cricketMatch.getCurrentOver();
@@ -985,10 +1032,11 @@ public class MatchViewModel extends ViewModel {
      * 
      * @param teamId The ID of the team that scored
      * @param scorerId The ID of the player who scored
+     * @param assisterId The ID of the player who assisted (can be null)
      * @param goalType The type of goal (OPEN_PLAY, PENALTY, FREE_KICK, etc.)
      * @param minute The match minute when the goal was scored
      */
-    public void addFootballGoal(String teamId, String scorerId, String goalType, int minute) {
+    public void addFootballGoal(String teamId, String scorerId, String assisterId, String goalType, int minute) {
         _isLoading.setValue(true);
         
         Match currentMatch = offlineMatch.getValue();
@@ -1019,10 +1067,18 @@ public class MatchViewModel extends ViewModel {
             new com.example.tournafy.domain.models.match.football.FootballGoalDetail();
         goalDetail.setEventId(event.getEventId());
         goalDetail.setScorerId(scorerId);
+        goalDetail.setAssistPlayerId(assisterId); // Set assister (can be null)
         goalDetail.setGoalType(goalType);
         goalDetail.setMinuteScored(minute);
         goalDetail.setPenalty(goalType.equals("PENALTY"));
         goalDetail.setOwnGoal(false);
+        
+        // Build description for event display
+        String description = getPlayerNameById(footballMatch, scorerId);
+        if (assisterId != null) {
+            description += " (Assist: " + getPlayerNameById(footballMatch, assisterId) + ")";
+        }
+        event.setDescription(description);
         
         // Create and execute Command
         com.example.tournafy.command.football.AddGoalCommand command = 
@@ -1100,6 +1156,10 @@ public class MatchViewModel extends ViewModel {
         cardDetail.setMinuteIssued(minute);
         cardDetail.setSecondYellow(false); // TODO: Track yellow cards per player
         
+        // Build description for event display
+        String playerName = getPlayerNameById(footballMatch, playerId);
+        event.setDescription(playerName);
+        
         // Create and execute Command
         com.example.tournafy.command.football.AddCardCommand command = 
             new com.example.tournafy.command.football.AddCardCommand(footballMatch, event, cardDetail);
@@ -1175,6 +1235,14 @@ public class MatchViewModel extends ViewModel {
         subDetail.setMinuteSubstituted(minute);
         subDetail.setSubstitutionReason("TACTICAL"); // Default to tactical
         
+        // Build description for event display
+        String playerOutName = getPlayerNameById(footballMatch, playerOutId);
+        String playerInName = getPlayerNameById(footballMatch, playerInId);
+        event.setDescription(playerOutName + " → " + playerInName);
+        
+        // Swap isStartingXI status for both players
+        swapPlayerStatus(footballMatch, teamId, playerOutId, playerInId);
+        
         // Create and execute Command
         com.example.tournafy.command.football.SubstitutePlayerCommand command = 
             new com.example.tournafy.command.football.SubstitutePlayerCommand(footballMatch, event, subDetail);
@@ -1216,6 +1284,49 @@ public class MatchViewModel extends ViewModel {
             return 0;
         }
     }
+    
+    /**
+     * Helper method to get player name by ID from a FootballMatch
+     */
+    private String getPlayerNameById(com.example.tournafy.domain.models.match.football.FootballMatch match, String playerId) {
+        if (match == null || playerId == null) return "Unknown";
+        
+        for (com.example.tournafy.domain.models.team.MatchTeam team : match.getTeams()) {
+            if (team.getPlayers() != null) {
+                for (com.example.tournafy.domain.models.team.Player player : team.getPlayers()) {
+                    if (player.getPlayerId().equals(playerId)) {
+                        return player.getPlayerName();
+                    }
+                }
+            }
+        }
+        return "Unknown";
+    }
+
+    /**
+     * Swaps the isStartingXI status when a substitution occurs.
+     * Player going out becomes bench player (isStartingXI = false)
+     * Player coming in becomes starting player (isStartingXI = true)
+     */
+    private void swapPlayerStatus(com.example.tournafy.domain.models.match.football.FootballMatch match, 
+                                   String teamId, String playerOutId, String playerInId) {
+        if (match == null || teamId == null) return;
+        
+        for (com.example.tournafy.domain.models.team.MatchTeam team : match.getTeams()) {
+            if (team.getTeamId().equals(teamId) && team.getPlayers() != null) {
+                for (com.example.tournafy.domain.models.team.Player player : team.getPlayers()) {
+                    if (player.getPlayerId().equals(playerOutId)) {
+                        // Player going out becomes substitute
+                        player.setStartingXI(false);
+                    } else if (player.getPlayerId().equals(playerInId)) {
+                        // Player coming in becomes starting XI
+                        player.setStartingXI(true);
+                    }
+                }
+                break;
+            }
+        }
+    }
 
     // --- Common Persistence ---
 
@@ -1251,6 +1362,170 @@ public class MatchViewModel extends ViewModel {
 
     public void clearErrorMessage() {
         _errorMessage.setValue(null);
+    }
+    
+    public void clearWicketFallEvent() {
+        _wicketFallEvent.setValue(false);
+    }
+    
+    public void clearOverCompletionEvent() {
+        _overCompletionEvent.setValue(false);
+    }
+
+    /**
+     * Updates the current match's timer state and persists to Firestore.
+     * Used to save timer progress during match.
+     */
+    public void updateTimerState(long elapsedMillis, boolean isRunning) {
+        Match match = offlineMatch.getValue();
+        if (match instanceof com.example.tournafy.domain.models.match.football.FootballMatch) {
+            com.example.tournafy.domain.models.match.football.FootballMatch footballMatch = 
+                (com.example.tournafy.domain.models.match.football.FootballMatch) match;
+            footballMatch.setElapsedTimeMillis(elapsedMillis);
+            footballMatch.setTimerRunning(isRunning);
+            android.util.Log.d("MatchViewModel", "Updating timer state in model - Elapsed: " + 
+                elapsedMillis + "ms, Running: " + isRunning + ", Persisting to Firestore...");
+            persistOfflineMatch(footballMatch);
+        }
+    }
+
+    /**
+     * Updates batsman and bowler statistics after a ball is bowled.
+     */
+    private void updatePlayerStatsAfterBall(CricketMatch match, CricketEvent event, int runs) {
+        // Update batsman stats
+        String strikerId = event.getBatsmanStrikerId();
+        if (strikerId != null) {
+            com.example.tournafy.domain.models.match.cricket.BatsmanStats batsmanStats = 
+                match.getBatsmanStats(strikerId);
+            
+            if (batsmanStats == null) {
+                // Initialize stats for this batsman
+                String batsmanName = getPlayerName(match, strikerId);
+                batsmanStats = new com.example.tournafy.domain.models.match.cricket.BatsmanStats(strikerId, batsmanName);
+            }
+            
+            // Add ball and runs
+            batsmanStats.addBall();
+            if (runs > 0) {
+                batsmanStats.addRuns(runs);
+            }
+            
+            match.updateBatsmanStats(strikerId, batsmanStats);
+        }
+        
+        // Update bowler stats
+        String bowlerId = event.getBowlerId();
+        if (bowlerId != null) {
+            com.example.tournafy.domain.models.match.cricket.BowlerStats bowlerStats = 
+                match.getBowlerStats(bowlerId);
+            
+            if (bowlerStats == null) {
+                // Initialize stats for this bowler
+                String bowlerName = getPlayerName(match, bowlerId);
+                bowlerStats = new com.example.tournafy.domain.models.match.cricket.BowlerStats(bowlerId, bowlerName);
+            }
+            
+            // Add ball and runs
+            if (event.isLegalDelivery()) {
+                bowlerStats.addBall(runs);
+            }
+            
+            match.updateBowlerStats(bowlerId, bowlerStats);
+        }
+    }
+    
+    /**
+     * Updates stats after an extra is bowled.
+     */
+    private void updatePlayerStatsAfterExtra(CricketMatch match, CricketEvent event, String extrasType, boolean isLegal) {
+        // Update batsman stats only for byes/leg-byes (legal deliveries)
+        if (isLegal) {
+            String strikerId = event.getBatsmanStrikerId();
+            if (strikerId != null) {
+                com.example.tournafy.domain.models.match.cricket.BatsmanStats batsmanStats = 
+                    match.getBatsmanStats(strikerId);
+                
+                if (batsmanStats == null) {
+                    String batsmanName = getPlayerName(match, strikerId);
+                    batsmanStats = new com.example.tournafy.domain.models.match.cricket.BatsmanStats(strikerId, batsmanName);
+                }
+                
+                // Add ball faced (bye/leg-bye count as balls faced)
+                batsmanStats.addBall();
+                
+                match.updateBatsmanStats(strikerId, batsmanStats);
+            }
+        }
+        
+        // Update bowler stats
+        String bowlerId = event.getBowlerId();
+        if (bowlerId != null) {
+            com.example.tournafy.domain.models.match.cricket.BowlerStats bowlerStats = 
+                match.getBowlerStats(bowlerId);
+            
+            if (bowlerStats == null) {
+                String bowlerName = getPlayerName(match, bowlerId);
+                bowlerStats = new com.example.tournafy.domain.models.match.cricket.BowlerStats(bowlerId, bowlerName);
+            }
+            
+            // Track extras
+            int extrasRuns = event.getRunsScoredExtras();
+            if (extrasType.equals("WIDE")) {
+                bowlerStats.addWide(extrasRuns - 1); // Subtract the 1 auto-added run
+            } else if (extrasType.equals("NO_BALL")) {
+                bowlerStats.addNoBall(extrasRuns - 1);
+            } else if (isLegal) {
+                // Byes/Leg-byes don't count against bowler's runs
+                bowlerStats.addBall(0);
+            }
+            
+            match.updateBowlerStats(bowlerId, bowlerStats);
+        }
+    }
+    
+    /**
+     * Updates stats after a wicket is taken.
+     */
+    private void updatePlayerStatsAfterWicket(CricketMatch match, CricketEvent event, String wicketType) {
+        // Update batsman stats - mark as out
+        String strikerId = event.getBatsmanStrikerId();
+        if (strikerId != null) {
+            com.example.tournafy.domain.models.match.cricket.BatsmanStats batsmanStats = 
+                match.getBatsmanStats(strikerId);
+            
+            if (batsmanStats == null) {
+                String batsmanName = getPlayerName(match, strikerId);
+                batsmanStats = new com.example.tournafy.domain.models.match.cricket.BatsmanStats(strikerId, batsmanName);
+            }
+            
+            // Add ball faced
+            batsmanStats.addBall();
+            // Mark as dismissed
+            batsmanStats.dismissBatsman(wicketType);
+            
+            match.updateBatsmanStats(strikerId, batsmanStats);
+        }
+        
+        // Update bowler stats - add wicket
+        String bowlerId = event.getBowlerId();
+        if (bowlerId != null) {
+            com.example.tournafy.domain.models.match.cricket.BowlerStats bowlerStats = 
+                match.getBowlerStats(bowlerId);
+            
+            if (bowlerStats == null) {
+                String bowlerName = getPlayerName(match, bowlerId);
+                bowlerStats = new com.example.tournafy.domain.models.match.cricket.BowlerStats(bowlerId, bowlerName);
+            }
+            
+            // Add ball and wicket
+            if (event.isLegalDelivery()) {
+                bowlerStats.addBall(0); // Wicket ball with 0 runs
+                bowlerStats.addWicket();
+            }
+            
+            match.updateBowlerStats(bowlerId, bowlerStats);
+        }
     }
 
     /**

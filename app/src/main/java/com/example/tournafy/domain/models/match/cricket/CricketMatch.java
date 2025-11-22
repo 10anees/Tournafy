@@ -11,7 +11,9 @@ import com.google.firebase.database.Exclude;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -25,6 +27,10 @@ public class CricketMatch extends Match {
     private List<CricketEvent> cricketEvents; // For AddWicketCommand, AddExtrasCommand [cite: 99, 100]
     private List<MatchTeam> teams;
 
+    // Toss information
+    private String tossWinner; // Team name or ID that won the toss
+    private String tossDecision; // "BAT" or "BOWL" - what winner chose
+
     // State tracking
     private int currentInningsNumber;
     private int targetScore;
@@ -35,6 +41,16 @@ public class CricketMatch extends Match {
     private String currentStrikerId;
     private String currentNonStrikerId;
     private String currentBowlerId;
+    
+    // Batting order queue - list of player IDs waiting to bat
+    private List<String> battingOrderQueue;
+    
+    // Bowling order queue - list of player IDs in bowling rotation
+    private List<String> bowlingOrderQueue;
+    
+    // Player statistics tracking
+    private Map<String, BatsmanStats> batsmanStatsMap;
+    private Map<String, BowlerStats> bowlerStatsMap;
 
     // Observer Pattern
     @Exclude
@@ -54,6 +70,10 @@ public class CricketMatch extends Match {
         this.teams = new ArrayList<>();
         this.currentOvers = new ArrayList<>();
         this.observers = new ArrayList<>();
+        this.batsmanStatsMap = new HashMap<>();
+        this.bowlerStatsMap = new HashMap<>();
+        this.battingOrderQueue = new ArrayList<>();
+        this.bowlingOrderQueue = new ArrayList<>();
 
         this.currentInningsNumber = 0;
         this.targetScore = 0;
@@ -128,12 +148,22 @@ public class CricketMatch extends Match {
         
         boolean inningsComplete = false;
 
-        // Get available players for batting team
-        int availablePlayers = getTeamPlayersCount(currentInnings.getBattingTeamId());
-        // Max wickets is minimum of 10 or (availablePlayers - 1) since 2 batsmen must be on field
-        int maxWickets = Math.min(10, Math.max(1, availablePlayers - 1));
+        // Calculate max wickets based on config
+        CricketMatchConfig cricketConfig = (CricketMatchConfig) this.matchConfig;
+        int playersPerSide = cricketConfig.getPlayersPerSide();
+        int maxWickets;
         
-        // Standard completion conditions with player availability check
+        if (cricketConfig.isLastManStanding()) {
+            // Last man standing: the last batsman can bat alone, so all players can be out
+            // maxWickets = playersPerSide (e.g., 5 players = 5 wickets)
+            maxWickets = Math.min(10, playersPerSide);
+        } else {
+            // Standard cricket: need 2 batsmen on field, so innings ends when players - 1 are out
+            // maxWickets = playersPerSide - 1 (e.g., 5 players = 4 wickets)
+            maxWickets = Math.min(10, Math.max(1, playersPerSide - 1));
+        }
+        
+        // Standard completion conditions
         if (currentInnings.getWicketsFallen() >= maxWickets) inningsComplete = true;
         if (currentInnings.getOversCompleted() >= config.getNumberOfOvers()) inningsComplete = true;
 
@@ -372,28 +402,63 @@ public class CricketMatch extends Match {
         setMatchStatus(MatchStatus.LIVE.name());
 
         if (innings.isEmpty() && teams.size() >= 2) {
+            // Determine who bats first based on toss result
+            MatchTeam firstBattingTeam;
+            MatchTeam firstBowlingTeam;
+            
+            if (tossWinner != null && tossDecision != null) {
+                // Find the team that won the toss
+                MatchTeam tossWinningTeam = null;
+                MatchTeam tossLosingTeam = null;
+                
+                for (MatchTeam team : teams) {
+                    if (team.getTeamName().equals(tossWinner)) {
+                        tossWinningTeam = team;
+                    } else {
+                        tossLosingTeam = team;
+                    }
+                }
+                
+                // Determine batting order based on toss decision
+                if (tossDecision.equals("BAT")) {
+                    // Toss winner chose to bat first
+                    firstBattingTeam = tossWinningTeam;
+                    firstBowlingTeam = tossLosingTeam;
+                } else {
+                    // Toss winner chose to bowl first (or field)
+                    firstBattingTeam = tossLosingTeam;
+                    firstBowlingTeam = tossWinningTeam;
+                }
+            } else {
+                // Fallback: if no toss result, default to teams.get(0) batting first
+                firstBattingTeam = teams.get(0);
+                firstBowlingTeam = teams.get(1);
+            }
+            
+            // Create first innings
             Innings first = new Innings();
             first.setInningsId(UUID.randomUUID().toString());
             first.setMatchId(this.entityId);
             first.setInningsNumber(1);
-            first.setBattingTeamId(teams.get(0).getTeamId());
-            first.setBowlingTeamId(teams.get(1).getTeamId());
+            first.setBattingTeamId(firstBattingTeam.getTeamId());
+            first.setBowlingTeamId(firstBowlingTeam.getTeamId());
             innings.add(first);
             currentInningsNumber = 1;
 
+            // Create second innings (teams swap roles)
             Innings second = new Innings();
             second.setInningsId(UUID.randomUUID().toString());
             second.setMatchId(this.entityId);
             second.setInningsNumber(2);
-            second.setBattingTeamId(teams.get(1).getTeamId());
-            second.setBowlingTeamId(teams.get(0).getTeamId());
+            second.setBattingTeamId(firstBowlingTeam.getTeamId());
+            second.setBowlingTeamId(firstBattingTeam.getTeamId());
             innings.add(second);
             
             // Initialize striker and non-striker from batting team
-            initializeStrikers(teams.get(0));
+            initializeStrikers(firstBattingTeam);
             
             // Initialize bowler from bowling team
-            initializeBowler(teams.get(1));
+            initializeBowler(firstBowlingTeam);
         }
         notifyStatusChanged(MatchStatus.LIVE.name());
     }
@@ -500,8 +565,136 @@ public class CricketMatch extends Match {
     public MatchResult getMatchResult() { return matchResult; }
     public List<Over> getCurrentOvers() { return currentOvers; }
     public String getCurrentStrikerId() { return currentStrikerId; }
+    public void setCurrentStrikerId(String currentStrikerId) { this.currentStrikerId = currentStrikerId; }
     public String getCurrentNonStrikerId() { return currentNonStrikerId; }
+    public void setCurrentNonStrikerId(String currentNonStrikerId) { this.currentNonStrikerId = currentNonStrikerId; }
     public String getCurrentBowlerId() { return currentBowlerId; }
+    public void setCurrentBowlerId(String currentBowlerId) { this.currentBowlerId = currentBowlerId; }
+    
+    // Batting/Bowling order queue getters/setters
+    public List<String> getBattingOrderQueue() { 
+        return battingOrderQueue != null ? battingOrderQueue : new ArrayList<>(); 
+    }
+    public void setBattingOrderQueue(List<String> battingOrderQueue) { 
+        this.battingOrderQueue = battingOrderQueue; 
+    }
+    public List<String> getBowlingOrderQueue() { 
+        return bowlingOrderQueue != null ? bowlingOrderQueue : new ArrayList<>(); 
+    }
+    public void setBowlingOrderQueue(List<String> bowlingOrderQueue) { 
+        this.bowlingOrderQueue = bowlingOrderQueue; 
+    }
+    
+    // Toss getters/setters
+    public String getTossWinner() { return tossWinner; }
+    public void setTossWinner(String tossWinner) { this.tossWinner = tossWinner; }
+    public String getTossDecision() { return tossDecision; }
+    public void setTossDecision(String tossDecision) { this.tossDecision = tossDecision; }
+    
+    // Stats getters/setters
+    public Map<String, BatsmanStats> getBatsmanStatsMap() { 
+        return batsmanStatsMap != null ? batsmanStatsMap : new HashMap<>(); 
+    }
+    public void setBatsmanStatsMap(Map<String, BatsmanStats> batsmanStatsMap) { 
+        this.batsmanStatsMap = batsmanStatsMap; 
+    }
+    public Map<String, BowlerStats> getBowlerStatsMap() { 
+        return bowlerStatsMap != null ? bowlerStatsMap : new HashMap<>(); 
+    }
+    public void setBowlerStatsMap(Map<String, BowlerStats> bowlerStatsMap) { 
+        this.bowlerStatsMap = bowlerStatsMap; 
+    }
+    
+    // Helper methods for stats
+    public BatsmanStats getBatsmanStats(String playerId) {
+        if (batsmanStatsMap == null) {
+            batsmanStatsMap = new HashMap<>();
+        }
+        return batsmanStatsMap.get(playerId);
+    }
+    
+    public void updateBatsmanStats(String playerId, BatsmanStats stats) {
+        if (batsmanStatsMap == null) {
+            batsmanStatsMap = new HashMap<>();
+        }
+        batsmanStatsMap.put(playerId, stats);
+    }
+    
+    public BowlerStats getBowlerStats(String playerId) {
+        if (bowlerStatsMap == null) {
+            bowlerStatsMap = new HashMap<>();
+        }
+        return bowlerStatsMap.get(playerId);
+    }
+    
+    public void updateBowlerStats(String playerId, BowlerStats stats) {
+        if (bowlerStatsMap == null) {
+            bowlerStatsMap = new HashMap<>();
+        }
+        bowlerStatsMap.put(playerId, stats);
+    }
+    
+    // Helper methods for batting order queue
+    public void addToBattingOrder(String playerId) {
+        if (battingOrderQueue == null) {
+            battingOrderQueue = new ArrayList<>();
+        }
+        if (!battingOrderQueue.contains(playerId)) {
+            battingOrderQueue.add(playerId);
+            android.util.Log.d("CricketMatch", "Added player " + playerId + " to batting order. Queue size: " + battingOrderQueue.size());
+        }
+    }
+    
+    public String getNextBatsmanFromQueue() {
+        if (battingOrderQueue == null || battingOrderQueue.isEmpty()) {
+            android.util.Log.d("CricketMatch", "Batting order queue is empty");
+            return null;
+        }
+        String nextBatsman = battingOrderQueue.remove(0);
+        android.util.Log.d("CricketMatch", "Retrieved next batsman from queue: " + nextBatsman + ". Remaining in queue: " + battingOrderQueue.size());
+        return nextBatsman;
+    }
+    
+    public boolean hasBatsmanInQueue() {
+        return battingOrderQueue != null && !battingOrderQueue.isEmpty();
+    }
+    
+    public void clearBattingOrderQueue() {
+        if (battingOrderQueue != null) {
+            battingOrderQueue.clear();
+        }
+    }
+    
+    // Helper methods for bowling order queue
+    public void addToBowlingOrder(String playerId) {
+        if (bowlingOrderQueue == null) {
+            bowlingOrderQueue = new ArrayList<>();
+        }
+        if (!bowlingOrderQueue.contains(playerId)) {
+            bowlingOrderQueue.add(playerId);
+            android.util.Log.d("CricketMatch", "Added player " + playerId + " to bowling order. Queue size: " + bowlingOrderQueue.size());
+        }
+    }
+    
+    public String getNextBowlerFromQueue() {
+        if (bowlingOrderQueue == null || bowlingOrderQueue.isEmpty()) {
+            android.util.Log.d("CricketMatch", "Bowling order queue is empty");
+            return null;
+        }
+        String nextBowler = bowlingOrderQueue.remove(0);
+        android.util.Log.d("CricketMatch", "Retrieved next bowler from queue: " + nextBowler + ". Remaining in queue: " + bowlingOrderQueue.size());
+        return nextBowler;
+    }
+    
+    public boolean hasBowlerInQueue() {
+        return bowlingOrderQueue != null && !bowlingOrderQueue.isEmpty();
+    }
+    
+    public void clearBowlingOrderQueue() {
+        if (bowlingOrderQueue != null) {
+            bowlingOrderQueue.clear();
+        }
+    }
 
     // --- COMMAND SUPPORT (Existing for Over management) ---
 
