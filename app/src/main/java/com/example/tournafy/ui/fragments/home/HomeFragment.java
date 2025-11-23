@@ -24,8 +24,11 @@ import com.example.tournafy.domain.models.base.Match;
 import com.example.tournafy.domain.models.series.Series;
 import com.example.tournafy.domain.models.tournament.Tournament;
 import com.example.tournafy.ui.viewmodels.HomeViewModel;
+import com.example.tournafy.utils.ShareHelper;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -153,5 +156,22 @@ public class HomeFragment extends Fragment implements HomeAdapter.OnEntityClickL
             })
             .setNegativeButton("Cancel", null)
             .show();
+    }
+
+    @Override
+    public void onShareClick(HostedEntity entity) {
+        // Check if user is logged in
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(getContext(), "Please log in to share matches", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Only allow sharing matches (not tournaments or series)
+        if (entity instanceof Match) {
+            ShareHelper.shareMatch(requireContext(), (Match) entity);
+        } else {
+            Toast.makeText(getContext(), "Only matches can be shared", Toast.LENGTH_SHORT).show();
+        }
     }
 }

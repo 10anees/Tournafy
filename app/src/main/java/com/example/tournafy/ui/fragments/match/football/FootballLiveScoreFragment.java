@@ -19,8 +19,12 @@ import com.example.tournafy.domain.models.match.football.FootballMatch;
 import com.example.tournafy.ui.components.ScoreboardView;
 import com.example.tournafy.ui.dialogs.EventInputDialog;
 import com.example.tournafy.ui.viewmodels.MatchViewModel;
+import com.example.tournafy.utils.ShareHelper;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import android.widget.TextView;
 import java.util.List;
@@ -52,9 +56,11 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
 
     private MatchViewModel matchViewModel;
     private String matchId;
+    private FootballMatch currentMatch; // Store current match for sharing
     
     // UI Views
     private ScoreboardView scoreboardView;
+    private MaterialButton btnShareMatch;
     private MaterialButton btnStartTimer, btnPauseTimer, btnHalfTime, btnEndMatch, btnToggleSquad;
     private MaterialCardView cardGoal, cardCard, cardSub, cardUndo;
     private androidx.recyclerview.widget.RecyclerView rvEventTimeline, rvTeamAPlayers, rvTeamBPlayers;
@@ -159,6 +165,7 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
 
     private void initViews(View view) {
         scoreboardView = view.findViewById(R.id.scoreboardView);
+        btnShareMatch = view.findViewById(R.id.btnShareMatch);
         btnStartTimer = view.findViewById(R.id.btnStartTimer);
         btnPauseTimer = view.findViewById(R.id.btnPauseTimer);
         btnHalfTime = view.findViewById(R.id.btnHalfTime);
@@ -231,6 +238,23 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
     }
 
     private void setupListeners() {
+        // Share Match Button - Opens system share sheet
+        btnShareMatch.setOnClickListener(v -> {
+            // Check if user is logged in
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (currentUser == null) {
+                Toast.makeText(requireContext(), "Please log in to share matches", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            android.util.Log.d("FootballLiveScore", "Share button clicked");
+            android.util.Log.d("FootballLiveScore", "currentMatch: " + (currentMatch != null ? currentMatch.getName() : "null"));
+            if (currentMatch != null) {
+                android.util.Log.d("FootballLiveScore", "currentMatch visibilityLink: " + currentMatch.getVisibilityLink());
+            }
+            ShareHelper.shareMatch(requireContext(), currentMatch);
+        });
+        
         btnStartTimer.setOnClickListener(v -> startTimer());
         btnPauseTimer.setOnClickListener(v -> pauseTimer());
         btnHalfTime.setOnClickListener(v -> transitionToHalfTime());
@@ -247,7 +271,14 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
         // Observe match updates
         matchViewModel.offlineMatch.observe(getViewLifecycleOwner(), match -> {
             if (match instanceof FootballMatch) {
-                updateUI((FootballMatch) match);
+                FootballMatch footballMatch = (FootballMatch) match;
+                currentMatch = footballMatch; // Store for sharing
+                updateUI(footballMatch);
+                
+                // Check if match just completed - show option to view details
+                if ("COMPLETED".equals(footballMatch.getMatchStatus())) {
+                    showMatchCompletedDialog();
+                }
             }
         });
         
@@ -982,5 +1013,37 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
             matchViewModel.undoLastEvent();
             Toast.makeText(getContext(), "↩️ Last event undone", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /**
+     * Shows a dialog when match is completed, offering to view match details.
+     */
+    private void showMatchCompletedDialog() {
+        if (matchViewModel.offlineMatch.getValue() == null) return;
+        
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Match Completed")
+                .setMessage("The match has ended. Would you like to view the full match statistics and timeline?")
+                .setPositiveButton("View Details", (dialog, which) -> {
+                    navigateToMatchDetails();
+                })
+                .setNegativeButton("Stay Here", (dialog, which) -> {
+                    dialog.dismiss();
+                })
+                .setCancelable(false)
+                .show();
+    }
+    
+    /**
+     * Navigate to MatchActivity to view completed match details.
+     */
+    private void navigateToMatchDetails() {
+        if (matchViewModel.offlineMatch.getValue() == null) return;
+        
+        android.content.Intent intent = new android.content.Intent(requireContext(), 
+                com.example.tournafy.ui.activities.MatchActivity.class);
+        intent.putExtra(com.example.tournafy.ui.activities.MatchActivity.EXTRA_MATCH_ID, 
+                matchViewModel.offlineMatch.getValue().getEntityId());
+        startActivity(intent);
     }
 }

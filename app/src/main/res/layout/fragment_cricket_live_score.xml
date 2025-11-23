@@ -13,13 +13,38 @@
         android:layout_height="wrap_content"
         android:paddingBottom="16dp">
 
+        <TextView
+            android:id="@+id/tvFragmentTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Live Score"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:layout_marginStart="16dp"
+            app:layout_constraintBottom_toBottomOf="@+id/btnShareMatch"
+            app:layout_constraintTop_toTopOf="@+id/btnShareMatch"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btnShareMatch"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnShareMatch"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="Share Match"
+            app:icon="@android:drawable/ic_menu_share"
+            app:iconTint="?attr/colorOnSurface"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
         <com.example.tournafy.ui.components.ScoreboardView
             android:id="@+id/scoreboardView"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="16dp"
-            app:layout_constraintTop_toTopOf="parent"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/btnShareMatch"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
@@ -161,21 +186,34 @@
                     android:gravity="center">
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnSelectNextBatsman"
-                        android:layout_width="wrap_content"
+                        android:id="@+id/btnChangeStriker"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="Next Batsman"
-                        android:textSize="12sp"
+                        android:layout_weight="1"
+                        android:text="Change Striker"
+                        android:textSize="11sp"
                         style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_marginEnd="8dp"/>
+                        android:layout_marginEnd="4dp"/>
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnSelectNextBowler"
-                        android:layout_width="wrap_content"
+                        android:id="@+id/btnChangeNonStriker"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="Next Bowler"
-                        android:textSize="12sp"
-                        style="@style/Widget.Material3.Button.OutlinedButton"/>
+                        android:layout_weight="1"
+                        android:text="Change Non-Striker"
+                        android:textSize="11sp"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_marginHorizontal="4dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnChangeBowler"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Change Bowler"
+                        android:textSize="11sp"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_marginStart="4dp"/>
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

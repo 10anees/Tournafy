@@ -46,6 +46,7 @@ public class SelectNextBatsmanDialog extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+        android.util.Log.d("SelectNextBatsmanDialog", "onCreateDialog started");
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_select_player, null);
@@ -55,8 +56,10 @@ public class SelectNextBatsmanDialog extends DialogFragment {
 
         // Get list of available batsmen
         List<Player> availableBatsmen = getAvailableBatsmen();
+        android.util.Log.d("SelectNextBatsmanDialog", "Available batsmen count: " + availableBatsmen.size());
         
         if (availableBatsmen.isEmpty()) {
+            android.util.Log.e("SelectNextBatsmanDialog", "No batsmen available - dismissing dialog");
             Toast.makeText(getContext(), "No batsmen available", Toast.LENGTH_SHORT).show();
             dismiss();
             return builder.create();
@@ -76,19 +79,42 @@ public class SelectNextBatsmanDialog extends DialogFragment {
                 .setTitle(title)
                 .setNegativeButton("Cancel", (dialog, which) -> dismiss());
 
-        return builder.create();
+        Dialog dialog = builder.create();
+        android.util.Log.d("SelectNextBatsmanDialog", "Dialog created successfully with " + availableBatsmen.size() + " batsmen");
+        android.util.Log.d("SelectNextBatsmanDialog", "Dialog isShowing: " + dialog.isShowing());
+        return dialog;
+    }
+    
+    @Override
+    public void onStart() {
+        super.onStart();
+        android.util.Log.d("SelectNextBatsmanDialog", "onStart called - dialog should be visible now");
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        android.util.Log.d("SelectNextBatsmanDialog", "onResume called");
+    }
+    
+    @Override
+    public void onDismiss(@NonNull android.content.DialogInterface dialog) {
+        super.onDismiss(dialog);
+        android.util.Log.d("SelectNextBatsmanDialog", "onDismiss called");
     }
 
     private List<Player> getAvailableBatsmen() {
         List<Player> availableBatsmen = new ArrayList<>();
         
         if (match == null || match.getTeams() == null || match.getTeams().isEmpty()) {
+            android.util.Log.e("SelectNextBatsmanDialog", "Match or teams is null/empty");
             return availableBatsmen;
         }
 
         // Determine which team is currently batting
         String battingTeamId = getCurrentBattingTeamId();
         if (battingTeamId == null) {
+            android.util.Log.e("SelectNextBatsmanDialog", "Batting team ID is null");
             return availableBatsmen;
         }
 
@@ -101,9 +127,17 @@ public class SelectNextBatsmanDialog extends DialogFragment {
             }
         }
 
-        if (battingTeam == null || battingTeam.getPlayers() == null) {
+        if (battingTeam == null) {
+            android.util.Log.e("SelectNextBatsmanDialog", "Batting team not found in match teams");
             return availableBatsmen;
         }
+        
+        if (battingTeam.getPlayers() == null) {
+            android.util.Log.e("SelectNextBatsmanDialog", "Batting team has null players list");
+            return availableBatsmen;
+        }
+
+        android.util.Log.d("SelectNextBatsmanDialog", "Batting team has " + battingTeam.getPlayers().size() + " players");
 
         // Filter available batsmen: not out, not currently batting
         String currentStrikerId = match.getCurrentStrikerId();
@@ -113,16 +147,19 @@ public class SelectNextBatsmanDialog extends DialogFragment {
             // Exclude currently batting players
             if (player.getPlayerId().equals(currentStrikerId) || 
                 player.getPlayerId().equals(currentNonStrikerId)) {
+                android.util.Log.d("SelectNextBatsmanDialog", "Skipping currently batting player: " + player.getPlayerName());
                 continue;
             }
             
             // Check if player is out using batsman stats
             BatsmanStats stats = match.getBatsmanStats(player.getPlayerId());
             if (stats != null && stats.isOut()) {
+                android.util.Log.d("SelectNextBatsmanDialog", "Skipping out player: " + player.getPlayerName());
                 continue; // Skip players who are already out
             }
             
             availableBatsmen.add(player);
+            android.util.Log.d("SelectNextBatsmanDialog", "Added player: " + player.getPlayerName());
         }
 
         return availableBatsmen;

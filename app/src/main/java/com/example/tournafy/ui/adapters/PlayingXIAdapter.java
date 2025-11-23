@@ -28,12 +28,18 @@ public class PlayingXIAdapter extends RecyclerView.Adapter<PlayingXIAdapter.Play
     private String currentNonStrikerId;
     private String currentBowlerId;
     private boolean isBattingTeam;
+    private boolean showCricketStats; // Flag to show/hide cricket-specific stats
 
     public PlayingXIAdapter(boolean isBattingTeam) {
+        this(isBattingTeam, true); // Default: show cricket stats
+    }
+    
+    public PlayingXIAdapter(boolean isBattingTeam, boolean showCricketStats) {
         this.players = new ArrayList<>();
         this.batsmanStatsMap = new HashMap<>();
         this.bowlerStatsMap = new HashMap<>();
         this.isBattingTeam = isBattingTeam;
+        this.showCricketStats = showCricketStats;
     }
 
     public void setPlayers(List<Player> players) {
@@ -71,7 +77,7 @@ public class PlayingXIAdapter extends RecyclerView.Adapter<PlayingXIAdapter.Play
     @Override
     public void onBindViewHolder(@NonNull PlayerViewHolder holder, int position) {
         Player player = players.get(position);
-        holder.bind(player, isBattingTeam);
+        holder.bind(player, isBattingTeam, showCricketStats);
     }
 
     @Override
@@ -101,7 +107,7 @@ public class PlayingXIAdapter extends RecyclerView.Adapter<PlayingXIAdapter.Play
             tvBowlerEconomy = itemView.findViewById(R.id.tvBowlerEconomy);
         }
 
-        public void bind(Player player, boolean isBattingTeam) {
+        public void bind(Player player, boolean isBattingTeam, boolean showCricketStats) {
             tvPlayerName.setText(player.getPlayerName());
             tvPlayerRole.setText(player.getRole() != null ? player.getRole() : "Player");
 
@@ -116,6 +122,11 @@ public class PlayingXIAdapter extends RecyclerView.Adapter<PlayingXIAdapter.Play
             tvBatsmanStrikeRate.setVisibility(View.GONE);
             tvBowlerStats.setVisibility(View.GONE);
             tvBowlerEconomy.setVisibility(View.GONE);
+            
+            // If cricket stats are disabled (e.g., for football), just show player info
+            if (!showCricketStats) {
+                return;
+            }
 
             if (isBattingTeam) {
                 // Show batting stats

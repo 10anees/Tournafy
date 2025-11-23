@@ -61,16 +61,22 @@ public class FirebaseMatchObserver implements MatchObserver {
             // Check that the event's matchId matches this observer's matchId
             if (event.getMatchId() != null && event.getMatchId().equals(this.matchId)) {
                 // CRITICAL FIX: Fetch the match and update it to persist the new event
-                matchFirebaseRepository.getById(matchId).observeForever(match -> {
-                    if (match != null) {
-                        // The match object already contains the new event (added by processEvent)
-                        // Now persist it to Firebase
-                        matchFirebaseRepository.update(match)
-                            .addOnFailureListener(e -> 
-                                System.err.println("FirebaseMatchObserver: Failed to sync event - " + e.getMessage())
-                            );
+                androidx.lifecycle.Observer<com.example.tournafy.domain.models.base.Match> eventSyncObserver = new androidx.lifecycle.Observer<Match>() {
+                    @Override
+                    public void onChanged(com.example.tournafy.domain.models.base.Match match) {
+                        if (match != null) {
+                            // The match object already contains the new event (added by processEvent)
+                            // Now persist it to Firebase
+                            matchFirebaseRepository.update(match)
+                                .addOnFailureListener(e -> 
+                                    System.err.println("FirebaseMatchObserver: Failed to sync event - " + e.getMessage())
+                                );
+                        }
+                        // IMPORTANT: Remove observer after execution to prevent infinite loop
+                        matchFirebaseRepository.getById(matchId).removeObserver(this);
                     }
-                });
+                };
+                matchFirebaseRepository.getById(matchId).observeForever(eventSyncObserver);
             } else {
                 // Log an error or handle mismatch
                 System.err.println("FirebaseMatchObserver: Event matchId does not match observer's matchId.");
@@ -97,14 +103,20 @@ public class FirebaseMatchObserver implements MatchObserver {
                 );
                 
             // Also trigger a full match update to ensure all related changes (innings, etc.) are synced
-            matchFirebaseRepository.getById(matchId).observeForever(match -> {
-                if (match != null) {
-                    matchFirebaseRepository.update(match)
-                        .addOnFailureListener(e -> 
-                            System.err.println("FirebaseMatchObserver: Failed to sync full match after status change - " + e.getMessage())
-                        );
+            androidx.lifecycle.Observer<com.example.tournafy.domain.models.base.Match> statusSyncObserver = new androidx.lifecycle.Observer<Match>() {
+                @Override
+                public void onChanged(com.example.tournafy.domain.models.base.Match match) {
+                    if (match != null) {
+                        matchFirebaseRepository.update(match)
+                            .addOnFailureListener(e -> 
+                                System.err.println("FirebaseMatchObserver: Failed to sync full match after status change - " + e.getMessage())
+                            );
+                    }
+                    // IMPORTANT: Remove observer after execution to prevent infinite loop
+                    matchFirebaseRepository.getById(matchId).removeObserver(this);
                 }
-            });
+            };
+            matchFirebaseRepository.getById(matchId).observeForever(statusSyncObserver);
         }
     }
 }

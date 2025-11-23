@@ -60,15 +60,21 @@ public class TournamentService implements ITournamentService {
     public void getTournamentTeams(String tournamentId, TournamentCallback<List<TournamentTeam>> callback) {
         // Note: observeForever is used here because we are in a Service (no LifecycleOwner).
         // Ideally, repositories should return Task<Data> for one-shot requests in Services.
-        // Ensure you handle removal of observers if this was a long-living connection.
-        tournamentRepository.getById(tournamentId).observeForever(tournament -> {
-            if (tournament != null) {
-                // Now getTeams() will resolve correctly
-                callback.onSuccess(tournament.getTeams());
-            } else {
-                callback.onError(new Exception("Tournament not found"));
+        // IMPORTANT: Remove observer after getting data to prevent memory leaks
+        androidx.lifecycle.Observer<Tournament> teamsObserver = new androidx.lifecycle.Observer<Tournament>() {
+            @Override
+            public void onChanged(Tournament tournament) {
+                if (tournament != null) {
+                    // Now getTeams() will resolve correctly
+                    callback.onSuccess(tournament.getTeams());
+                } else {
+                    callback.onError(new Exception("Tournament not found"));
+                }
+                // Remove observer after execution to prevent infinite loop and memory leaks
+                tournamentRepository.getById(tournamentId).removeObserver(this);
             }
-        });
+        };
+        tournamentRepository.getById(tournamentId).observeForever(teamsObserver);
     }
 
     @Override

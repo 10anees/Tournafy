@@ -32,7 +32,7 @@
             android:text="Sample Match Name"
             android:textAppearance="?attr/textAppearanceTitleMedium"
             android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@+id/chipOnlineStatus"
+            app:layout_constraintEnd_toStartOf="@+id/btnShare"
             app:layout_constraintStart_toEndOf="@id/ivEntityIcon"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -46,28 +46,29 @@
             app:layout_constraintStart_toStartOf="@id/tvEntityName"
             app:layout_constraintTop_toBottomOf="@id/tvEntityName" />
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipOnlineStatus"
-            style="@style/Widget.Material3.Chip.Assist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minHeight="32dp"
-            android:text="Offline"
-            android:textSize="12sp"
-            app:layout_constraintEnd_toStartOf="@id/btnDelete"
-            app:layout_constraintTop_toTopOf="parent" />
-            
-        <ImageButton
-            android:id="@+id/btnDelete"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnShare"
+            style="@style/Widget.Material3.Button.IconButton"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@drawable/ic_delete" 
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Share"
+            app:icon="@drawable/ic_share"
+            app:iconTint="?attr/colorPrimary"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btnDelete"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDelete"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:contentDescription="Delete"
-            app:tint="?attr/colorError"
+            app:icon="@drawable/ic_delete"
+            app:iconTint="?attr/colorError"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="@id/chipOnlineStatus"/>
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/tvEntityStatus"

@@ -18,6 +18,12 @@ public class Innings {
     private int oversCompleted; // Whole overs
     private boolean isCompleted;
     
+    // Extras tracking
+    private int byes;
+    private int legByes;
+    private int wides;
+    private int noBalls;
+    
     // Note: Overs will be stored in a separate 'Overs' collection
     // to avoid document size limits.
 
@@ -95,5 +101,46 @@ public class Innings {
 
     public void setCompleted(boolean completed) {
         isCompleted = completed;
+    }
+
+    public int getByes() {
+        return byes;
+    }
+
+    public void setByes(int byes) {
+        this.byes = byes;
+    }
+
+    public int getLegByes() {
+        return legByes;
+    }
+
+    public void setLegByes(int legByes) {
+        this.legByes = legByes;
+    }
+
+    public int getWides() {
+        return wides;
+    }
+
+    public void setWides(int wides) {
+        this.wides = wides;
+    }
+
+    public int getNoBalls() {
+        return noBalls;
+    }
+
+    public void setNoBalls(int noBalls) {
+        this.noBalls = noBalls;
+    }
+
+    /**
+     * Calculates total overs including partial overs
+     * @return Total overs as decimal (e.g., 12.3 means 12 overs and 3 balls)
+     */
+    public double getTotalOvers() {
+        return oversCompleted; // For now, returns complete overs only
+        // TODO: Add partial over calculation if needed
     }
 }

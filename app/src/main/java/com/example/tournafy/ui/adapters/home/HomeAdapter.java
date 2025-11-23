@@ -1,15 +1,12 @@
 package com.example.tournafy.ui.adapters.home;
 
-import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
@@ -19,7 +16,7 @@ import com.example.tournafy.domain.models.base.HostedEntity;
 import com.example.tournafy.domain.models.base.Match;
 import com.example.tournafy.domain.models.series.Series;
 import com.example.tournafy.domain.models.tournament.Tournament;
-import com.google.android.material.chip.Chip;
+import com.google.android.material.button.MaterialButton;
 
 public class HomeAdapter extends ListAdapter<HostedEntity, HomeAdapter.EntityViewHolder> {
 
@@ -28,7 +25,8 @@ public class HomeAdapter extends ListAdapter<HostedEntity, HomeAdapter.EntityVie
     public interface OnEntityClickListener {
         void onEntityClick(HostedEntity entity);
         void onEntityLongClick(HostedEntity entity);
-        void onDeleteClick(HostedEntity entity); // NEW METHOD
+        void onDeleteClick(HostedEntity entity);
+        void onShareClick(HostedEntity entity);
     }
 
     public HomeAdapter(OnEntityClickListener listener) {
@@ -52,8 +50,8 @@ public class HomeAdapter extends ListAdapter<HostedEntity, HomeAdapter.EntityVie
     static class EntityViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvStatus, tvType;
         ImageView ivIcon;
-        Chip chipOnlineStatus;
-        ImageButton btnDelete; // NEW
+        MaterialButton btnShare;
+        MaterialButton btnDelete;
 
         public EntityViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -61,8 +59,8 @@ public class HomeAdapter extends ListAdapter<HostedEntity, HomeAdapter.EntityVie
             tvStatus = itemView.findViewById(R.id.tvEntityStatus);
             tvType = itemView.findViewById(R.id.tvEntityType);
             ivIcon = itemView.findViewById(R.id.ivEntityIcon);
-            chipOnlineStatus = itemView.findViewById(R.id.chipOnlineStatus);
-            btnDelete = itemView.findViewById(R.id.btnDelete); // Bind new button
+            btnShare = itemView.findViewById(R.id.btnShare);
+            btnDelete = itemView.findViewById(R.id.btnDelete);
         }
 
         public void bind(HostedEntity entity, OnEntityClickListener listener) {
@@ -80,25 +78,16 @@ public class HomeAdapter extends ListAdapter<HostedEntity, HomeAdapter.EntityVie
                 ivIcon.setImageResource(R.drawable.ic_series);
             }
 
-            if (entity.isOnline()) {
-                chipOnlineStatus.setText("Online");
-                chipOnlineStatus.setChipBackgroundColor(ColorStateList.valueOf(
-                        ContextCompat.getColor(itemView.getContext(), android.R.color.holo_green_light)
-                ));
-            } else {
-                chipOnlineStatus.setText("Offline");
-                chipOnlineStatus.setChipBackgroundColor(ColorStateList.valueOf(
-                        ContextCompat.getColor(itemView.getContext(), android.R.color.darker_gray)
-                ));
-            }
-
             itemView.setOnClickListener(v -> listener.onEntityClick(entity));
             itemView.setOnLongClickListener(v -> {
                 listener.onEntityLongClick(entity);
                 return true;
             });
             
-            // NEW: Handle delete click
+            // Handle share button click
+            btnShare.setOnClickListener(v -> listener.onShareClick(entity));
+            
+            // Handle delete button click
             btnDelete.setOnClickListener(v -> listener.onDeleteClick(entity));
         }
     }
@@ -113,8 +102,7 @@ public class HomeAdapter extends ListAdapter<HostedEntity, HomeAdapter.EntityVie
         @Override
         public boolean areContentsTheSame(@NonNull HostedEntity oldItem, @NonNull HostedEntity newItem) {
             return oldItem.getName().equals(newItem.getName()) &&
-                    oldItem.getStatus().equals(newItem.getStatus()) &&
-                    oldItem.isOnline() == newItem.isOnline();
+                    oldItem.getStatus().equals(newItem.getStatus());
         }
     }
 }

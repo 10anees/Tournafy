@@ -45,6 +45,7 @@ public class SelectNextBowlerDialog extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+        android.util.Log.d("SelectNextBowlerDialog", "onCreateDialog started");
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_select_player, null);
@@ -54,8 +55,10 @@ public class SelectNextBowlerDialog extends DialogFragment {
 
         // Get list of available bowlers
         List<Player> availableBowlers = getAvailableBowlers();
+        android.util.Log.d("SelectNextBowlerDialog", "Available bowlers count: " + availableBowlers.size());
         
         if (availableBowlers.isEmpty()) {
+            android.util.Log.e("SelectNextBowlerDialog", "No bowlers available - dismissing dialog");
             Toast.makeText(getContext(), "No bowlers available", Toast.LENGTH_SHORT).show();
             dismiss();
             return builder.create();
@@ -75,19 +78,42 @@ public class SelectNextBowlerDialog extends DialogFragment {
                 .setTitle(title)
                 .setNegativeButton("Cancel", (dialog, which) -> dismiss());
 
-        return builder.create();
+        Dialog dialog = builder.create();
+        android.util.Log.d("SelectNextBowlerDialog", "Dialog created successfully with " + availableBowlers.size() + " bowlers");
+        android.util.Log.d("SelectNextBowlerDialog", "Dialog isShowing: " + dialog.isShowing());
+        return dialog;
+    }
+    
+    @Override
+    public void onStart() {
+        super.onStart();
+        android.util.Log.d("SelectNextBowlerDialog", "onStart called - dialog should be visible now");
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        android.util.Log.d("SelectNextBowlerDialog", "onResume called");
+    }
+    
+    @Override
+    public void onDismiss(@NonNull android.content.DialogInterface dialog) {
+        super.onDismiss(dialog);
+        android.util.Log.d("SelectNextBowlerDialog", "onDismiss called");
     }
 
     private List<Player> getAvailableBowlers() {
         List<Player> availableBowlers = new ArrayList<>();
         
         if (match == null || match.getTeams() == null || match.getTeams().isEmpty()) {
+            android.util.Log.e("SelectNextBowlerDialog", "Match or teams is null/empty");
             return availableBowlers;
         }
 
         // Determine which team is currently bowling
         String bowlingTeamId = getCurrentBowlingTeamId();
         if (bowlingTeamId == null) {
+            android.util.Log.e("SelectNextBowlerDialog", "Bowling team ID is null");
             return availableBowlers;
         }
 
@@ -100,13 +126,22 @@ public class SelectNextBowlerDialog extends DialogFragment {
             }
         }
 
-        if (bowlingTeam == null || bowlingTeam.getPlayers() == null) {
+        if (bowlingTeam == null) {
+            android.util.Log.e("SelectNextBowlerDialog", "Bowling team not found in match teams");
             return availableBowlers;
         }
+        
+        if (bowlingTeam.getPlayers() == null) {
+            android.util.Log.e("SelectNextBowlerDialog", "Bowling team has null players list");
+            return availableBowlers;
+        }
+
+        android.util.Log.d("SelectNextBowlerDialog", "Bowling team has " + bowlingTeam.getPlayers().size() + " players");
 
         // Include all bowlers from the bowling team (removed starting XI restriction)
         for (Player player : bowlingTeam.getPlayers()) {
             availableBowlers.add(player);
+            android.util.Log.d("SelectNextBowlerDialog", "Added player: " + player.getPlayerName());
         }
 
         return availableBowlers;

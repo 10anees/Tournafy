@@ -136,6 +136,10 @@ public class MatchFirestoreRepository extends FirestoreRepository<Match> {
         if (data.containsKey("venue")) match.setVenue((String) data.get("venue"));
         if (data.containsKey("hostUserId")) match.setHostUserId((String) data.get("hostUserId"));
         if (data.containsKey("status")) match.setStatus((String) data.get("status"));
+        if (data.containsKey("visibilityLink")) {
+            match.setVisibilityLink((String) data.get("visibilityLink"));
+            android.util.Log.d("MatchFirestoreRepository", "Deserialized visibilityLink: " + data.get("visibilityLink"));
+        }
         
         // CRITICAL FIX: Populate cricket-specific fields if this is a CricketMatch
         if (match instanceof CricketMatch) {

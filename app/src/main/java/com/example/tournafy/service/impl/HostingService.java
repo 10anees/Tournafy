@@ -8,6 +8,7 @@ import com.example.tournafy.domain.models.match.football.FootballMatch;
 import com.example.tournafy.domain.models.series.Series;
 import com.example.tournafy.domain.models.tournament.Tournament;
 import com.example.tournafy.service.interfaces.IHostingService;
+import com.example.tournafy.utils.LinkGenerator;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -39,6 +40,14 @@ public class HostingService implements IHostingService {
     public void createCricketMatch(CricketMatch.Builder builder, HostingCallback<CricketMatch> callback) {
         try {
             CricketMatch match = builder.build();
+            
+            // Auto-generate visibility link if not already set
+            if (match.getVisibilityLink() == null || match.getVisibilityLink().isEmpty()) {
+                String visibilityLink = LinkGenerator.generateLink(match.getName(), match.getEntityId());
+                match.setVisibilityLink(visibilityLink);
+                android.util.Log.d("HostingService", "Generated visibility link: " + visibilityLink);
+            }
+            
             android.util.Log.d("HostingService", "Creating match - ID: " + match.getEntityId() + 
                 ", Name: " + match.getName() + ", MatchStatus: " + match.getMatchStatus() + 
                 ", Teams: " + (match.getTeams() != null ? match.getTeams().size() : 0));
@@ -58,6 +67,14 @@ public class HostingService implements IHostingService {
     public void createFootballMatch(FootballMatch.Builder builder, HostingCallback<FootballMatch> callback) {
         try {
             FootballMatch match = builder.build();
+            
+            // Auto-generate visibility link if not already set
+            if (match.getVisibilityLink() == null || match.getVisibilityLink().isEmpty()) {
+                String visibilityLink = LinkGenerator.generateLink(match.getName(), match.getEntityId());
+                match.setVisibilityLink(visibilityLink);
+                android.util.Log.d("HostingService", "Generated visibility link: " + visibilityLink);
+            }
+            
             matchRepository.add(match)
                 .addOnFailureListener(callback::onError);
             
@@ -72,6 +89,14 @@ public class HostingService implements IHostingService {
     public void createTournament(Tournament.Builder builder, HostingCallback<Tournament> callback) {
         try {
             Tournament tournament = builder.build();
+            
+            // Auto-generate visibility link if not already set
+            if (tournament.getVisibilityLink() == null || tournament.getVisibilityLink().isEmpty()) {
+                String visibilityLink = LinkGenerator.generateLink(tournament.getName(), tournament.getEntityId());
+                tournament.setVisibilityLink(visibilityLink);
+                android.util.Log.d("HostingService", "Generated visibility link: " + visibilityLink);
+            }
+            
             tournamentRepository.add(tournament)
                 .addOnFailureListener(callback::onError);
             
@@ -86,6 +111,14 @@ public class HostingService implements IHostingService {
     public void createSeries(Series.Builder builder, HostingCallback<Series> callback) {
         try {
             Series series = builder.build();
+            
+            // Auto-generate visibility link if not already set
+            if (series.getVisibilityLink() == null || series.getVisibilityLink().isEmpty()) {
+                String visibilityLink = LinkGenerator.generateLink(series.getName(), series.getEntityId());
+                series.setVisibilityLink(visibilityLink);
+                android.util.Log.d("HostingService", "Generated visibility link: " + visibilityLink);
+            }
+            
             seriesRepository.add(series)
                 .addOnFailureListener(callback::onError);
             

@@ -79,4 +79,12 @@ public class FootballShotDetail {
     public void setXGValue(double xGValue) {
         this.xGValue = xGValue;
     }
+
+    /**
+     * Convenience method to check if shot was on target.
+     * Returns true if shotType is "ON_TARGET" or "SAVED".
+     */
+    public boolean isOnTarget() {
+        return "ON_TARGET".equals(shotType) || "SAVED".equals(shotType);
+    }
 }

@@ -1,10 +1,11 @@
 package com.example.tournafy.ui.fragments.search;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -13,131 +14,189 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tournafy.R;
-import com.example.tournafy.domain.models.base.Match;
-import com.example.tournafy.domain.models.match.cricket.CricketMatch;
-import com.example.tournafy.domain.models.match.football.FootballMatch;
-import com.example.tournafy.ui.viewmodels.MatchViewModel;
+import com.example.tournafy.domain.models.search.SearchResult;
+import com.example.tournafy.ui.activities.MatchActivity;
+import com.example.tournafy.ui.adapters.SearchResultAdapter;
+import com.example.tournafy.ui.viewmodels.SearchViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
+/**
+ * Fragment for searching matches, tournaments, and series by code.
+ */
 @AndroidEntryPoint
-public class SearchFragment extends Fragment {
-
-    private MatchViewModel matchViewModel;
+public class SearchFragment extends Fragment implements SearchResultAdapter.OnResultClickListener {
+    
+    private SearchViewModel searchViewModel;
     
     // UI Components
     private TextInputEditText etSearch;
-    private TextInputLayout tilSearch;
     private MaterialButton btnSearch;
     private ProgressBar progressBar;
     private TextView tvError;
-
-    public SearchFragment() {
-        // Required empty public constructor
-    }
-
+    private RecyclerView recyclerResults;
+    
+    private SearchResultAdapter adapter;
+    
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        searchViewModel = new ViewModelProvider(this).get(SearchViewModel.class);
+    }
+    
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_search, container, false);
     }
-
+    
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
-        // Initialize Views
+        
+        initViews(view);
+        setupRecyclerView();
+        setupListeners();
+        observeViewModel();
+    }
+    
+    private void initViews(View view) {
         etSearch = view.findViewById(R.id.etSearch);
-        tilSearch = view.findViewById(R.id.tilSearch);
         btnSearch = view.findViewById(R.id.btnSearch);
         progressBar = view.findViewById(R.id.progressBar);
         tvError = view.findViewById(R.id.tvError);
-
-        // Initialize ViewModel
-        matchViewModel = new ViewModelProvider(requireActivity()).get(MatchViewModel.class);
-
-        // Setup Observers
-        setupObservers();
-
-        // Setup Listeners
-        btnSearch.setOnClickListener(v -> performSearch());
+        recyclerResults = view.findViewById(R.id.recyclerResults);
     }
-
-    private void setupObservers() {
-        // 1. Observe Loading State
-        matchViewModel.isLoading.observe(getViewLifecycleOwner(), isLoading -> {
-            progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
-            btnSearch.setEnabled(!isLoading);
-            tilSearch.setEnabled(!isLoading);
+    
+    private void setupRecyclerView() {
+        adapter = new SearchResultAdapter(this);
+        recyclerResults.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerResults.setAdapter(adapter);
+    }
+    
+    private void setupListeners() {
+        // Search button click
+        btnSearch.setOnClickListener(v -> performSearch());
+        
+        // Enter key on keyboard
+        etSearch.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                performSearch();
+                return true;
+            }
+            return false;
         });
-
-        // 2. Observe Online Match Result
-        matchViewModel.onlineMatch.observe(getViewLifecycleOwner(), match -> {
-            if (match != null) {
-                // Match Found!
+        
+        // Clear error when user starts typing
+        etSearch.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
                 tvError.setVisibility(View.GONE);
-                navigateToMatchDetails(match);
+            }
+            
+            @Override
+            public void afterTextChanged(android.text.Editable s) {}
+        });
+    }
+    
+    private void observeViewModel() {
+        // Observe search results
+        searchViewModel.searchResults.observe(getViewLifecycleOwner(), results -> {
+            if (results != null && !results.isEmpty()) {
+                adapter.setResults(results);
+                recyclerResults.setVisibility(View.VISIBLE);
+                android.util.Log.d("SearchFragment", "Displaying " + results.size() + " result(s)");
             } else {
-                // If loading is finished but match is null, it might not exist
-                // (Note: Real-time db returns null if path doesn't exist)
-                if (Boolean.FALSE.equals(matchViewModel.isLoading.getValue())) {
-                    showError("Match not found.");
-                }
+                recyclerResults.setVisibility(View.GONE);
+            }
+        });
+        
+        // Observe loading state
+        searchViewModel.isLoading.observe(getViewLifecycleOwner(), isLoading -> {
+            if (isLoading != null && isLoading) {
+                progressBar.setVisibility(View.VISIBLE);
+                btnSearch.setEnabled(false);
+            } else {
+                progressBar.setVisibility(View.GONE);
+                btnSearch.setEnabled(true);
+            }
+        });
+        
+        // Observe errors
+        searchViewModel.errorMessage.observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                tvError.setText(error);
+                tvError.setVisibility(View.VISIBLE);
+                recyclerResults.setVisibility(View.GONE);
+            } else {
+                tvError.setVisibility(View.GONE);
             }
         });
     }
-
+    
     private void performSearch() {
-        String query = etSearch.getText() != null ? etSearch.getText().toString().trim() : "";
-
-        if (TextUtils.isEmpty(query)) {
-            tilSearch.setError("Please enter an ID or Link");
+        String query = etSearch.getText().toString().trim();
+        
+        if (query.isEmpty()) {
+            tvError.setText("Please enter a match code");
+            tvError.setVisibility(View.VISIBLE);
             return;
         }
-
-        tilSearch.setError(null);
-        tvError.setVisibility(View.GONE);
         
-        // In a real scenario, you'd parse the link to extract the ID. 
-        // For now, we assume the user enters the ID directly.
-        String entityId = extractIdFromInput(query);
+        // Hide keyboard
+        android.view.inputmethod.InputMethodManager imm = 
+            (android.view.inputmethod.InputMethodManager) requireActivity()
+                .getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
+        }
         
-        // Trigger the load in the ViewModel
-        // This updates the _onlineMatchId MutableLiveData, triggering the repository call
-        matchViewModel.loadOnlineMatch(entityId);
+        // Perform search
+        android.util.Log.d("SearchFragment", "Searching for: " + query);
+        searchViewModel.search(query);
     }
-
-    private String extractIdFromInput(String input) {
-        // Logic to parse deep links or standard URLs would go here.
-        // e.g. tournafy.com/match/12345 -> returns 12345
-        return input; 
-    }
-
-    private void navigateToMatchDetails(Match match) {
-        NavController navController = Navigation.findNavController(requireView());
+    
+    @Override
+    public void onResultClick(SearchResult result) {
+        android.util.Log.d("SearchFragment", "Result clicked: " + result.getTitle() + 
+            " (Type: " + result.getType() + ", ID: " + result.getId() + ")");
         
-        if (match instanceof CricketMatch) {
-            // Navigate to Cricket Details
-            // Note: You will need to create this navigation action in navigation graph later
-            // NavDirections action = SearchFragmentDirections.actionSearchToCricketDetails(match.getEntityId());
-            // navController.navigate(action);
-            
-            Toast.makeText(getContext(), "Found Cricket Match: " + match.getName(), Toast.LENGTH_SHORT).show();
-        } else if (match instanceof FootballMatch) {
-            // Navigate to Football Details
-            Toast.makeText(getContext(), "Found Football Match: " + match.getName(), Toast.LENGTH_SHORT).show();
+        switch (result.getType()) {
+            case SearchResult.TYPE_MATCH:
+                openMatch(result.getId());
+                break;
+            case SearchResult.TYPE_TOURNAMENT:
+                // TODO: Open tournament activity
+                Toast.makeText(getContext(), "Opening tournament: " + result.getTitle(), 
+                    Toast.LENGTH_SHORT).show();
+                break;
+            case SearchResult.TYPE_SERIES:
+                // TODO: Open series activity
+                Toast.makeText(getContext(), "Opening series: " + result.getTitle(), 
+                    Toast.LENGTH_SHORT).show();
+                break;
         }
     }
-
-    private void showError(String message) {
-        tvError.setText(message);
-        tvError.setVisibility(View.VISIBLE);
+    
+    private void openMatch(String matchId) {
+        Intent intent = new Intent(getContext(), MatchActivity.class);
+        intent.putExtra(MatchActivity.EXTRA_MATCH_ID, matchId);
+        startActivity(intent);
+    }
+    
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        searchViewModel.clearSearch();
     }
 }

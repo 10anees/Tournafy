@@ -41,6 +41,36 @@
                     android:orientation="vertical"
                     android:layout_marginBottom="@dimen/spacing_lg">
 
+                    <!-- Team Names Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="@dimen/spacing_md">
+
+                        <TextView
+                            android:id="@+id/tvHomeTeamName"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Home"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            android:gravity="start"/>
+
+                        <TextView
+                            android:id="@+id/tvAwayTeamName"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Away"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            android:gravity="end"/>
+                    </LinearLayout>
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -89,135 +119,38 @@
 
                 <!-- Shots -->
                 <include
-                    layout="@layout/component_stat_item"
+                    layout="@layout/component_football_stat_item"
                     android:id="@+id/statShots"/>
 
                 <!-- Shots on Target -->
                 <include
-                    layout="@layout/component_stat_item"
+                    layout="@layout/component_football_stat_item"
                     android:id="@+id/statShotsOnTarget"/>
 
                 <!-- Corners -->
                 <include
-                    layout="@layout/component_stat_item"
+                    layout="@layout/component_football_stat_item"
                     android:id="@+id/statCorners"/>
 
                 <!-- Fouls -->
                 <include
-                    layout="@layout/component_stat_item"
+                    layout="@layout/component_football_stat_item"
                     android:id="@+id/statFouls"/>
 
                 <!-- Yellow Cards -->
                 <include
-                    layout="@layout/component_stat_item"
+                    layout="@layout/component_football_stat_item"
                     android:id="@+id/statYellowCards"/>
 
                 <!-- Red Cards -->
                 <include
-                    layout="@layout/component_stat_item"
+                    layout="@layout/component_football_stat_item"
                     android:id="@+id/statRedCards"/>
 
                 <!-- Offsides -->
                 <include
-                    layout="@layout/component_stat_item"
+                    layout="@layout/component_football_stat_item"
                     android:id="@+id/statOffsides"/>
-
-                <!-- Passes -->
-                <include
-                    layout="@layout/component_stat_item"
-                    android:id="@+id/statPasses"/>
-
-                <!-- Pass Accuracy -->
-                <include
-                    layout="@layout/component_stat_item"
-                    android:id="@+id/statPassAccuracy"/>
-
-                <!-- Saves -->
-                <include
-                    layout="@layout/component_stat_item"
-                    android:id="@+id/statSaves"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Player Stats Card -->
-        <com.google.android.material.card.MaterialCardView
-            style="@style/Widget.Tournafy.Card.Filled"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_md">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="@dimen/spacing_md">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Top Performers"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="@dimen/spacing_sm"/>
-
-                <!-- Man of the Match -->
-                <LinearLayout
-                    android:id="@+id/layoutMOTM"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:background="?attr/selectableItemBackground"
-                    android:padding="@dimen/spacing_sm"
-                    android:layout_marginBottom="@dimen/spacing_sm">
-
-                    <ImageView
-                        android:layout_width="@dimen/icon_size_md"
-                        android:layout_height="@dimen/icon_size_md"
-                        android:src="@android:drawable/btn_star_big_on"
-                        android:contentDescription="Man of the Match"
-                        app:tint="?attr/colorPrimary"/>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:layout_marginStart="@dimen/spacing_md">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Man of the Match"
-                            android:textAppearance="?attr/textAppearanceLabelSmall"
-                            android:textColor="?attr/colorOnSurfaceVariant"/>
-
-                        <TextView
-                            android:id="@+id/tvMOTM"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Lionel Messi"
-                            android:textAppearance="?attr/textAppearanceTitleMedium"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textStyle="bold"/>
-                    </LinearLayout>
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipMOTMRating"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="9.5"
-                        app:chipBackgroundColor="?attr/colorPrimaryContainer"
-                        android:textColor="?attr/colorOnPrimaryContainer"/>
-                </LinearLayout>
-
-                <!-- Top Scorer -->
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvTopPerformers"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="?attr/colorPrimaryContainer"
+    android:padding="@dimen/spacing_md">
+
+    <!-- Match Status Chip -->
+    <com.google.android.material.chip.Chip
+        android:id="@+id/chipMatchStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="COMPLETED"
+        app:chipBackgroundColor="?attr/colorSecondaryContainer"
+        android:textColor="?attr/colorOnSecondaryContainer"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="@dimen/spacing_sm"/>
+
+    <!-- Score Display -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="@dimen/spacing_xs">
+
+        <!-- Team A Score -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tvTeamAName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Team A"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnPrimaryContainer"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/tvTeamAScore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2"
+                android:textAppearance="?attr/textAppearanceHeadlineLarge"
+                android:textColor="?attr/colorOnPrimaryContainer"
+                android:textStyle="bold"
+                android:layout_marginTop="@dimen/spacing_xs"/>
+        </LinearLayout>
+
+        <!-- VS Separator -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="vs"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorOnPrimaryContainer"
+            android:alpha="0.7"
+            android:layout_marginHorizontal="@dimen/spacing_md"/>
+
+        <!-- Team B Score -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tvTeamBName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Team B"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnPrimaryContainer"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/tvTeamBScore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1"
+                android:textAppearance="?attr/textAppearanceHeadlineLarge"
+                android:textColor="?attr/colorOnPrimaryContainer"
+                android:textStyle="bold"
+                android:layout_marginTop="@dimen/spacing_xs"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Match Result -->
+    <TextView
+        android:id="@+id/tvMatchResult"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Team A wins 2-1"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginTop="@dimen/spacing_sm"/>
+
+</LinearLayout>

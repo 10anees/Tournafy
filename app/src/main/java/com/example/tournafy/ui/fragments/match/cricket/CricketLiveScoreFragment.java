@@ -27,8 +27,12 @@ import com.example.tournafy.domain.models.team.MatchTeam;
 import com.example.tournafy.domain.models.team.Player;
 import com.example.tournafy.ui.components.ScoreboardView;
 import com.example.tournafy.ui.viewmodels.MatchViewModel;
+import com.example.tournafy.utils.ShareHelper;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.example.tournafy.ui.adapters.PlayingXIAdapter;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -49,8 +53,10 @@ public class CricketLiveScoreFragment extends Fragment {
 
     // UI Components from new Layout
     private MaterialButton btnStartMatch;
-    private MaterialButton btnSelectNextBatsman;
-    private MaterialButton btnSelectNextBowler;
+    private MaterialButton btnChangeStriker;
+    private MaterialButton btnChangeNonStriker;
+    private MaterialButton btnChangeBowler;
+    private MaterialButton btnShareMatch;
     private ScoreboardView scoreboardView;
     private TextView tvStriker, tvNonStriker, tvBowler;
     private LinearLayout llRecentBalls;
@@ -112,8 +118,10 @@ public class CricketLiveScoreFragment extends Fragment {
     private void initViews(View view) {
         // Main Views
         btnStartMatch = view.findViewById(R.id.btnStartMatch);
-        btnSelectNextBatsman = view.findViewById(R.id.btnSelectNextBatsman);
-        btnSelectNextBowler = view.findViewById(R.id.btnSelectNextBowler);
+        btnChangeStriker = view.findViewById(R.id.btnChangeStriker);
+        btnChangeNonStriker = view.findViewById(R.id.btnChangeNonStriker);
+        btnChangeBowler = view.findViewById(R.id.btnChangeBowler);
+        btnShareMatch = view.findViewById(R.id.btnShareMatch);
         scoreboardView = view.findViewById(R.id.scoreboardView);
         tvStriker = view.findViewById(R.id.tvStriker);
         tvNonStriker = view.findViewById(R.id.tvNonStriker);
@@ -164,9 +172,68 @@ public class CricketLiveScoreFragment extends Fragment {
     }
 
     private void setupListeners() {
+        // Share Match Button - Opens system share sheet
+        btnShareMatch.setOnClickListener(v -> {
+            // Check if user is logged in
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (currentUser == null) {
+                Toast.makeText(requireContext(), "Please log in to share matches", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            android.util.Log.d("CricketLiveScore", "Share button clicked");
+            android.util.Log.d("CricketLiveScore", "currentMatch: " + (currentMatch != null ? currentMatch.getName() : "null"));
+            if (currentMatch != null) {
+                android.util.Log.d("CricketLiveScore", "currentMatch visibilityLink: " + currentMatch.getVisibilityLink());
+            }
+            ShareHelper.shareMatch(requireContext(), currentMatch);
+        });
+
         // Start Match Button
         btnStartMatch.setOnClickListener(v -> {
-            // Let the ViewModel handle all validation and show specific error messages
+            android.util.Log.d("CricketLiveScore", "Start Match button clicked");
+            
+            // Get match to validate
+            com.example.tournafy.domain.models.base.Match match = matchViewModel.offlineMatch.getValue();
+            if (!(match instanceof CricketMatch)) {
+                Toast.makeText(getContext(), "Invalid match type", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            CricketMatch cricketMatch = (CricketMatch) match;
+            
+            // Validate match can start
+            if (cricketMatch.getTeams() == null || cricketMatch.getTeams().size() < 2) {
+                Toast.makeText(getContext(), "Need at least 2 teams to start", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            if (!cricketMatch.getMatchStatus().equals(com.example.tournafy.domain.enums.MatchStatus.SCHEDULED.name())) {
+                Toast.makeText(getContext(), "Match already started or completed", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // CRITICAL VALIDATION: Check if players are selected
+            if (cricketMatch.getCurrentBowlerId() == null) {
+                Toast.makeText(getContext(), "Please select a bowler before starting the match\n(Use 'Change Bowler' button)", 
+                    Toast.LENGTH_LONG).show();
+                return;
+            }
+            
+            if (cricketMatch.getCurrentStrikerId() == null) {
+                Toast.makeText(getContext(), "Please select a striker before starting the match\n(Use 'Change Striker' button)", 
+                    Toast.LENGTH_LONG).show();
+                return;
+            }
+            
+            if (cricketMatch.getCurrentNonStrikerId() == null) {
+                Toast.makeText(getContext(), "Please select a non-striker before starting the match\n(Use 'Change Non-Striker' button)", 
+                    Toast.LENGTH_LONG).show();
+                return;
+            }
+            
+            // All validations passed - start the match
+            android.util.Log.d("CricketLiveScore", "All players selected, starting match");
             matchViewModel.startMatch();
         });
 
@@ -206,8 +273,9 @@ public class CricketLiveScoreFragment extends Fragment {
         btnSwap.setOnClickListener(v -> Toast.makeText(getContext(), "Swap Strike", Toast.LENGTH_SHORT).show());
         
         // Player Selection Buttons
-        btnSelectNextBatsman.setOnClickListener(v -> showNextBatsmanDialog());
-        btnSelectNextBowler.setOnClickListener(v -> showNextBowlerDialog());
+        btnChangeStriker.setOnClickListener(v -> showChangeStrikerDialog());
+        btnChangeNonStriker.setOnClickListener(v -> showChangeNonStrikerDialog());
+        btnChangeBowler.setOnClickListener(v -> showChangeBowlerDialog());
         
         // Expand/Collapse Batting Team
         headerBattingTeam.setOnClickListener(v -> {
@@ -224,12 +292,22 @@ public class CricketLiveScoreFragment extends Fragment {
         });
     }
 
+    private boolean matchCompletedDialogShown = false;
+    
     private void observeViewModel() {
         // Observe match updates
         matchViewModel.offlineMatch.observe(getViewLifecycleOwner(), match -> {
             if (match instanceof CricketMatch) {
                 currentMatch = (CricketMatch) match;
+                String previousStatus = currentMatch != null ? currentMatch.getMatchStatus() : null;
                 updateUI(currentMatch);
+                
+                // Check if match just completed - show option to view full scorecard
+                // Only show dialog once when status changes to COMPLETED
+                if ("COMPLETED".equals(currentMatch.getMatchStatus()) && !matchCompletedDialogShown) {
+                    matchCompletedDialogShown = true;
+                    showMatchCompletedDialog();
+                }
             }
         });
         
@@ -245,13 +323,6 @@ public class CricketLiveScoreFragment extends Fragment {
         matchViewModel.wicketFallEvent.observe(getViewLifecycleOwner(), wicketFall -> {
             if (wicketFall != null && wicketFall) {
                 handleWicketFall();
-            }
-        });
-        
-        // Observe over completion events
-        matchViewModel.overCompletionEvent.observe(getViewLifecycleOwner(), overCompleted -> {
-            if (overCompleted != null && overCompleted) {
-                handleOverCompletion();
             }
         });
     }
@@ -472,34 +543,56 @@ public class CricketLiveScoreFragment extends Fragment {
     }
     
     private void showNextBatsmanDialog(boolean isForQueue) {
-        if (currentMatch == null) {
+        android.util.Log.d("CricketLiveScore", "showNextBatsmanDialog called, isForQueue: " + isForQueue);
+        
+        // Get fresh match data from ViewModel
+        com.example.tournafy.domain.models.base.Match match = matchViewModel.offlineMatch.getValue();
+        if (!(match instanceof CricketMatch)) {
             Toast.makeText(getContext(), "Match not loaded", Toast.LENGTH_SHORT).show();
             return;
         }
         
+        CricketMatch cricketMatch = (CricketMatch) match;
+        android.util.Log.d("CricketLiveScore", "Fragment isAdded: " + isAdded());
+        android.util.Log.d("CricketLiveScore", "Match status: " + cricketMatch.getMatchStatus());
+        
+        // Check if fragment is added to activity
+        if (!isAdded()) {
+            android.util.Log.e("CricketLiveScore", "Fragment not added, cannot show batsman dialog");
+            return;
+        }
+        android.util.Log.d("CricketLiveScore", "Showing next batsman dialog, isForQueue: " + isForQueue);
+        
         com.example.tournafy.ui.dialogs.SelectNextBatsmanDialog dialog =
                 com.example.tournafy.ui.dialogs.SelectNextBatsmanDialog.newInstance(
-                        currentMatch,
+                        cricketMatch,
                         isForQueue,
                         player -> {
                             if (isForQueue) {
                                 // Add to batting order queue
-                                currentMatch.addToBattingOrder(player.getPlayerId());
-                                matchViewModel.updateMatch(currentMatch);
+                                cricketMatch.addToBattingOrder(player.getPlayerId());
+                                matchViewModel.updateMatch(cricketMatch);
                                 Toast.makeText(getContext(), 
                                         player.getPlayerName() + " added to batting order", 
                                         Toast.LENGTH_SHORT).show();
                             } else {
                                 // Immediate replacement - set as striker
-                                currentMatch.setCurrentStrikerId(player.getPlayerId());
-                                matchViewModel.updateMatch(currentMatch);
+                                cricketMatch.setCurrentStrikerId(player.getPlayerId());
+                                matchViewModel.updateMatch(cricketMatch);
                                 Toast.makeText(getContext(), 
                                         player.getPlayerName() + " is now batting", 
                                         Toast.LENGTH_SHORT).show();
                             }
                         }
                 );
-        dialog.show(getParentFragmentManager(), "SelectNextBatsmanDialog");
+        
+        try {
+            android.util.Log.d("CricketLiveScore", "About to call batsman dialog.showNow()");
+            dialog.showNow(getParentFragmentManager(), "SelectNextBatsmanDialog");
+            android.util.Log.d("CricketLiveScore", "Batsman dialog.showNow() completed");
+        } catch (Exception e) {
+            android.util.Log.e("CricketLiveScore", "Error showing batsman dialog: " + e.getMessage(), e);
+        }
     }
     
     private void showNextBowlerDialog() {
@@ -507,52 +600,213 @@ public class CricketLiveScoreFragment extends Fragment {
     }
     
     private void showNextBowlerDialog(boolean isForQueue) {
-        if (currentMatch == null) {
+        // Get fresh match data from ViewModel
+        com.example.tournafy.domain.models.base.Match match = matchViewModel.offlineMatch.getValue();
+        if (!(match instanceof CricketMatch)) {
             Toast.makeText(getContext(), "Match not loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        CricketMatch cricketMatch = (CricketMatch) match;
+        android.util.Log.d("CricketLiveScore", "Showing next bowler dialog, isForQueue: " + isForQueue);
+        android.util.Log.d("CricketLiveScore", "Fragment isAdded: " + isAdded());
+        android.util.Log.d("CricketLiveScore", "Match status: " + cricketMatch.getMatchStatus());
+        
+        // Check if fragment is added to activity
+        if (!isAdded()) {
+            android.util.Log.e("CricketLiveScore", "Fragment not added, cannot show dialog");
             return;
         }
         
         com.example.tournafy.ui.dialogs.SelectNextBowlerDialog dialog =
                 com.example.tournafy.ui.dialogs.SelectNextBowlerDialog.newInstance(
-                        currentMatch,
+                        cricketMatch,
                         isForQueue,
                         player -> {
                             if (isForQueue) {
                                 // Add to bowling order queue
-                                currentMatch.addToBowlingOrder(player.getPlayerId());
-                                matchViewModel.updateMatch(currentMatch);
+                                cricketMatch.addToBowlingOrder(player.getPlayerId());
+                                matchViewModel.updateMatch(cricketMatch);
                                 Toast.makeText(getContext(), 
                                         player.getPlayerName() + " added to bowling order", 
                                         Toast.LENGTH_SHORT).show();
                             } else {
                                 // Immediate replacement - set as current bowler
-                                currentMatch.setCurrentBowlerId(player.getPlayerId());
-                                matchViewModel.updateMatch(currentMatch);
+                                cricketMatch.setCurrentBowlerId(player.getPlayerId());
+                                matchViewModel.updateMatch(cricketMatch);
                                 Toast.makeText(getContext(), 
                                         player.getPlayerName() + " is now bowling", 
                                         Toast.LENGTH_SHORT).show();
                             }
                         }
                 );
-        dialog.show(getParentFragmentManager(), "SelectNextBowlerDialog");
+        
+        try {
+            android.util.Log.d("CricketLiveScore", "About to call dialog.showNow()");
+            dialog.showNow(getParentFragmentManager(), "SelectNextBowlerDialog");
+            android.util.Log.d("CricketLiveScore", "dialog.showNow() completed");
+        } catch (Exception e) {
+            android.util.Log.e("CricketLiveScore", "Error showing dialog: " + e.getMessage(), e);
+        }
     }
-    
+
+    /**
+     * Show dialog to change the current striker
+     * Works even when match is SCHEDULED (before startMatch is called)
+     */
+    private void showChangeStrikerDialog() {
+        android.util.Log.d("CricketLiveScore", "showChangeStrikerDialog called");
+        
+        // Get fresh match data from ViewModel
+        com.example.tournafy.domain.models.base.Match match = matchViewModel.offlineMatch.getValue();
+        if (!(match instanceof CricketMatch)) {
+            Toast.makeText(getContext(), "Match not loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        CricketMatch cricketMatch = (CricketMatch) match;
+        
+        // Check if fragment is added to activity
+        if (!isAdded()) {
+            android.util.Log.e("CricketLiveScore", "Fragment not added, cannot show dialog");
+            return;
+        }
+        
+        // Use the SelectStrikerDialog for changing striker
+        com.example.tournafy.ui.dialogs.SelectStrikerDialog dialog =
+                com.example.tournafy.ui.dialogs.SelectStrikerDialog.newInstance(
+                        cricketMatch,
+                        player -> {
+                            android.util.Log.d("CricketLiveScore", "Striker changed to: " + player.getPlayerName());
+                            cricketMatch.setCurrentStrikerId(player.getPlayerId());
+                            matchViewModel.updateMatch(cricketMatch);
+                            Toast.makeText(getContext(), 
+                                    player.getPlayerName() + " is now the striker", 
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                );
+        
+        try {
+            dialog.showNow(getParentFragmentManager(), "SelectStrikerDialog");
+        } catch (Exception e) {
+            android.util.Log.e("CricketLiveScore", "Error showing striker dialog: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Show dialog to change the current non-striker
+     * Works even when match is SCHEDULED (before startMatch is called)
+     */
+    private void showChangeNonStrikerDialog() {
+        android.util.Log.d("CricketLiveScore", "showChangeNonStrikerDialog called");
+        
+        // Get fresh match data from ViewModel
+        com.example.tournafy.domain.models.base.Match match = matchViewModel.offlineMatch.getValue();
+        if (!(match instanceof CricketMatch)) {
+            Toast.makeText(getContext(), "Match not loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        CricketMatch cricketMatch = (CricketMatch) match;
+        
+        // Check if fragment is added to activity
+        if (!isAdded()) {
+            android.util.Log.e("CricketLiveScore", "Fragment not added, cannot show dialog");
+            return;
+        }
+        
+        // Use the SelectNonStrikerDialog, passing current striker ID to exclude
+        String strikerId = cricketMatch.getCurrentStrikerId();
+        com.example.tournafy.ui.dialogs.SelectNonStrikerDialog dialog =
+                com.example.tournafy.ui.dialogs.SelectNonStrikerDialog.newInstance(
+                        cricketMatch,
+                        strikerId,
+                        player -> {
+                            android.util.Log.d("CricketLiveScore", "Non-striker changed to: " + player.getPlayerName());
+                            cricketMatch.setCurrentNonStrikerId(player.getPlayerId());
+                            matchViewModel.updateMatch(cricketMatch);
+                            Toast.makeText(getContext(), 
+                                    player.getPlayerName() + " is now the non-striker", 
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                );
+        
+        try {
+            dialog.showNow(getParentFragmentManager(), "SelectNonStrikerDialog");
+        } catch (Exception e) {
+            android.util.Log.e("CricketLiveScore", "Error showing non-striker dialog: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Show dialog to change the current bowler
+     * Works even when match is SCHEDULED (before startMatch is called)
+     */
+    private void showChangeBowlerDialog() {
+        android.util.Log.d("CricketLiveScore", "showChangeBowlerDialog called");
+        
+        // Get fresh match data from ViewModel
+        com.example.tournafy.domain.models.base.Match match = matchViewModel.offlineMatch.getValue();
+        if (!(match instanceof CricketMatch)) {
+            Toast.makeText(getContext(), "Match not loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        CricketMatch cricketMatch = (CricketMatch) match;
+        
+        // Check if fragment is added to activity
+        if (!isAdded()) {
+            android.util.Log.e("CricketLiveScore", "Fragment not added, cannot show dialog");
+            return;
+        }
+        
+        // Use the SelectOpeningBowlerDialog for changing bowler
+        com.example.tournafy.ui.dialogs.SelectOpeningBowlerDialog dialog =
+                com.example.tournafy.ui.dialogs.SelectOpeningBowlerDialog.newInstance(
+                        cricketMatch,
+                        player -> {
+                            android.util.Log.d("CricketLiveScore", "Bowler changed to: " + player.getPlayerName());
+                            cricketMatch.setCurrentBowlerId(player.getPlayerId());
+                            matchViewModel.updateMatch(cricketMatch);
+                            Toast.makeText(getContext(), 
+                                    player.getPlayerName() + " is now bowling", 
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                );
+        
+        try {
+            dialog.showNow(getParentFragmentManager(), "SelectOpeningBowlerDialog");
+        } catch (Exception e) {
+            android.util.Log.e("CricketLiveScore", "Error showing bowler dialog: " + e.getMessage(), e);
+        }
+    }
+
     /**
      * Check if wicket was just taken and automatically bring next batsman from queue,
      * or show dialog if queue is empty
      */
     private void handleWicketFall() {
-        if (currentMatch == null) {
+        android.util.Log.d("CricketLiveScore", "handleWicketFall called");
+        
+        // Get fresh match data from ViewModel
+        com.example.tournafy.domain.models.base.Match match = matchViewModel.offlineMatch.getValue();
+        if (!(match instanceof CricketMatch)) {
+            android.util.Log.w("CricketLiveScore", "Match is not CricketMatch or is null in handleWicketFall");
             matchViewModel.clearWicketFallEvent();
             return;
         }
         
-        if (currentMatch.hasBatsmanInQueue()) {
+        CricketMatch cricketMatch = (CricketMatch) match;
+        boolean hasBatsmanInQueue = cricketMatch.hasBatsmanInQueue();
+        android.util.Log.d("CricketLiveScore", "Has batsman in queue: " + hasBatsmanInQueue);
+        
+        if (hasBatsmanInQueue) {
             // Get next batsman from queue
-            String nextBatsmanId = currentMatch.getNextBatsmanFromQueue();
+            String nextBatsmanId = cricketMatch.getNextBatsmanFromQueue();
+            android.util.Log.d("CricketLiveScore", "Next batsman from queue: " + nextBatsmanId);
             if (nextBatsmanId != null) {
-                currentMatch.setCurrentStrikerId(nextBatsmanId);
-                matchViewModel.updateMatch(currentMatch);
+                cricketMatch.setCurrentStrikerId(nextBatsmanId);
+                matchViewModel.updateMatch(cricketMatch);
                 
                 String playerName = getPlayerName(nextBatsmanId);
                 Toast.makeText(getContext(), 
@@ -561,6 +815,7 @@ public class CricketLiveScoreFragment extends Fragment {
             }
         } else {
             // Queue is empty, show dialog
+            android.util.Log.d("CricketLiveScore", "Queue empty, showing next batsman dialog");
             showNextBatsmanDialog(false);
         }
         
@@ -569,36 +824,20 @@ public class CricketLiveScoreFragment extends Fragment {
     }
     
     /**
-     * Check if over completed and automatically bring next bowler from queue,
-     * or show dialog if queue is empty
+     * Handle match start - show initial batsman and bowler selection dialogs in sequence
+     * This is called when match transitions to LIVE status (triggered by match start event)
+     * 
+     * At this point:
+     * - Match status is LIVE
+     * - Innings structure has been created
+     * - First over has been created
+     * - But no players are initialized yet
+     * 
+     * Dialog sequence:
+     * 1. Select Opening Bowler
+     * 2. Select Opening Striker (first batsman)
+     * 3. Select Opening Non-Striker (second batsman)
      */
-    private void handleOverCompletion() {
-        if (currentMatch == null) {
-            matchViewModel.clearOverCompletionEvent();
-            return;
-        }
-        
-        if (currentMatch.hasBowlerInQueue()) {
-            // Get next bowler from queue
-            String nextBowlerId = currentMatch.getNextBowlerFromQueue();
-            if (nextBowlerId != null) {
-                currentMatch.setCurrentBowlerId(nextBowlerId);
-                matchViewModel.updateMatch(currentMatch);
-                
-                String playerName = getPlayerName(nextBowlerId);
-                Toast.makeText(getContext(), 
-                        playerName + " is now bowling (from queue)", 
-                        Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            // Queue is empty, show dialog
-            showNextBowlerDialog(false);
-        }
-        
-        // Clear the event flag
-        matchViewModel.clearOverCompletionEvent();
-    }
-    
     /**
      * Helper method to get player name by ID
      */
@@ -617,5 +856,37 @@ public class CricketLiveScoreFragment extends Fragment {
             }
         }
         return "Unknown Player";
+    }
+    
+    /**
+     * Shows a dialog when match is completed, offering to view full scorecard
+     */
+    private void showMatchCompletedDialog() {
+        if (currentMatch == null) return;
+        
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Match Completed")
+                .setMessage("The match has ended. Would you like to view the full scorecard and match details?")
+                .setPositiveButton("View Scorecard", (dialog, which) -> {
+                    navigateToMatchDetails();
+                })
+                .setNegativeButton("Stay Here", (dialog, which) -> {
+                    dialog.dismiss();
+                })
+                .setCancelable(false)
+                .show();
+    }
+    
+    /**
+     * Navigate to MatchActivity to view completed match details
+     */
+    private void navigateToMatchDetails() {
+        if (currentMatch == null) return;
+        
+        android.content.Intent intent = new android.content.Intent(requireContext(), 
+                com.example.tournafy.ui.activities.MatchActivity.class);
+        intent.putExtra(com.example.tournafy.ui.activities.MatchActivity.EXTRA_MATCH_ID, 
+                currentMatch.getEntityId());
+        startActivity(intent);
     }
 }

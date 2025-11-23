@@ -13,7 +13,7 @@
         android:orientation="vertical"
         android:padding="@dimen/spacing_md">
 
-        <!-- Formation Card -->
+        <!-- Team A Starting XI -->
         <com.google.android.material.card.MaterialCardView
             style="@style/Widget.Tournafy.Card"
             android:layout_width="match_parent"
@@ -26,111 +26,24 @@
                 android:padding="@dimen/spacing_md">
 
                 <TextView
+                    android:id="@+id/tvTeamAName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Formation"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="@dimen/spacing_sm"/>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center">
-
-                        <TextView
-                            android:id="@+id/tvTeamAFormation"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="4-3-3"
-                            android:textAppearance="?attr/textAppearanceHeadlineLarge"
-                            android:textColor="?attr/colorPrimary"
-                            android:textStyle="bold"/>
-
-                        <TextView
-                            android:id="@+id/tvTeamAName"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Barcelona"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:layout_marginTop="@dimen/spacing_xs"/>
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="match_parent"
-                        android:background="?attr/colorOutlineVariant"/>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center">
-
-                        <TextView
-                            android:id="@+id/tvTeamBFormation"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="4-4-2"
-                            android:textAppearance="?attr/textAppearanceHeadlineLarge"
-                            android:textColor="?attr/colorPrimary"
-                            android:textStyle="bold"/>
-
-                        <TextView
-                            android:id="@+id/tvTeamBName"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Real Madrid"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:layout_marginTop="@dimen/spacing_xs"/>
-                    </LinearLayout>
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Starting XI -->
-        <com.google.android.material.card.MaterialCardView
-            style="@style/Widget.Tournafy.Card.Filled"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_md">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="@dimen/spacing_md">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Starting XI"
+                    android:text="Team A"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:textColor="?attr/colorOnSurface"
                     android:textStyle="bold"
                     android:layout_marginBottom="@dimen/spacing_sm"/>
 
                 <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvStartingXI"
+                    android:id="@+id/rvTeamA"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:nestedScrollingEnabled="false"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Substitutes -->
+        <!-- Team B Starting XI -->
         <com.google.android.material.card.MaterialCardView
             style="@style/Widget.Tournafy.Card.Filled"
             android:layout_width="match_parent"
@@ -144,16 +57,17 @@
                 android:padding="@dimen/spacing_md">
 
                 <TextView
+                    android:id="@+id/tvTeamBName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Substitutes"
+                    android:text="Team B"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:textColor="?attr/colorOnSurface"
                     android:textStyle="bold"
                     android:layout_marginBottom="@dimen/spacing_sm"/>
 
                 <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvSubstitutes"
+                    android:id="@+id/rvTeamB"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:nestedScrollingEnabled="false"/>

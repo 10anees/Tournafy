@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="@dimen/spacing_sm"
+    android:background="?attr/selectableItemBackground">
+
+    <!-- Bowler Name -->
+    <TextView
+        android:id="@+id/tvBowlerName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:text="Shaheen Afridi"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurface"/>
+
+    <!-- Overs -->
+    <TextView
+        android:id="@+id/tvOvers"
+        android:layout_width="@dimen/scorecard_column_width"
+        android:layout_height="wrap_content"
+        android:text="10"
+        android:gravity="center"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurface"/>
+
+    <!-- Maidens -->
+    <TextView
+        android:id="@+id/tvMaidens"
+        android:layout_width="@dimen/scorecard_column_width"
+        android:layout_height="wrap_content"
+        android:text="2"
+        android:gravity="center"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurface"/>
+
+    <!-- Runs Conceded -->
+    <TextView
+        android:id="@+id/tvRunsConceded"
+        android:layout_width="@dimen/scorecard_column_width"
+        android:layout_height="wrap_content"
+        android:text="45"
+        android:gravity="center"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurface"/>
+
+    <!-- Wickets -->
+    <TextView
+        android:id="@+id/tvWickets"
+        android:layout_width="@dimen/scorecard_column_width"
+        android:layout_height="wrap_content"
+        android:text="3"
+        android:gravity="center"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorPrimary"
+        android:textStyle="bold"/>
+
+    <!-- Economy -->
+    <TextView
+        android:id="@+id/tvEconomy"
+        android:layout_width="@dimen/scorecard_column_width"
+        android:layout_height="wrap_content"
+        android:text="4.50"
+        android:gravity="center"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurface"/>
+</LinearLayout>

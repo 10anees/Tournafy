@@ -99,4 +99,30 @@ public class MatchResult {
     public void setWinMargin(String winMargin) {
         this.winMargin = winMargin;
     }
+
+    /**
+     * Gets a human-readable result text
+     * @return Result text (e.g., "India won by 5 wickets")
+     */
+    public String getResultText() {
+        if (resultType == null) {
+            return "Match result pending";
+        }
+        
+        switch (resultType) {
+            case "WIN":
+                if (winMargin != null && !winMargin.isEmpty()) {
+                    return "Won by " + winMargin;
+                }
+                return "Match won";
+            case "DRAW":
+                return "Match drawn";
+            case "TIE":
+                return "Match tied";
+            case "NO_RESULT":
+                return "No result";
+            default:
+                return "Match completed";
+        }
+    }
 }

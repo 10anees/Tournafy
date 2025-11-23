@@ -71,6 +71,8 @@ public class MatchViewModel extends ViewModel {
     public final LiveData<Boolean> wicketFallEvent = _wicketFallEvent;
     private final MutableLiveData<Boolean> _overCompletionEvent = new MutableLiveData<>();
     public final LiveData<Boolean> overCompletionEvent = _overCompletionEvent;
+    private final MutableLiveData<Boolean> _matchStartEvent = new MutableLiveData<>();
+    public final LiveData<Boolean> matchStartEvent = _matchStartEvent;
 
     @Inject
     public MatchViewModel(
@@ -156,11 +158,54 @@ public class MatchViewModel extends ViewModel {
         _offlineMatchId.setValue(matchId);
         
         // CRITICAL FIX: Register online sync observer when match is loaded
-        offlineMatch.observeForever(match -> {
-            if (match instanceof CricketMatch) {
-                registerOnlineSync((CricketMatch) match);
+        // Use observeForever ONCE to check and generate link, then remove observer
+        androidx.lifecycle.Observer<com.example.tournafy.domain.models.base.Match> linkGenerationObserver = new androidx.lifecycle.Observer<com.example.tournafy.domain.models.base.Match>() {
+            @Override
+            public void onChanged(com.example.tournafy.domain.models.base.Match match) {
+                if (match == null) {
+                    android.util.Log.w("MatchViewModel", "Match is null in linkGenerationObserver");
+                    return;
+                }
+                
+                android.util.Log.d("MatchViewModel", "Checking match: " + match.getName() + 
+                    " (ID: " + match.getEntityId() + ") for visibility link");
+                
+                if (match instanceof CricketMatch) {
+                    registerOnlineSync((CricketMatch) match);
+                }
+                
+                // Auto-generate visibility link if missing (for existing matches) - ONLY ONCE
+                if (match.getVisibilityLink() == null || match.getVisibilityLink().isEmpty()) {
+                    String visibilityLink = com.example.tournafy.utils.LinkGenerator.generateLink(
+                        match.getName(), 
+                        match.getEntityId()
+                    );
+                    android.util.Log.d("MatchViewModel", "Auto-generating visibility link: " + visibilityLink);
+                    
+                    // Set the link in the match object immediately (optimistic update)
+                    // The match object is already part of the LiveData, so this updates it in-place
+                    match.setVisibilityLink(visibilityLink);
+                    android.util.Log.d("MatchViewModel", "Link set in match object, now available for sharing: " + visibilityLink);
+                    
+                    // Persist to repository in background for future loads
+                    offlineMatchRepo.update(match)
+                        .addOnSuccessListener(aVoid -> {
+                            android.util.Log.d("MatchViewModel", "Successfully persisted visibility link to repository: " + visibilityLink);
+                        })
+                        .addOnFailureListener(e -> {
+                            android.util.Log.e("MatchViewModel", "Failed to persist visibility link: " + e.getMessage());
+                            // Even if persistence fails, the in-memory object still has the link
+                        });
+                } else {
+                    android.util.Log.d("MatchViewModel", "Match already has visibility link: " + match.getVisibilityLink());
+                }
+                
+                // IMPORTANT: Remove observer after first execution to prevent infinite loop
+                offlineMatch.removeObserver(this);
             }
-        });
+        };
+        
+        offlineMatch.observeForever(linkGenerationObserver);
     }
 
     public void loadOnlineMatch(String matchId) {
@@ -196,6 +241,65 @@ public class MatchViewModel extends ViewModel {
 
     public Match getOfflineMatch() {
         return offlineMatch.getValue();
+    }
+
+    /**
+     * Load match by match code (visibility link).
+     * Searches for match in offline repository with the given match code.
+     * Case-insensitive search with hyphen handling.
+     * 
+     * @param matchCode The match code to search for (e.g., "MHA-E2B" or "MHAE2B")
+     */
+    public void loadMatchByCode(String matchCode) {
+        _isLoading.setValue(true);
+        
+        // Normalize match code: uppercase and remove hyphens for comparison
+        String normalizedInput = matchCode.toUpperCase().replaceAll("-", "");
+        
+        // Search offline repository for match with this code
+        androidx.lifecycle.Observer<java.util.List<Match>> searchObserver = new androidx.lifecycle.Observer<java.util.List<Match>>() {
+            @Override
+            public void onChanged(java.util.List<Match> matches) {
+                if (matches != null) {
+                    for (Match match : matches) {
+                        String visibilityLink = match.getVisibilityLink();
+                        if (visibilityLink != null) {
+                            // Normalize stored code for comparison
+                            String normalizedStored = visibilityLink.toUpperCase().replaceAll("-", "");
+                            if (normalizedInput.equals(normalizedStored)) {
+                                // Found the match, load it
+                                loadOfflineMatch(match.getEntityId());
+                                _isLoading.setValue(false);
+                                android.util.Log.d("MatchViewModel", "Found match by code: " + match.getName() + " (Code: " + visibilityLink + ")");
+                                // IMPORTANT: Remove observer after finding match to prevent infinite loop
+                                offlineMatchRepo.getAll().removeObserver(this);
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+                // Match not found
+                _errorMessage.setValue("No match found with code: " + matchCode);
+                _isLoading.setValue(false);
+                android.util.Log.w("MatchViewModel", "No match found with code: " + matchCode);
+                // IMPORTANT: Remove observer even if match not found
+                offlineMatchRepo.getAll().removeObserver(this);
+            }
+        };
+        
+        offlineMatchRepo.getAll().observeForever(searchObserver);
+    }
+    
+    /**
+     * Load match by visibility link (for deep link handling).
+     * Searches for match in offline repository with the given visibility link.
+     * 
+     * @param visibilityLink The visibility link to search for
+     */
+    public void loadMatchByVisibilityLink(String visibilityLink) {
+        // Reuse the code search method
+        loadMatchByCode(visibilityLink);
     }
 
     // --- Cricket Helper Methods ---
@@ -413,8 +517,11 @@ public class MatchViewModel extends ViewModel {
             (finalCurrentOver.getBalls() != null ? finalCurrentOver.getBalls().size() : 0));
         android.util.Log.d("MatchViewModel", "Before save - Total runs: " + currentInnings.getTotalRuns());
         
-        // Check if over was completed (6 legal balls)
-        final boolean overCompleted = finalCurrentOver.isCompleted();
+        // Check if innings just ended (to trigger dialogs for next innings)
+        final boolean inningsJustEnded = currentInnings.isCompleted();
+        final int currentInningsNum = cricketMatch.getCurrentInningsNumber();
+        
+        android.util.Log.d("MatchViewModel", "Innings ended: " + inningsJustEnded + ", Innings number: " + currentInningsNum);
         
         // --- SIMPLIFIED PERSISTENCE: Only update Match document ---
         // All nested data (innings, overs, balls) is stored within the match document
@@ -429,10 +536,17 @@ public class MatchViewModel extends ViewModel {
                     if (currentId != null) {
                         _offlineMatchId.setValue(currentId);
                     }
-                    // Trigger over completion event if over completed
-                    if (overCompleted) {
-                        _overCompletionEvent.setValue(true);
+                    
+                    // If innings just ended and we're moving to next innings, trigger match start event
+                    // This will show dialogs for batsman and bowler selection for the new innings
+                    if (inningsJustEnded && currentInningsNum == 1) {
+                        android.util.Log.d("MatchViewModel", "First innings ended - triggering match start event for second innings");
+                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                            _matchStartEvent.setValue(false);
+                            _matchStartEvent.setValue(true);
+                        }, 300);
                     }
+                    
                     _isLoading.setValue(false);
                 }, 100); // 100ms delay
             } else {
@@ -728,6 +842,14 @@ public class MatchViewModel extends ViewModel {
                                     // if (overTask.isSuccessful()) {
                                     //     cricketMatch.notifyStatusChanged(com.example.tournafy.domain.enums.MatchStatus.LIVE.name());
                                     // }
+                                    if (overTask.isSuccessful()) {
+                                        // Trigger match start event to show initial dialogs
+                                        // Use a delay to ensure UI is ready and match data is loaded
+                                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                                            android.util.Log.d("MatchViewModel", "Triggering match start event");
+                                            _matchStartEvent.setValue(true);
+                                        }, 300);
+                                    }
                                     _isLoading.setValue(false);
                                     if (!overTask.isSuccessful()) {
                                         _errorMessage.setValue("Failed to create first over");
@@ -1370,6 +1492,10 @@ public class MatchViewModel extends ViewModel {
     
     public void clearOverCompletionEvent() {
         _overCompletionEvent.setValue(false);
+    }
+
+    public void clearMatchStartEvent() {
+        _matchStartEvent.setValue(false);
     }
 
     /**
