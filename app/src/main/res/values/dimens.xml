@@ -45,10 +45,17 @@
     
     <!-- Elevation -->
     <dimen name="elevation_none">0dp</dimen>
+    <dimen name="elevation_xs">1dp</dimen>
     <dimen name="elevation_sm">2dp</dimen>
     <dimen name="elevation_md">4dp</dimen>
     <dimen name="elevation_lg">8dp</dimen>
     <dimen name="elevation_xl">16dp</dimen>
+    
+    <!-- Corner Radius -->
+    <dimen name="corner_radius_sm">8dp</dimen>
+    <dimen name="corner_radius_md">12dp</dimen>
+    <dimen name="corner_radius_lg">16dp</dimen>
+    <dimen name="corner_radius_xl">24dp</dimen>
     
     <!-- App Bar -->
     <dimen name="app_bar_height">56dp</dimen>

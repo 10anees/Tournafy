@@ -12,10 +12,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 
 import com.example.tournafy.R;
 import com.example.tournafy.domain.models.sport.SportTypeEnum;
 import com.example.tournafy.ui.viewmodels.HostViewModel;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -26,9 +29,24 @@ public class AddMatchDetailsFragment extends Fragment {
     private ChipGroup chipGroupSport;
     private LinearLayout grpCricketConfig, grpFootballConfig;
     private TextInputEditText etMatchName, etVenue, etOvers, etDuration, etPlayersPerSide, etCricketPlayersPerSide;
+    private MaterialButton btnNext;
+    
+    private String matchId;
+    private String tournamentId;
+    private boolean isTournamentMatch;
 
     public AddMatchDetailsFragment() {
         // Required empty public constructor
+    }
+    
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            matchId = getArguments().getString("match_id");
+            tournamentId = getArguments().getString("tournament_id");
+            isTournamentMatch = getArguments().getBoolean("is_tournament_match", false);
+        }
     }
 
     @Override
@@ -59,9 +77,29 @@ public class AddMatchDetailsFragment extends Fragment {
         etDuration = view.findViewById(R.id.etDuration);
         etPlayersPerSide = view.findViewById(R.id.etPlayersPerSide);
         etCricketPlayersPerSide = view.findViewById(R.id.etCricketPlayersPerSide);
+        btnNext = view.findViewById(R.id.btnNext);
+        
+        // If this is a tournament match, show Next button and load match details
+        if (isTournamentMatch) {
+            if (btnNext != null) {
+                btnNext.setVisibility(View.VISIBLE);
+            }
+            if (matchId != null) {
+                loadTournamentMatchDetails();
+            }
+        }
     }
 
     private void setupListeners() {
+        // Set up Next button
+        if (btnNext != null) {
+            btnNext.setOnClickListener(v -> {
+                if (isTournamentMatch) {
+                    navigateToAddMatchTeams();
+                }
+            });
+        }
+        
         // FIX: Listen for text changes and update the shared ViewModel
         etMatchName.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -226,5 +264,121 @@ public class AddMatchDetailsFragment extends Fragment {
                           ", Players: " + config.getPlayersPerSide() + ", Offside: " + config.isOffsideOn());
         
         return config;
+    }
+    
+    /**
+     * Load tournament match details and pre-fill the form
+     */
+    private void loadTournamentMatchDetails() {
+        if (matchId == null) {
+            android.util.Log.w("AddMatchDetails", "Cannot load tournament match: matchId is null");
+            return;
+        }
+        
+        android.util.Log.d("AddMatchDetails", "Loading tournament match with ID: " + matchId);
+        
+        // Load the match from repository via ViewModel
+        hostViewModel.loadMatchById(matchId);
+        hostViewModel.currentMatch.observe(getViewLifecycleOwner(), match -> {
+            if (match != null && etMatchName != null) {
+                android.util.Log.d("AddMatchDetails", "Match loaded: " + match.getName() + ", Sport: " + match.getSportId());
+                
+                // Pre-fill match name
+                etMatchName.setText(match.getName());
+                etMatchName.setEnabled(false); // Don't allow changing tournament match name
+                
+                // Pre-select sport type based on match
+                boolean isCricket = "CRICKET".equalsIgnoreCase(match.getSportId());
+                if (isCricket) {
+                    chipGroupSport.check(R.id.chipCricket);
+                    showCricketConfig();
+                } else {
+                    chipGroupSport.check(R.id.chipFootball);
+                    showFootballConfig();
+                }
+                
+                // Disable sport selection for tournament matches
+                chipGroupSport.setEnabled(false);
+                for (int i = 0; i < chipGroupSport.getChildCount(); i++) {
+                    chipGroupSport.getChildAt(i).setEnabled(false);
+                }
+                
+                android.util.Log.d("AddMatchDetails", "Match details pre-filled successfully");
+            } else {
+                android.util.Log.w("AddMatchDetails", "Match is null or etMatchName is null");
+            }
+        });
+    }
+    
+    /**
+     * Navigate to AddMatchTeamsFragment for team selection
+     */
+    private void navigateToAddMatchTeams() {
+        android.util.Log.d("AddMatchDetails", "Preparing to navigate to AddMatchTeams");
+        
+        // Validate inputs
+        if (!validate()) {
+            android.util.Log.w("AddMatchDetails", "Validation failed, cannot navigate");
+            return;
+        }
+        
+        // Load the match and save configuration
+        hostViewModel.loadMatchById(matchId);
+        hostViewModel.currentMatch.observe(getViewLifecycleOwner(), new androidx.lifecycle.Observer<com.example.tournafy.domain.models.base.Match>() {
+            @Override
+            public void onChanged(com.example.tournafy.domain.models.base.Match match) {
+                if (match == null) {
+                    android.util.Log.w("AddMatchDetails", "Match is null, cannot save config");
+                    return;
+                }
+                
+                // Remove observer to prevent multiple calls
+                hostViewModel.currentMatch.removeObserver(this);
+                
+                android.util.Log.d("AddMatchDetails", "Match loaded: " + match.getName());
+                
+                // Set configuration based on sport type
+                boolean isCricket = chipGroupSport.getCheckedChipId() == R.id.chipCricket;
+                if (isCricket && match instanceof com.example.tournafy.domain.models.match.cricket.CricketMatch) {
+                    com.example.tournafy.domain.models.match.cricket.CricketMatchConfig config = getCricketConfig();
+                    ((com.example.tournafy.domain.models.match.cricket.CricketMatch) match).setMatchConfig(config);
+                    hostViewModel.cricketMatchConfig.setValue(config);
+                    android.util.Log.d("AddMatchDetails", "Cricket config set: " + config.getNumberOfOvers() + " overs");
+                } else if (!isCricket && match instanceof com.example.tournafy.domain.models.match.football.FootballMatch) {
+                    com.example.tournafy.domain.models.match.football.FootballMatchConfig config = getFootballConfig();
+                    ((com.example.tournafy.domain.models.match.football.FootballMatch) match).setMatchConfig(config);
+                    hostViewModel.footballMatchConfig.setValue(config);
+                    android.util.Log.d("AddMatchDetails", "Football config set: " + config.getMatchDuration() + " mins");
+                }
+                
+                // Save match to Firestore
+                hostViewModel.updateMatch(match, new com.example.tournafy.service.interfaces.IHostingService.HostingCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        android.util.Log.d("AddMatchDetails", "Match config saved to Firestore successfully");
+                        
+                        // Navigate with match details
+                        Bundle args = new Bundle();
+                        args.putString("match_id", matchId);
+                        args.putString("tournament_id", tournamentId);
+                        args.putBoolean("is_tournament_match", true);
+                        
+                        android.util.Log.d("AddMatchDetails", "Navigating with args: match_id=" + matchId + 
+                                          ", tournament_id=" + tournamentId + ", is_tournament_match=true");
+                        
+                        NavController navController = Navigation.findNavController(requireView());
+                        navController.navigate(R.id.action_addMatchDetails_to_addMatchTeams, args);
+                    }
+                    
+                    @Override
+                    public void onError(Exception e) {
+                        android.util.Log.e("AddMatchDetails", "Failed to save match config", e);
+                        android.widget.Toast.makeText(getContext(), 
+                            "Failed to save configuration: " + e.getMessage(), 
+                            android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
     }
 }

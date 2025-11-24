@@ -19,7 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="centerCrop"
-            android:src="@drawable/ic_sports_cricket"
+            android:src="@drawable/ic_matches"
             app:tint="?attr/colorPrimary"
             android:padding="@dimen/spacing_md"/>
 

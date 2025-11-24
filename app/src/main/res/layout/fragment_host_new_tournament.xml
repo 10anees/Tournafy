@@ -67,6 +67,62 @@
             app:simpleItems="@array/tournament_formats" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Tournament Configuration Section -->
+    <TextView
+        android:id="@+id/tvConfigTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Tournament Configuration"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textColor="?attr/colorPrimary"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tilTournamentType" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilPlayersPerTeam"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
+        android:hint="Players per Team"
+        app:helperText="Required players in squad"
+        app:helperTextEnabled="true"
+        app:layout_constraintEnd_toStartOf="@id/tilMinTeams"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvConfigTitle">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etPlayersPerTeam"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="11" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilMinTeams"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:hint="Min. Teams"
+        app:helperText="Required to start"
+        app:helperTextEnabled="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/tilPlayersPerTeam"
+        app:layout_constraintTop_toBottomOf="@id/tvConfigTitle">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etMinTeams"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="2" />
+    </com.google.android.material.textfield.TextInputLayout>
+
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
@@ -75,7 +131,7 @@
         app:layout_constraintBottom_toTopOf="@id/btnCreate"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tilTournamentType" />
+        app:layout_constraintTop_toBottomOf="@id/tilMinTeams" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnCreate"

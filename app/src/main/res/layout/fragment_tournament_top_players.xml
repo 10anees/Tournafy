@@ -1,245 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView 
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
-    android:fillViewport="true">
+    android:background="?attr/colorSurface">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="@dimen/spacing_md">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
         <!-- Category Filter -->
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chipGroupCategory"
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Material3.CardView.Filled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/spacing_md"
-            app:singleSelection="true"
-            app:selectionRequired="true"
-            app:chipSpacingHorizontal="@dimen/spacing_sm">
+            android:layout_margin="8dp"
+            app:cardElevation="0dp">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipBatting"
-                style="@style/Widget.Tournafy.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Batting"
-                android:checked="true"/>
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipBowling"
-                style="@style/Widget.Tournafy.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Bowling"/>
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipAllRound"
-                style="@style/Widget.Tournafy.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="All-Round"/>
-        </com.google.android.material.chip.ChipGroup>
-
-        <!-- Top Batsmen -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardBatsmen"
-            style="@style/Widget.Tournafy.Card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <LinearLayout
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupCategory"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:padding="8dp"
+                app:singleSelection="true"
+                app:selectionRequired="true">
 
-                <!-- Header -->
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipBatting"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:background="?attr/colorPrimaryContainer"
-                    android:padding="@dimen/spacing_md">
+                    android:text="Batting"
+                    android:checked="true"/>
 
-                    <ImageView
-                        android:layout_width="@dimen/icon_size_md"
-                        android:layout_height="@dimen/icon_size_md"
-                        android:src="@android:drawable/btn_star_big_on"
-                        android:contentDescription="Batting"
-                        app:tint="?attr/colorOnPrimaryContainer"/>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Top Run Scorers"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
-                        android:textColor="?attr/colorOnPrimaryContainer"
-                        android:textStyle="bold"
-                        android:layout_marginStart="@dimen/spacing_sm"/>
-                </LinearLayout>
-
-                <!-- Players List -->
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvTopBatsmen"
-                    android:layout_width="match_parent"
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipBowling"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:padding="@dimen/spacing_sm"
-                    android:nestedScrollingEnabled="false"/>
-            </LinearLayout>
+                    android:text="Bowling"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipFielding"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Fielding"/>
+
+            </com.google.android.material.chip.ChipGroup>
+
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Top Bowlers -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardBowlers"
-            style="@style/Widget.Tournafy.Card"
+        <!-- Top Players List -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvTopPlayers"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_md"
-            android:visibility="gone">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <!-- Header -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:background="?attr/colorSecondaryContainer"
-                    android:padding="@dimen/spacing_md">
-
-                    <ImageView
-                        android:layout_width="@dimen/icon_size_md"
-                        android:layout_height="@dimen/icon_size_md"
-                        android:src="@android:drawable/btn_star_big_on"
-                        android:contentDescription="Bowling"
-                        app:tint="?attr/colorOnSecondaryContainer"/>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Top Wicket Takers"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
-                        android:textColor="?attr/colorOnSecondaryContainer"
-                        android:textStyle="bold"
-                        android:layout_marginStart="@dimen/spacing_sm"/>
-                </LinearLayout>
-
-                <!-- Players List -->
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvTopBowlers"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="@dimen/spacing_sm"
-                    android:nestedScrollingEnabled="false"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Top All-Rounders -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardAllRounders"
-            style="@style/Widget.Tournafy.Card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_md"
-            android:visibility="gone">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <!-- Header -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:background="?attr/colorTertiaryContainer"
-                    android:padding="@dimen/spacing_md">
-
-                    <ImageView
-                        android:layout_width="@dimen/icon_size_md"
-                        android:layout_height="@dimen/icon_size_md"
-                        android:src="@android:drawable/btn_star_big_on"
-                        android:contentDescription="All-Rounders"
-                        app:tint="?attr/colorOnTertiaryContainer"/>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Top All-Rounders"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
-                        android:textColor="?attr/colorOnTertiaryContainer"
-                        android:textStyle="bold"
-                        android:layout_marginStart="@dimen/spacing_sm"/>
-                </LinearLayout>
-
-                <!-- Players List -->
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvTopAllRounders"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="@dimen/spacing_sm"
-                    android:nestedScrollingEnabled="false"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Additional Stats -->
-        <com.google.android.material.card.MaterialCardView
-            style="@style/Widget.Tournafy.Card.Filled"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_md">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="@dimen/spacing_md">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Tournament Highlights"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="@dimen/spacing_sm"/>
-
-                <!-- Highest Score -->
-                <include
-                    layout="@layout/component_stat_item"
-                    android:id="@+id/statHighestScore"/>
-
-                <!-- Best Bowling -->
-                <include
-                    layout="@layout/component_stat_item"
-                    android:id="@+id/statBestBowling"/>
-
-                <!-- Most Sixes -->
-                <include
-                    layout="@layout/component_stat_item"
-                    android:id="@+id/statMostSixes"/>
-
-                <!-- Most Catches -->
-                <include
-                    layout="@layout/component_stat_item"
-                    android:id="@+id/statMostCatches"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="8dp"
+            android:clipToPadding="false"/>
 
     </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+
+    <!-- Empty State -->
+    <LinearLayout
+        android:id="@+id/layoutEmptyState"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@drawable/ic_star"
+            android:alpha="0.5"
+            android:tint="?attr/colorOnSurfaceVariant"/>
+
+        <TextView
+            android:id="@+id/tvEmptyMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="No player statistics available yet.\nPlay some matches to see top performers!"
+            android:textSize="16sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:gravity="center"
+            android:textAlignment="center"/>
+
+    </LinearLayout>
+
+</FrameLayout>

@@ -2,11 +2,16 @@ package com.example.tournafy.ui.viewmodels;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
+import com.example.tournafy.data.repository.offline.MatchFirestoreRepository;
 import com.example.tournafy.domain.models.base.HostedEntity;
+import com.example.tournafy.domain.models.base.Match;
 import com.example.tournafy.domain.models.match.cricket.CricketMatch;
+import com.example.tournafy.domain.models.match.cricket.CricketMatchConfig;
 import com.example.tournafy.domain.models.match.football.FootballMatch;
+import com.example.tournafy.domain.models.match.football.FootballMatchConfig;
 import com.example.tournafy.domain.models.series.Series;
 import com.example.tournafy.domain.models.tournament.Tournament;
 import com.example.tournafy.service.interfaces.IHostingService;
@@ -26,11 +31,20 @@ import dagger.hilt.android.lifecycle.HiltViewModel;
 public class HostViewModel extends ViewModel {
 
     private final IHostingService hostingService;
+    private final MatchFirestoreRepository matchRepository;
 
     // --- Shared State for Match Wizard ---
     // FIX: Added this field so AddMatchDetailsFragment can pass the name to HostNewMatchFragment
     public final MutableLiveData<String> matchNameInput = new MutableLiveData<>("");
     public final MutableLiveData<Integer> playersPerSide = new MutableLiveData<>(11); // Default 11 players
+    
+    // --- Configuration State for Tournament Matches ---
+    public final MutableLiveData<CricketMatchConfig> cricketMatchConfig = new MutableLiveData<>();
+    public final MutableLiveData<FootballMatchConfig> footballMatchConfig = new MutableLiveData<>();
+    
+    // --- Match Loading State ---
+    private final MutableLiveData<String> _currentMatchId = new MutableLiveData<>();
+    public final LiveData<Match> currentMatch;
 
     // --- Creation State ---
     private final MutableLiveData<Boolean> _isLoading = new MutableLiveData<>(false);
@@ -43,8 +57,27 @@ public class HostViewModel extends ViewModel {
     public final LiveData<String> errorMessage = _errorMessage;
 
     @Inject
-    public HostViewModel(IHostingService hostingService) {
+    public HostViewModel(IHostingService hostingService, MatchFirestoreRepository matchRepository) {
         this.hostingService = hostingService;
+        this.matchRepository = matchRepository;
+        
+        // Initialize currentMatch LiveData after matchRepository is assigned
+        this.currentMatch = Transformations.switchMap(_currentMatchId, 
+            matchId -> matchRepository.getById(matchId));
+    }
+    
+    /**
+     * Load a match by its ID
+     */
+    public void loadMatchById(String matchId) {
+        _currentMatchId.setValue(matchId);
+    }
+    
+    /**
+     * Update a match with new configuration
+     */
+    public void updateMatch(Match match, IHostingService.HostingCallback<Void> callback) {
+        hostingService.updateMatch(match, callback);
     }
 
     /**

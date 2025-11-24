@@ -18,7 +18,16 @@ public class AppModule {
     @Provides
     @Singleton
     public FirebaseFirestore provideFirebaseFirestore() {
-        return FirebaseFirestore.getInstance();
+        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+        
+        // Enable offline persistence for better offline support
+        com.google.firebase.firestore.FirebaseFirestoreSettings settings = 
+            new com.google.firebase.firestore.FirebaseFirestoreSettings.Builder()
+                .setPersistenceEnabled(true)
+                .build();
+        firestore.setFirestoreSettings(settings);
+        
+        return firestore;
     }
 
     @Provides

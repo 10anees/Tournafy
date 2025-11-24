@@ -81,6 +81,9 @@ public class Tournament extends HostedEntity {
     public String getSportId() { return sportId; }
     public void setSportId(String sportId) { this.sportId = sportId; }
 
+    public String getSportType() { return sportId; } // Alias for sportId
+    public void setSportType(String sportType) { this.sportId = sportType; }
+
     public String getTournamentType() { return tournamentType; }
     public void setTournamentType(String tournamentType) { this.tournamentType = tournamentType; }
 

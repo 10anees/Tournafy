@@ -118,18 +118,35 @@ public class HomeFragment extends Fragment implements HomeAdapter.OnEntityClickL
     public void onEntityClick(HostedEntity entity) {
         NavController navController = Navigation.findNavController(requireView());
         Bundle args = new Bundle();
-        args.putString("match_id", entity.getEntityId());
         
         if (entity instanceof Match) {
             Match match = (Match) entity;
-            boolean isCricket = "CRICKET".equalsIgnoreCase(match.getSportId());
-            if (isCricket) {
-                navController.navigate(R.id.action_home_to_cricketLiveScore, args);
+            args.putString("match_id", entity.getEntityId());
+            
+            // Check if this is a tournament match that hasn't been configured yet
+            boolean isTournamentMatch = match.getTournamentId() != null && !match.getTournamentId().isEmpty();
+            boolean isScheduled = "SCHEDULED".equals(match.getMatchStatus());
+            boolean hasConfig = match.getMatchConfig() != null;
+            
+            if (isTournamentMatch && isScheduled && !hasConfig) {
+                // Navigate to AddMatchDetailsFragment to configure the match
+                args.putBoolean("is_tournament_match", true);
+                args.putString("tournament_id", match.getTournamentId());
+                navController.navigate(R.id.action_homeFragment_to_addMatchDetailsFragment, args);
             } else {
-                navController.navigate(R.id.action_home_to_footballLiveScore, args);
+                // Navigate to live score for configured or ongoing matches
+                boolean isCricket = "CRICKET".equalsIgnoreCase(match.getSportId());
+                if (isCricket) {
+                    navController.navigate(R.id.action_home_to_cricketLiveScore, args);
+                } else {
+                    navController.navigate(R.id.action_home_to_footballLiveScore, args);
+                }
             }
         } else if (entity instanceof Tournament) {
-            Toast.makeText(getContext(), "Tournament Details coming soon", Toast.LENGTH_SHORT).show();
+            // Navigate to TournamentActivity
+            args.putString("tournament_id", entity.getEntityId());
+            args.putBoolean("is_online", entity.isOnline());
+            navController.navigate(R.id.action_home_to_tournamentActivity, args);
         } else if (entity instanceof Series) {
             Toast.makeText(getContext(), "Series Details coming soon", Toast.LENGTH_SHORT).show();
         }

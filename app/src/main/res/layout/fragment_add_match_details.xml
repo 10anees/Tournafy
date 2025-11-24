@@ -182,5 +182,16 @@
                 android:layout_marginTop="8dp"/>
         </LinearLayout>
 
+        <!-- Next button for tournament matches -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNext"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Next"
+            android:visibility="gone"
+            app:icon="@android:drawable/ic_media_next"
+            app:iconGravity="end" />
+
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

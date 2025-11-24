@@ -103,6 +103,7 @@ public class TournamentViewModel extends ViewModel {
 
     public void loadOnlineTournament(String tournamentId) {
         _onlineTournamentId.setValue(tournamentId);
+        loadTournamentTeams(tournamentId);
     }
 
     private void loadTournamentTeams(String tournamentId) {
@@ -153,6 +154,10 @@ public class TournamentViewModel extends ViewModel {
             @Override
             public void onSuccess(Tournament updatedTournament) {
                 _isLoading.setValue(false);
+                // Reload tournament to show updated data
+                loadOfflineTournament(currentTournament.getEntityId());
+                // Show success message
+                _errorMessage.setValue("Brackets generated successfully!");
             }
 
             @Override
@@ -165,5 +170,56 @@ public class TournamentViewModel extends ViewModel {
 
     public void clearErrorMessage() {
         _errorMessage.setValue(null);
+    }
+    
+    public void startTournament(String tournamentId, boolean isOnline) {
+        _isLoading.setValue(true);
+        tournamentService.startTournament(tournamentId, new ITournamentService.TournamentCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                _isLoading.setValue(false);
+                // Reload tournament to show updated status
+                if (isOnline) {
+                    loadOnlineTournament(tournamentId);
+                } else {
+                    loadOfflineTournament(tournamentId);
+                }
+            }
+
+            @Override
+            public void onError(Exception e) {
+                _errorMessage.setValue("Failed to start tournament: " + e.getMessage());
+                _isLoading.setValue(false);
+            }
+        });
+    }
+    
+    public void completeTournament(String tournamentId, String winnerTeamId, boolean isOnline) {
+        _isLoading.setValue(true);
+        tournamentService.completeTournament(tournamentId, winnerTeamId, new ITournamentService.TournamentCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                _isLoading.setValue(false);
+                // Reload tournament to show updated status and winner
+                if (isOnline) {
+                    loadOnlineTournament(tournamentId);
+                } else {
+                    loadOfflineTournament(tournamentId);
+                }
+            }
+
+            @Override
+            public void onError(Exception e) {
+                _errorMessage.setValue("Failed to complete tournament: " + e.getMessage());
+                _isLoading.setValue(false);
+            }
+        });
+    }
+    
+    public void generateBrackets(String tournamentId, String strategyType, boolean isOnline) {
+        _isLoading.setValue(true);
+        // TODO: Implement bracket generation with specific strategy
+        // For now, just show loading
+        _isLoading.setValue(false);
     }
 }

@@ -91,8 +91,17 @@
     
     <!-- Status Colors -->
     <color name="live_red">#D32F2F</color>
+    <color name="live_light">#FFCDD2</color>
     <color name="scheduled_blue">#1976D2</color>
+    <color name="scheduled_light">#BBDEFB</color>
+    <color name="success_light">#C8E6C9</color>
     <color name="completed_grey">#616161</color>
+    
+    <!-- Tournament Status Colors -->
+    <color name="status_draft">#9E9E9E</color>
+    <color name="status_scheduled">#2196F3</color>
+    <color name="status_live">#F44336</color>
+    <color name="status_completed">#4CAF50</color>
     
     <!-- Player Status Colors -->
     <color name="playing_green">#4CAF50</color>

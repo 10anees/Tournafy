@@ -33,6 +33,71 @@
         <action
             android:id="@+id/action_home_to_footballLiveScore"
             app:destination="@id/footballLiveScoreFragment" />
+        <action
+            android:id="@+id/action_home_to_tournamentActivity"
+            app:destination="@id/tournamentActivity" />
+        <action
+            android:id="@+id/action_homeFragment_to_addMatchDetailsFragment"
+            app:destination="@id/addMatchDetailsFragment" />
+    </fragment>
+    
+    <!-- Fragment for configuring match details (overs, players, etc.) -->
+    <fragment
+        android:id="@+id/addMatchDetailsFragment"
+        android:name="com.example.tournafy.ui.fragments.host.match.AddMatchDetailsFragment"
+        android:label="Match Details"
+        tools:layout="@layout/fragment_add_match_details">
+        
+        <argument
+            android:name="match_id"
+            app:argType="string" />
+        <argument
+            android:name="tournament_id"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+        <argument
+            android:name="is_tournament_match"
+            app:argType="boolean"
+            android:defaultValue="false" />
+        
+        <action
+            android:id="@+id/action_addMatchDetails_to_addMatchTeams"
+            app:destination="@id/addMatchTeamsFragment" />
+    </fragment>
+    
+    <!-- Fragment for configuring match teams -->
+    <fragment
+        android:id="@+id/addMatchTeamsFragment"
+        android:name="com.example.tournafy.ui.fragments.host.match.AddMatchTeamsFragment"
+        android:label="Match Teams"
+        tools:layout="@layout/fragment_add_match_teams">
+        
+        <argument
+            android:name="match_id"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+        <argument
+            android:name="tournament_id"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+        <argument
+            android:name="is_tournament_match"
+            app:argType="boolean"
+            android:defaultValue="false" />
+        <argument
+            android:name="sport_type"
+            app:argType="string"
+            android:defaultValue="FOOTBALL" />
+        
+        <action
+            android:id="@+id/action_addMatchTeams_to_cricketToss"
+            app:destination="@id/cricketTossFragment" />
+        <action
+            android:id="@+id/action_addMatchTeams_to_footballLiveScore"
+            app:destination="@id/footballLiveScoreFragment" />
     </fragment>
 
     <fragment
@@ -100,7 +165,31 @@
         android:id="@+id/hostNewTournamentFragment"
         android:name="com.example.tournafy.ui.fragments.host.tournament.HostNewTournamentFragment"
         android:label="New Tournament"
-        tools:layout="@layout/fragment_host_new_tournament" />
+        tools:layout="@layout/fragment_host_new_tournament">
+        
+        <action
+            android:id="@+id/action_hostNewTournament_to_addTournamentTeams"
+            app:destination="@id/addTournamentTeamsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/addTournamentTeamsFragment"
+        android:name="com.example.tournafy.ui.fragments.tournament.AddTournamentTeamsFragment"
+        android:label="Add Teams"
+        tools:layout="@layout/fragment_add_tournament_teams">
+        
+        <argument
+            android:name="tournament_id"
+            app:argType="string" />
+        <argument
+            android:name="is_online"
+            app:argType="boolean"
+            android:defaultValue="false" />
+        
+        <action
+            android:id="@+id/action_addTeams_to_tournamentActivity"
+            app:destination="@id/tournamentActivity" />
+    </fragment>
 
     <fragment
         android:id="@+id/hostNewSeriesFragment"
@@ -143,6 +232,21 @@
         <argument
             android:name="match_id"
             app:argType="string" />
+    </activity>
+
+    <!-- Tournament Details Activity -->
+    <activity
+        android:id="@+id/tournamentActivity"
+        android:name="com.example.tournafy.ui.activities.TournamentActivity"
+        android:label="Tournament Details"
+        tools:layout="@layout/activity_tournament">
+        <argument
+            android:name="tournament_id"
+            app:argType="string" />
+        <argument
+            android:name="is_online"
+            app:argType="boolean"
+            android:defaultValue="false" />
     </activity>
 
 </navigation>

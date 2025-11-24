@@ -12,7 +12,7 @@
         android:id="@+id/ivAuthIllustration"
         android:layout_width="0dp"
         android:layout_height="200dp"
-        android:src="@drawable/ic_sports_cricket"
+        android:src="@drawable/ic_matches"
         app:tint="?attr/colorPrimary"
         android:layout_margin="@dimen/spacing_xl"
         app:layout_constraintTop_toTopOf="parent"

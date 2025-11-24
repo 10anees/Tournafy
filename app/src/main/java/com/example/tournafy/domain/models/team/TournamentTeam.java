@@ -10,6 +10,7 @@ public class TournamentTeam {
     private String tournamentTeamId;
     private String tournamentId;
     private String teamId;
+    private String teamName; // Team name for display purposes
 
     // Statistics fields
     private int points;
@@ -130,5 +131,13 @@ public class TournamentTeam {
 
     public void setNetRunRate(float netRunRate) {
         this.netRunRate = netRunRate;
+    }
+
+    public String getTeamName() {
+        return teamName;
+    }
+
+    public void setTeamName(String teamName) {
+        this.teamName = teamName;
     }
 }

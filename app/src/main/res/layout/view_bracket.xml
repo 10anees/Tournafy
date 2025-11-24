@@ -119,7 +119,7 @@
                     android:layout_width="@dimen/icon_size_xl"
                     android:layout_height="@dimen/icon_size_xl"
                     android:layout_marginTop="@dimen/spacing_lg"
-                    android:src="@drawable/ic_tournament"
+                    android:src="@drawable/ic_trophy"
                     android:contentDescription="@string/trophy"
                     app:tint="?attr/colorPrimary"/>
 
@@ -152,7 +152,7 @@
         <ImageView
             android:layout_width="@dimen/empty_state_icon_size"
             android:layout_height="@dimen/empty_state_icon_size"
-            android:src="@drawable/ic_tournament"
+            android:src="@drawable/ic_trophy"
             android:contentDescription="@string/no_bracket"
             app:tint="?attr/colorOnSurfaceVariant"
             android:alpha="0.6"/>

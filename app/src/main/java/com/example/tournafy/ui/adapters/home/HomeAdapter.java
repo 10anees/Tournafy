@@ -69,10 +69,10 @@ public class HomeAdapter extends ListAdapter<HostedEntity, HomeAdapter.EntityVie
 
             if (entity instanceof Match) {
                 tvType.setText("Match");
-                ivIcon.setImageResource(R.drawable.ic_sports_cricket);
+                ivIcon.setImageResource(R.drawable.ic_matches);
             } else if (entity instanceof Tournament) {
                 tvType.setText("Tournament");
-                ivIcon.setImageResource(R.drawable.ic_tournament);
+                ivIcon.setImageResource(R.drawable.ic_trophy);
             } else if (entity instanceof Series) {
                 tvType.setText("Series");
                 ivIcon.setImageResource(R.drawable.ic_series);

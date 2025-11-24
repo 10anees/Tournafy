@@ -15,7 +15,7 @@
         android:id="@+id/ivStatIcon"
         android:layout_width="@dimen/icon_size_md"
         android:layout_height="@dimen/icon_size_md"
-        android:src="@drawable/ic_sports_cricket"
+        android:src="@drawable/ic_matches"
         app:tint="?attr/colorPrimary"/>
 
     <!-- Stat Label -->

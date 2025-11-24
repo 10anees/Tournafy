@@ -35,6 +35,8 @@ public class HostNewTournamentFragment extends Fragment {
     private AuthViewModel authViewModel;
 
     private TextInputEditText etName;
+    private TextInputEditText etPlayersPerTeam;
+    private TextInputEditText etMinTeams;
     private AutoCompleteTextView actvSport, actvFormat;
     private MaterialButton btnCreate;
     private ProgressBar progressBar;
@@ -78,6 +80,8 @@ public class HostNewTournamentFragment extends Fragment {
 
     private void initViews(View view) {
         etName = view.findViewById(R.id.etTournamentName);
+        etPlayersPerTeam = view.findViewById(R.id.etPlayersPerTeam);
+        etMinTeams = view.findViewById(R.id.etMinTeams);
         actvSport = view.findViewById(R.id.actvSportType);
         actvFormat = view.findViewById(R.id.actvTournamentType);
         btnCreate = view.findViewById(R.id.btnCreate);
@@ -109,10 +113,16 @@ public class HostNewTournamentFragment extends Fragment {
 
         hostViewModel.creationSuccess.observe(getViewLifecycleOwner(), entity -> {
             if (entity != null && entity instanceof Tournament) {
+                Tournament tournament = (Tournament) entity;
                 Toast.makeText(getContext(), "Tournament Created!", Toast.LENGTH_SHORT).show();
                 hostViewModel.clearSuccessEvent();
+                
+                // Navigate to Add Teams screen with tournament details
                 NavController navController = Navigation.findNavController(requireView());
-                navController.navigateUp();
+                Bundle args = new Bundle();
+                args.putString("tournament_id", tournament.getEntityId());
+                args.putBoolean("is_online", tournament.isOnline());
+                navController.navigate(R.id.action_hostNewTournament_to_addTournamentTeams, args);
             }
         });
 
@@ -128,17 +138,49 @@ public class HostNewTournamentFragment extends Fragment {
         String name = etName.getText().toString().trim();
         String sport = actvSport.getText().toString();
         String format = actvFormat.getText().toString();
+        String playersPerTeamStr = etPlayersPerTeam.getText().toString().trim();
+        String minTeamsStr = etMinTeams.getText().toString().trim();
 
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(sport) || TextUtils.isEmpty(format)) {
             Toast.makeText(getContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // Parse configuration values with defaults
+        int playersPerTeam = 11; // default
+        int minTeams = 2; // default
+        
+        try {
+            if (!TextUtils.isEmpty(playersPerTeamStr)) {
+                playersPerTeam = Integer.parseInt(playersPerTeamStr);
+                if (playersPerTeam < 1 || playersPerTeam > 25) {
+                    Toast.makeText(getContext(), "Players per team must be between 1 and 25", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+            if (!TextUtils.isEmpty(minTeamsStr)) {
+                minTeams = Integer.parseInt(minTeamsStr);
+                if (minTeams < 2 || minTeams > 32) {
+                    Toast.makeText(getContext(), "Minimum teams must be between 2 and 32", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+        } catch (NumberFormatException e) {
+            Toast.makeText(getContext(), "Invalid number format", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // FIX: Use GUEST_HOST_ID if currentUserId is null
         String hostId = (currentUserId != null) ? currentUserId : GUEST_HOST_ID;
 
+        // Build tournament configuration
+        java.util.Map<String, Object> config = new java.util.HashMap<>();
+        config.put("playersPerTeam", playersPerTeam);
+        config.put("minTeams", minTeams);
+
         Tournament.Builder builder = new Tournament.Builder(name, hostId, sport.toUpperCase(), format.toUpperCase())
-                .withStartDate(new Date());
+                .withStartDate(new Date())
+                .withTournamentConfig(config);
 
         hostViewModel.createTournament(builder);
     }

@@ -48,6 +48,7 @@ public class MatchViewModel extends ViewModel {
 
     private final IEventService eventService;
     private final MatchCommandManager commandManager;
+    private final com.example.tournafy.service.impl.TournamentService tournamentService;
 
     private final MutableLiveData<String> _offlineMatchId = new MutableLiveData<>();
     private final MutableLiveData<String> _onlineMatchId = new MutableLiveData<>();
@@ -86,7 +87,8 @@ public class MatchViewModel extends ViewModel {
             @OnlineRepo BallFirebaseRepository onlineBallRepo,
             @OnlineRepo FootballEventFirebaseRepository onlineFootballEventRepo,
             IEventService eventService,
-            MatchCommandManager commandManager
+            MatchCommandManager commandManager,
+            com.example.tournafy.service.impl.TournamentService tournamentService
     ) {
         this.offlineMatchRepo = offlineMatchRepo;
         this.offlineInningsRepo = offlineInningsRepo;
@@ -101,6 +103,7 @@ public class MatchViewModel extends ViewModel {
 
         this.eventService = eventService;
         this.commandManager = commandManager;
+        this.tournamentService = tournamentService;
 
         this.offlineMatch = Transformations.switchMap(_offlineMatchId,
                 matchId -> offlineMatchRepo.getById(matchId)
@@ -162,8 +165,11 @@ public class MatchViewModel extends ViewModel {
         androidx.lifecycle.Observer<com.example.tournafy.domain.models.base.Match> linkGenerationObserver = new androidx.lifecycle.Observer<com.example.tournafy.domain.models.base.Match>() {
             @Override
             public void onChanged(com.example.tournafy.domain.models.base.Match match) {
+                // ALWAYS remove observer first to prevent accumulation
+                offlineMatch.removeObserver(this);
+                
                 if (match == null) {
-                    android.util.Log.w("MatchViewModel", "Match is null in linkGenerationObserver");
+                    android.util.Log.w("MatchViewModel", "Match is null in linkGenerationObserver, observer removed");
                     return;
                 }
                 
@@ -199,9 +205,6 @@ public class MatchViewModel extends ViewModel {
                 } else {
                     android.util.Log.d("MatchViewModel", "Match already has visibility link: " + match.getVisibilityLink());
                 }
-                
-                // IMPORTANT: Remove observer after first execution to prevent infinite loop
-                offlineMatch.removeObserver(this);
             }
         };
         
@@ -966,7 +969,8 @@ public class MatchViewModel extends ViewModel {
     }
 
     /**
-     * Ends the match completely.
+     * PHASE 10: Ends the match completely.
+     * Now integrates with TournamentService to update standings automatically.
      */
     public void endMatch() {
         _isLoading.setValue(true);
@@ -981,11 +985,46 @@ public class MatchViewModel extends ViewModel {
         currentMatch.endMatch();
         
         offlineMatchRepo.update(currentMatch).addOnCompleteListener(task -> {
-            _isLoading.setValue(false);
             if (!task.isSuccessful()) {
                 _errorMessage.setValue("Failed to end match");
+                _isLoading.setValue(false);
+                return;
+            }
+            
+            // Check if this match is part of a tournament
+            String tournamentId = currentMatch.getTournamentId();
+            if (tournamentId != null && !tournamentId.isEmpty()) {
+                // Update tournament standings
+                updateTournamentStandings(tournamentId, currentMatch.getEntityId(), currentMatch);
+            } else {
+                _isLoading.setValue(false);
             }
         });
+    }
+
+    /**
+     * Update tournament standings after match completion
+     */
+    private void updateTournamentStandings(String tournamentId, String matchId, Match match) {
+        tournamentService.calculateAndUpdateStandings(
+            tournamentId, 
+            matchId, 
+            match,
+            new com.example.tournafy.service.interfaces.ITournamentService.TournamentCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {
+                    _isLoading.setValue(false);
+                    // Standings updated successfully
+                    // Stage advancement will be checked automatically by the service
+                }
+                
+                @Override
+                public void onError(Exception e) {
+                    _isLoading.setValue(false);
+                    _errorMessage.setValue("Match ended but failed to update standings: " + e.getMessage());
+                }
+            }
+        );
     }
 
     /**

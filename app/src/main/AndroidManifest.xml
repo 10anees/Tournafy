@@ -32,6 +32,12 @@
             android:name=".ui.activities.MainActivity"
             android:exported="false" />
         
+        <!-- Tournament Activity -->
+        <activity
+            android:name=".ui.activities.TournamentActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.activities.MainActivity" />
+        
         <!-- Match Details Activity -->
         <activity
             android:name=".ui.activities.MatchActivity"

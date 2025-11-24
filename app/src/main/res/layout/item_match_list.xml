@@ -19,7 +19,7 @@
             android:id="@+id/ivSportIcon"
             android:layout_width="@dimen/icon_size_xl"
             android:layout_height="@dimen/icon_size_xl"
-            android:src="@drawable/ic_sports_cricket"
+            android:src="@drawable/ic_matches"
             app:tint="?attr/colorPrimary"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"/>

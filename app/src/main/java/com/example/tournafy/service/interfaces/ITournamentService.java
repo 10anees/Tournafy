@@ -48,6 +48,22 @@ public interface ITournamentService {
      */
     void advanceKnockoutTeams(String tournamentId, String stageId, TournamentCallback<Void> callback);
 
+    /**
+     * Starts a tournament by changing its status to IN_PROGRESS.
+     *
+     * @param tournamentId The ID of the tournament to start.
+     * @param callback   Callback to signal success or error.
+     */
+    void startTournament(String tournamentId, TournamentCallback<Void> callback);
+
+    /**
+     * Completes a tournament by setting its status to COMPLETED and recording the winner.
+     *
+     * @param tournamentId The ID of the tournament to complete.
+     * @param winnerTeamId The ID of the winning team.
+     * @param callback   Callback to signal success or error.
+     */
+    void completeTournament(String tournamentId, String winnerTeamId, TournamentCallback<Void> callback);
 
     /**
      * A generic callback interface for tournament operations.
