@@ -432,8 +432,8 @@ public class CricketMatch extends Match {
             second.setInningsId(UUID.randomUUID().toString());
             second.setMatchId(this.entityId);
             second.setInningsNumber(2);
-            second.setBattingTeamId(firstBowlingTeam.getTeamId());
-            second.setBowlingTeamId(firstBattingTeam.getTeamId());
+            second.setBattingTeamId(firstBowlingTeam.getTeamId()); // Team that bowled first now bats
+            second.setBowlingTeamId(firstBattingTeam.getTeamId()); // Team that batted first now bowls
             innings.add(second);
             
             // Don't initialize players here - let the UI dialogs handle selection

@@ -125,7 +125,10 @@ public class CricketTossFragment extends Fragment {
                 chipTeamA.setText(teamAName);
                 chipTeamB.setText(teamBName);
                 
-                // Enable the chips (NOT the chip group - ChipGroup should always be enabled)
+                // Enable the chip groups AND the chips
+                chipGroupTossWinner.setEnabled(true);
+                chipGroupTossDecision.setEnabled(true);
+                
                 chipTeamA.setEnabled(true);
                 chipTeamB.setEnabled(true);
                 chipTeamA.setClickable(true);
@@ -133,7 +136,16 @@ public class CricketTossFragment extends Fragment {
                 chipTeamA.setCheckable(true);
                 chipTeamB.setCheckable(true);
                 
+                chipBat.setEnabled(true);
+                chipBowl.setEnabled(true);
+                chipBat.setClickable(true);
+                chipBowl.setClickable(true);
+                chipBat.setCheckable(true);
+                chipBowl.setCheckable(true);
+                
                 android.util.Log.d("CricketToss", "UI enabled for toss selection");
+                android.util.Log.d("CricketToss", "ChipGroupTossWinner enabled: " + chipGroupTossWinner.isEnabled());
+                android.util.Log.d("CricketToss", "ChipGroupTossDecision enabled: " + chipGroupTossDecision.isEnabled());
                 android.util.Log.d("CricketToss", "ChipTeamA enabled: " + chipTeamA.isEnabled());
                 android.util.Log.d("CricketToss", "ChipTeamB enabled: " + chipTeamB.isEnabled());
             } else {

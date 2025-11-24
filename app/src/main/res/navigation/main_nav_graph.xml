@@ -96,6 +96,9 @@
             android:id="@+id/action_addMatchTeams_to_cricketToss"
             app:destination="@id/cricketTossFragment" />
         <action
+            android:id="@+id/action_addMatchTeams_to_cricketLiveScore"
+            app:destination="@id/cricketLiveScoreFragment" />
+        <action
             android:id="@+id/action_addMatchTeams_to_footballLiveScore"
             app:destination="@id/footballLiveScoreFragment" />
     </fragment>

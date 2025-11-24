@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tournafy.R;
+import com.example.tournafy.domain.models.base.MatchConfig;
 import com.example.tournafy.domain.models.team.Player;
 import com.example.tournafy.domain.models.team.Team;
 import com.example.tournafy.ui.adapters.PlayerListAdapter;
@@ -408,6 +409,31 @@ public class AddMatchTeamsFragment extends Fragment implements AddPlayerDialog.A
             
             android.util.Log.d("AddMatchTeams", "Match loaded: " + match.getName() + " (ID: " + match.getEntityId() + ")");
             
+            // CRITICAL: Check if match config exists when loaded
+            if (match instanceof com.example.tournafy.domain.models.match.cricket.CricketMatch) {
+                com.example.tournafy.domain.models.base.MatchConfig config =
+                    ((com.example.tournafy.domain.models.match.cricket.CricketMatch) match).getMatchConfig();
+                if (config instanceof com.example.tournafy.domain.models.match.cricket.CricketMatchConfig) {
+                    com.example.tournafy.domain.models.match.cricket.CricketMatchConfig cricketConfig = 
+                        (com.example.tournafy.domain.models.match.cricket.CricketMatchConfig) config;
+                    android.util.Log.w("AddMatchTeams", "LOADED Cricket match config: " + 
+                        cricketConfig.getNumberOfOvers() + " overs, " + cricketConfig.getPlayersPerSide() + " players");
+                } else {
+                    android.util.Log.w("AddMatchTeams", "LOADED Cricket match config: NULL");
+                }
+            } else if (match instanceof com.example.tournafy.domain.models.match.football.FootballMatch) {
+                com.example.tournafy.domain.models.base.MatchConfig config =
+                    ((com.example.tournafy.domain.models.match.football.FootballMatch) match).getMatchConfig();
+                if (config instanceof com.example.tournafy.domain.models.match.football.FootballMatchConfig) {
+                    com.example.tournafy.domain.models.match.football.FootballMatchConfig footballConfig = 
+                        (com.example.tournafy.domain.models.match.football.FootballMatchConfig) config;
+                    android.util.Log.w("AddMatchTeams", "LOADED Football match config: " + 
+                        footballConfig.getMatchDuration() + " mins, " + footballConfig.getPlayersPerSide() + " players");
+                } else {
+                    android.util.Log.w("AddMatchTeams", "LOADED Football match config: NULL");
+                }
+            }
+            
             // Check if match is CricketMatch or FootballMatch and has teams
             List<com.example.tournafy.domain.models.team.MatchTeam> matchTeams = null;
             
@@ -538,6 +564,43 @@ public class AddMatchTeamsFragment extends Fragment implements AddPlayerDialog.A
         android.util.Log.d("AddMatchTeams", "Match name: " + currentMatch.getName());
         android.util.Log.d("AddMatchTeams", "Is tournament match: " + isTournamentMatch);
         
+        // CRITICAL: Verify match has config before saving
+        // Check if match config exists
+        boolean hasConfig = false;
+        if (currentMatch instanceof com.example.tournafy.domain.models.match.cricket.CricketMatch) {
+            com.example.tournafy.domain.models.base.MatchConfig config =
+                ((com.example.tournafy.domain.models.match.cricket.CricketMatch) currentMatch).getMatchConfig();
+            hasConfig = (config != null);
+            android.util.Log.d("AddMatchTeams", "Cricket match config exists: " + hasConfig);
+            if (config != null && config instanceof com.example.tournafy.domain.models.match.cricket.CricketMatchConfig) {
+                com.example.tournafy.domain.models.match.cricket.CricketMatchConfig cricketConfig = 
+                    (com.example.tournafy.domain.models.match.cricket.CricketMatchConfig) config;
+                android.util.Log.d("AddMatchTeams", "Config - Overs: " + cricketConfig.getNumberOfOvers() + 
+                                  ", Players per side: " + cricketConfig.getPlayersPerSide());
+            }
+        } else if (currentMatch instanceof com.example.tournafy.domain.models.match.football.FootballMatch) {
+            com.example.tournafy.domain.models.base.MatchConfig config =
+                ((com.example.tournafy.domain.models.match.football.FootballMatch) currentMatch).getMatchConfig();
+            hasConfig = (config != null);
+            android.util.Log.d("AddMatchTeams", "Football match config exists: " + hasConfig);
+            if (config != null && config instanceof com.example.tournafy.domain.models.match.football.FootballMatchConfig) {
+                com.example.tournafy.domain.models.match.football.FootballMatchConfig footballConfig = 
+                    (com.example.tournafy.domain.models.match.football.FootballMatchConfig) config;
+                android.util.Log.d("AddMatchTeams", "Config - Duration: " + footballConfig.getMatchDuration() + 
+                                  " mins, Players per side: " + footballConfig.getPlayersPerSide());
+            }
+        }
+        
+        // CRITICAL: Don't proceed if config is missing!
+        if (!hasConfig) {
+            android.util.Log.e("AddMatchTeams", "ERROR: Cannot navigate - Match config is NULL!");
+            android.util.Log.e("AddMatchTeams", "The config should have been set in AddMatchDetailsFragment!");
+            android.widget.Toast.makeText(getContext(), 
+                "Error: Match configuration missing. Please go back and set match details.", 
+                android.widget.Toast.LENGTH_LONG).show();
+            return;
+        }
+        
         // Save match to Firestore to ensure any changes are persisted
         android.util.Log.d("AddMatchTeams", "Saving match to Firestore before navigation");
         hostViewModel.updateMatch(currentMatch, new com.example.tournafy.service.interfaces.IHostingService.HostingCallback<Void>() {
@@ -564,9 +627,16 @@ public class AddMatchTeamsFragment extends Fragment implements AddPlayerDialog.A
                                 try {
                                     androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(requireView());
                                     
+                                    // For tournament matches, skip toss screen and go directly to live score
+                                    // Toss is already auto-generated during bracket creation
                                     if ("CRICKET".equalsIgnoreCase(sportType)) {
-                                        android.util.Log.d("AddMatchTeams", "Navigating to cricket toss");
-                                        navController.navigate(R.id.action_addMatchTeams_to_cricketToss, args);
+                                        if (isTournamentMatch) {
+                                            android.util.Log.d("AddMatchTeams", "Tournament match - skipping toss, going directly to live score");
+                                            navController.navigate(R.id.action_addMatchTeams_to_cricketLiveScore, args);
+                                        } else {
+                                            android.util.Log.d("AddMatchTeams", "Regular match - navigating to cricket toss");
+                                            navController.navigate(R.id.action_addMatchTeams_to_cricketToss, args);
+                                        }
                                     } else {
                                         android.util.Log.d("AddMatchTeams", "Navigating to football live score");
                                         navController.navigate(R.id.action_addMatchTeams_to_footballLiveScore, args);
@@ -579,7 +649,7 @@ public class AddMatchTeamsFragment extends Fragment implements AddPlayerDialog.A
                                         android.widget.Toast.LENGTH_SHORT).show();
                                 }
                             }
-                        }, 300); // 300ms delay after save - ensures Firestore propagation
+                        }, 300); // 300ms delay after save - ensures Firestore propagation for MatchViewModel
                     }
                     
                     @Override

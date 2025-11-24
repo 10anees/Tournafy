@@ -322,36 +322,34 @@ public class AddMatchDetailsFragment extends Fragment {
             return;
         }
         
-        // Load the match and save configuration
-        hostViewModel.loadMatchById(matchId);
+        // Load the match, set config on it, save to Firestore, then navigate
         hostViewModel.currentMatch.observe(getViewLifecycleOwner(), new androidx.lifecycle.Observer<com.example.tournafy.domain.models.base.Match>() {
             @Override
             public void onChanged(com.example.tournafy.domain.models.base.Match match) {
-                if (match == null) {
-                    android.util.Log.w("AddMatchDetails", "Match is null, cannot save config");
+                if (match == null || !match.getEntityId().equals(matchId)) {
                     return;
                 }
                 
                 // Remove observer to prevent multiple calls
                 hostViewModel.currentMatch.removeObserver(this);
                 
-                android.util.Log.d("AddMatchDetails", "Match loaded: " + match.getName());
+                android.util.Log.d("AddMatchDetails", "Match loaded for config save: " + match.getName());
                 
-                // Set configuration based on sport type
+                // Set configuration on the match object
                 boolean isCricket = chipGroupSport.getCheckedChipId() == R.id.chipCricket;
                 if (isCricket && match instanceof com.example.tournafy.domain.models.match.cricket.CricketMatch) {
                     com.example.tournafy.domain.models.match.cricket.CricketMatchConfig config = getCricketConfig();
                     ((com.example.tournafy.domain.models.match.cricket.CricketMatch) match).setMatchConfig(config);
                     hostViewModel.cricketMatchConfig.setValue(config);
-                    android.util.Log.d("AddMatchDetails", "Cricket config set: " + config.getNumberOfOvers() + " overs");
+                    android.util.Log.d("AddMatchDetails", "Cricket config set on match: " + config.getNumberOfOvers() + " overs");
                 } else if (!isCricket && match instanceof com.example.tournafy.domain.models.match.football.FootballMatch) {
                     com.example.tournafy.domain.models.match.football.FootballMatchConfig config = getFootballConfig();
                     ((com.example.tournafy.domain.models.match.football.FootballMatch) match).setMatchConfig(config);
                     hostViewModel.footballMatchConfig.setValue(config);
-                    android.util.Log.d("AddMatchDetails", "Football config set: " + config.getMatchDuration() + " mins");
+                    android.util.Log.d("AddMatchDetails", "Football config set on match: " + config.getMatchDuration() + " mins");
                 }
                 
-                // Save match to Firestore
+                // Save match with config to Firestore
                 hostViewModel.updateMatch(match, new com.example.tournafy.service.interfaces.IHostingService.HostingCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
