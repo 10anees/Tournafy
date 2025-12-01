@@ -60,12 +60,14 @@
                     android:layout_height="wrap_content"
                     android:text="Tournaments" />
 
+                <!--
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipSeries"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Series" />
+                -->
             </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
 

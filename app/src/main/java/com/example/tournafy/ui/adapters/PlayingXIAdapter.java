@@ -13,6 +13,7 @@ import com.example.tournafy.R;
 import com.example.tournafy.domain.models.match.cricket.BatsmanStats;
 import com.example.tournafy.domain.models.team.Player;
 import com.example.tournafy.domain.models.match.cricket.BowlerStats;
+import com.example.tournafy.domain.models.statistics.PlayerStatistics;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,6 +25,7 @@ public class PlayingXIAdapter extends RecyclerView.Adapter<PlayingXIAdapter.Play
     private List<Player> players;
     private Map<String, BatsmanStats> batsmanStatsMap;
     private Map<String, BowlerStats> bowlerStatsMap;
+    private Map<String, PlayerStatistics> playerStatisticsMap;
     private String currentStrikerId;
     private String currentNonStrikerId;
     private String currentBowlerId;
@@ -38,12 +40,18 @@ public class PlayingXIAdapter extends RecyclerView.Adapter<PlayingXIAdapter.Play
         this.players = new ArrayList<>();
         this.batsmanStatsMap = new HashMap<>();
         this.bowlerStatsMap = new HashMap<>();
+        this.playerStatisticsMap = new HashMap<>();
         this.isBattingTeam = isBattingTeam;
         this.showCricketStats = showCricketStats;
     }
 
     public void setPlayers(List<Player> players) {
         this.players = players != null ? players : new ArrayList<>();
+        notifyDataSetChanged();
+    }
+
+    public void setPlayerStatistics(Map<String, PlayerStatistics> stats) {
+        this.playerStatisticsMap = stats != null ? stats : new HashMap<>();
         notifyDataSetChanged();
     }
 
@@ -94,6 +102,8 @@ public class PlayingXIAdapter extends RecyclerView.Adapter<PlayingXIAdapter.Play
         private TextView tvBatsmanStrikeRate;
         private TextView tvBowlerStats;
         private TextView tvBowlerEconomy;
+        private TextView tvFootballGoals;
+        private TextView tvFootballAssists;
 
         public PlayerViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -105,6 +115,8 @@ public class PlayingXIAdapter extends RecyclerView.Adapter<PlayingXIAdapter.Play
             tvBatsmanStrikeRate = itemView.findViewById(R.id.tvBatsmanStrikeRate);
             tvBowlerStats = itemView.findViewById(R.id.tvBowlerStats);
             tvBowlerEconomy = itemView.findViewById(R.id.tvBowlerEconomy);
+            tvFootballGoals = itemView.findViewById(R.id.tvFootballGoals);
+            tvFootballAssists = itemView.findViewById(R.id.tvFootballAssists);
         }
 
         public void bind(Player player, boolean isBattingTeam, boolean showCricketStats) {
@@ -122,9 +134,27 @@ public class PlayingXIAdapter extends RecyclerView.Adapter<PlayingXIAdapter.Play
             tvBatsmanStrikeRate.setVisibility(View.GONE);
             tvBowlerStats.setVisibility(View.GONE);
             tvBowlerEconomy.setVisibility(View.GONE);
+            if(tvFootballGoals != null) tvFootballGoals.setVisibility(View.GONE);
+            if(tvFootballAssists != null) tvFootballAssists.setVisibility(View.GONE);
             
-            // If cricket stats are disabled (e.g., for football), just show player info
+            // If cricket stats are disabled (e.g., for football), show football stats.
             if (!showCricketStats) {
+                if (tvFootballGoals != null && tvFootballAssists != null) {
+                    tvFootballGoals.setVisibility(View.VISIBLE);
+                    tvFootballAssists.setVisibility(View.VISIBLE);
+
+                    PlayerStatistics stats = playerStatisticsMap.get(playerId);
+                    Object goals = null;
+                    Object assists = null;
+
+                    if (stats != null && stats.getFootballStats() != null) {
+                        goals = stats.getFootballStats().get("goals");
+                        assists = stats.getFootballStats().get("assists");
+                    }
+
+                    tvFootballGoals.setText("Goals: " + (goals != null ? goals.toString() : "0"));
+                    tvFootballAssists.setText("Assists: " + (assists != null ? assists.toString() : "0"));
+                }
                 return;
             }
 

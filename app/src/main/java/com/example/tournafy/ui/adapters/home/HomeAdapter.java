@@ -68,7 +68,18 @@ public class HomeAdapter extends ListAdapter<HostedEntity, HomeAdapter.EntityVie
             tvStatus.setText(entity.getStatus());
 
             if (entity instanceof Match) {
-                tvType.setText("Match");
+                Match match = (Match) entity;
+                String sportType = "Match";
+                if (match.getSportId() != null) {
+                    if (match.getSportId().equalsIgnoreCase("FOOTBALL")) {
+                        sportType = "Football Match";
+                    } else if (match.getSportId().equalsIgnoreCase("CRICKET")) {
+                        sportType = "Cricket Match";
+                    } else {
+                        sportType = match.getSportId().substring(0, 1).toUpperCase() + match.getSportId().substring(1).toLowerCase() + " Match";
+                    }
+                }
+                tvType.setText(sportType);
                 ivIcon.setImageResource(R.drawable.ic_matches);
             } else if (entity instanceof Tournament) {
                 tvType.setText("Tournament");

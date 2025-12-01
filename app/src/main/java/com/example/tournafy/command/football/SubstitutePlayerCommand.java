@@ -33,4 +33,14 @@ public class SubstitutePlayerCommand implements MatchCommand {
         // Reverse the swap (In becomes Out, Out becomes In)
         match.performSubstitution(subDetail.getPlayerInId(), subDetail.getPlayerOutId());
     }
+    
+    @Override
+    public String getEventId() {
+        return event != null ? event.getEventId() : null;
+    }
+    
+    @Override
+    public String getCommandType() {
+        return "SUBSTITUTION";
+    }
 }

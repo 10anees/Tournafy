@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="?attr/colorSurface"
+    android:padding="@dimen/dialog_padding"
+    android:clipToOutline="true"
+    android:elevation="@dimen/elevation_md"
+    android:minWidth="@dimen/dialog_min_width"
+    android:maxWidth="@dimen/dialog_max_width"
+    android:layout_margin="@dimen/spacing_md">
+
+    <TextView
+        android:id="@+id/tvDialogTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Host New Event"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+        android:textColor="?attr/colorOnSurface"
+        android:layout_marginBottom="@dimen/spacing_md"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnHostMatch"
+        style="@style/Widget.Tournafy.Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Host Match"
+        android:layout_marginBottom="@dimen/spacing_sm"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnHostTournament"
+        style="@style/Widget.Tournafy.Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Host Tournament"
+        android:layout_marginBottom="@dimen/spacing_sm"/>
+
+    <!--
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnHostSeries"
+        style="@style/Widget.Tournafy.Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Host Series"
+        android:layout_marginBottom="@dimen/spacing_sm"/>
+    -->
+
+</LinearLayout>

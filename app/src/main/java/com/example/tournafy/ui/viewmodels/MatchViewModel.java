@@ -6,6 +6,7 @@ import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
 import com.example.tournafy.command.MatchCommandManager;
+import com.example.tournafy.data.repository.offline.PlayerStatisticsFirestoreRepository;
 import com.example.tournafy.data.repository.online.BallFirebaseRepository;
 import com.example.tournafy.data.repository.online.FootballEventFirebaseRepository;
 import com.example.tournafy.data.repository.online.InningsFirebaseRepository;
@@ -24,6 +25,7 @@ import com.example.tournafy.domain.models.match.cricket.CricketWicketDetail;
 import com.example.tournafy.domain.models.match.cricket.Innings;
 import com.example.tournafy.domain.models.match.cricket.Over;
 import com.example.tournafy.domain.models.match.football.FootballEvent;
+import com.example.tournafy.domain.models.statistics.PlayerStatistics;
 import com.example.tournafy.service.interfaces.IEventService;
 
 import java.util.List;
@@ -73,6 +75,13 @@ public class MatchViewModel extends ViewModel {
     public final LiveData<Boolean> overCompletionEvent = _overCompletionEvent;
     private final MutableLiveData<Boolean> _matchStartEvent = new MutableLiveData<>();
     public final LiveData<Boolean> matchStartEvent = _matchStartEvent;
+
+    @Inject
+    PlayerStatisticsFirestoreRepository playerStatisticsRepository;
+
+    public LiveData<List<PlayerStatistics>> getPlayerStats(String entityId) {
+        return playerStatisticsRepository.getStatsForEntity(entityId);
+    }
 
     @Inject
     public MatchViewModel(
@@ -1207,6 +1216,13 @@ public class MatchViewModel extends ViewModel {
             new com.example.tournafy.command.football.AddGoalCommand(footballMatch, event, goalDetail);
         commandManager.executeCommand(command);
         
+        // Set event score AFTER command updates match score (for timeline display)
+        event.setHomeScoreAtEvent(footballMatch.getHomeScore());
+        event.setAwayScoreAtEvent(footballMatch.getAwayScore());
+        
+        // Update player statistics for goal scorer and assister
+        updateFootballPlayerStatsAfterGoal(footballMatch, scorerId, assisterId);
+        
         // Persist event and match
         offlineFootballEventRepo.add(event).addOnCompleteListener(eventTask -> {
             if (eventTask.isSuccessful()) {
@@ -1286,6 +1302,10 @@ public class MatchViewModel extends ViewModel {
         com.example.tournafy.command.football.AddCardCommand command = 
             new com.example.tournafy.command.football.AddCardCommand(footballMatch, event, cardDetail);
         commandManager.executeCommand(command);
+        
+        // Set event score for timeline display (card doesn't change score, just record current state)
+        event.setHomeScoreAtEvent(footballMatch.getHomeScore());
+        event.setAwayScoreAtEvent(footballMatch.getAwayScore());
         
         // Persist event and match
         offlineFootballEventRepo.add(event).addOnCompleteListener(eventTask -> {
@@ -1369,6 +1389,10 @@ public class MatchViewModel extends ViewModel {
         com.example.tournafy.command.football.SubstitutePlayerCommand command = 
             new com.example.tournafy.command.football.SubstitutePlayerCommand(footballMatch, event, subDetail);
         commandManager.executeCommand(command);
+        
+        // Set event score for timeline display (substitution doesn't change score, just record current state)
+        event.setHomeScoreAtEvent(footballMatch.getHomeScore());
+        event.setAwayScoreAtEvent(footballMatch.getAwayScore());
         
         // Persist event and match
         offlineFootballEventRepo.add(event).addOnCompleteListener(eventTask -> {
@@ -1462,11 +1486,42 @@ public class MatchViewModel extends ViewModel {
 
     public void undoLastEvent() {
         if (commandManager.canUndo()) {
+            // Get the last command to undo
+            com.example.tournafy.command.interfaces.MatchCommand lastCommand = commandManager.getLastExecutedCommand();
             commandManager.undo();
             // After undo, persist the reverted state
             Match match = offlineMatch.getValue();
             if (match != null) {
                 persistOfflineMatch(match);
+            }
+
+            // Delete the event from Firestore if possible
+            if (lastCommand != null) {
+                String eventId = lastCommand.getEventId();
+                String commandType = lastCommand.getCommandType();
+                if (eventId != null) {
+                    if (commandType.equals("GOAL") || commandType.equals("CARD") || commandType.equals("SUBSTITUTION")) {
+                        offlineFootballEventRepo.delete(eventId);
+                    }
+                    // TODO: Add cricket event deletion if needed
+                }
+
+                // Revert player statistics for football goals/assists
+                if (commandType.equals("GOAL") && lastCommand instanceof com.example.tournafy.command.football.AddGoalCommand) {
+                    com.example.tournafy.command.football.AddGoalCommand goalCmd = (com.example.tournafy.command.football.AddGoalCommand) lastCommand;
+                    String scorerId = goalCmd.getScorerId();
+                    String assisterId = goalCmd.getAssisterId();
+                    String entityId = match != null ? match.getEntityId() : null;
+                    if (entityId != null) {
+                        if (scorerId != null) {
+                            playerStatisticsRepository.incrementStat(scorerId, "goals", -1);
+                        }
+                        if (assisterId != null) {
+                            playerStatisticsRepository.incrementStat(assisterId, "assists", -1);
+                        }
+                    }
+                }
+                // TODO: Add cricket stat reversal if needed
             }
         }
     }
@@ -1652,6 +1707,86 @@ public class MatchViewModel extends ViewModel {
             
             match.updateBowlerStats(bowlerId, bowlerStats);
         }
+    }
+
+    /**
+     * Updates player statistics for football goal scorers and assisters.
+     * Creates or updates PlayerStatistics documents in Firestore.
+     */
+    private void updateFootballPlayerStatsAfterGoal(
+            com.example.tournafy.domain.models.match.football.FootballMatch match,
+            String scorerId, 
+            String assisterId) {
+        
+        String entityId = match.getEntityId();
+        
+        // Update scorer's stats
+        if (scorerId != null) {
+            updateOrCreateFootballPlayerStat(entityId, scorerId, "goals", 1);
+        }
+        
+        // Update assister's stats if there was an assist
+        if (assisterId != null) {
+            updateOrCreateFootballPlayerStat(entityId, assisterId, "assists", 1);
+        }
+    }
+    
+    /**
+     * Updates or creates a football player statistic.
+     * If the player has no stats for this entity, creates a new PlayerStatistics document.
+     * Otherwise, increments the specified stat field.
+     */
+    private void updateOrCreateFootballPlayerStat(String entityId, String playerId, String statField, int increment) {
+        // First, try to find existing stats for this player in this entity
+        collectionReference(PlayerStatisticsFirestoreRepository.COLLECTION_PATH)
+            .whereEqualTo("entityId", entityId)
+            .whereEqualTo("playerId", playerId)
+            .get()
+            .addOnSuccessListener(querySnapshot -> {
+                if (!querySnapshot.isEmpty()) {
+                    // Update existing stats
+                    PlayerStatistics existingStats = querySnapshot.getDocuments().get(0).toObject(PlayerStatistics.class);
+                    if (existingStats != null) {
+                        java.util.Map<String, Object> footballStats = existingStats.getFootballStats();
+                        if (footballStats == null) {
+                            footballStats = new java.util.HashMap<>();
+                        }
+                        
+                        Object currentValue = footballStats.get(statField);
+                        int newValue = increment;
+                        if (currentValue instanceof Number) {
+                            newValue = ((Number) currentValue).intValue() + increment;
+                        }
+                        footballStats.put(statField, newValue);
+                        existingStats.setFootballStats(footballStats);
+                        existingStats.setLastUpdated(new java.util.Date());
+                        
+                        playerStatisticsRepository.update(existingStats);
+                    }
+                } else {
+                    // Create new stats
+                    PlayerStatistics newStats = new PlayerStatistics(playerId, entityId);
+                    newStats.setEntityType("MATCH");
+                    java.util.Map<String, Object> footballStats = new java.util.HashMap<>();
+                    footballStats.put(statField, increment);
+                    footballStats.put("goals", statField.equals("goals") ? increment : 0);
+                    footballStats.put("assists", statField.equals("assists") ? increment : 0);
+                    newStats.setFootballStats(footballStats);
+                    newStats.setLastUpdated(new java.util.Date());
+                    
+                    playerStatisticsRepository.add(newStats);
+                }
+            })
+            .addOnFailureListener(e -> {
+                android.util.Log.e("MatchViewModel", "Failed to update player stats: " + e.getMessage());
+            });
+    }
+    
+    /**
+     * Helper method to get Firestore collection reference.
+     */
+    private com.google.firebase.firestore.CollectionReference collectionReference(String collectionPath) {
+        return com.google.firebase.firestore.FirebaseFirestore.getInstance().collection(collectionPath);
     }
 
     /**

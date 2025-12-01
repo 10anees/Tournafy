@@ -76,6 +76,10 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
     private long timeSwapBuff = 0L;
     private boolean isRunning = false;
     private boolean matchStarted = false; // Track if startMatch() has been called
+    private String currentLoadedMatchId = null; // Track which match is currently loaded to detect match changes
+    private boolean timerStateRestored = false; // Track if we've restored timer state for current match
+    private boolean completedDialogShown = false; // Track if completion dialog was shown for current match
+    private String previousMatchStatus = null; // Track previous status to detect transitions
     
     // Match State
     private String currentTimerText = "00:00";
@@ -161,6 +165,43 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
         super.onDestroyView();
         // Prevent memory leaks by stopping the handler callbacks when view is destroyed
         timerHandler.removeCallbacks(updateTimerThread);
+    }
+    
+    /**
+     * Resets all fragment state variables when loading a new match.
+     * CRITICAL: This prevents stale state from a previous match affecting the new one.
+     */
+    private void resetFragmentState() {
+        android.util.Log.d("FootballLiveScore", "Resetting fragment state for new match");
+        
+        // Stop any running timer
+        timerHandler.removeCallbacks(updateTimerThread);
+        
+        // Reset timer state
+        startTime = 0L;
+        timeInMilliseconds = 0L;
+        timeSwapBuff = 0L;
+        isRunning = false;
+        matchStarted = false;
+        timerStateRestored = false; // Reset timer restore tracking
+        completedDialogShown = false; // Reset completion dialog tracking
+        previousMatchStatus = null; // Reset previous status tracking
+        
+        // Reset match state
+        currentTimerText = "00:00";
+        currentMinute = 0;
+        currentPeriod = "FIRST_HALF";
+        currentEventType = null;
+        currentMatch = null;
+        
+        // Reset UI button states
+        if (btnStartTimer != null) btnStartTimer.setEnabled(true);
+        if (btnPauseTimer != null) btnPauseTimer.setEnabled(false);
+        if (btnHalfTime != null) btnHalfTime.setEnabled(false);
+        if (btnEndMatch != null) btnEndMatch.setEnabled(false);
+        
+        // Enable input buttons for fresh match
+        setInputButtonsEnabled(false); // Start disabled until match is LIVE
     }
 
     private void initViews(View view) {
@@ -272,13 +313,40 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
         matchViewModel.offlineMatch.observe(getViewLifecycleOwner(), match -> {
             if (match instanceof FootballMatch) {
                 FootballMatch footballMatch = (FootballMatch) match;
+                
+                // CRITICAL FIX: Detect when a NEW match is loaded and reset fragment state
+                String loadedMatchId = footballMatch.getEntityId();
+                if (currentLoadedMatchId != null && !currentLoadedMatchId.equals(loadedMatchId)) {
+                    // A different match was loaded - reset all fragment state
+                    android.util.Log.d("FootballLiveScore", "New match detected! Resetting fragment state. Old: " + 
+                        currentLoadedMatchId + ", New: " + loadedMatchId);
+                    resetFragmentState();
+                }
+                currentLoadedMatchId = loadedMatchId;
+                
+                // Determine matchStarted from actual match status (not persisted boolean)
+                String status = footballMatch.getMatchStatus();
+                if (status != null && (status.equals("LIVE") || status.equals("COMPLETED"))) {
+                    matchStarted = true;
+                } else {
+                    // SCHEDULED or DRAFT - match hasn't started yet
+                    matchStarted = false;
+                }
+                
                 currentMatch = footballMatch; // Store for sharing
                 updateUI(footballMatch);
                 
-                // Check if match just completed - show option to view details
-                if ("COMPLETED".equals(footballMatch.getMatchStatus())) {
+                // Check if match JUST TRANSITIONED to completed - show option to view details
+                // Only show dialog if: status changed from non-COMPLETED to COMPLETED, and dialog not already shown
+                String currentStatus = footballMatch.getMatchStatus();
+                if ("COMPLETED".equals(currentStatus) && 
+                    previousMatchStatus != null && 
+                    !"COMPLETED".equals(previousMatchStatus) && 
+                    !completedDialogShown) {
+                    completedDialogShown = true;
                     showMatchCompletedDialog();
                 }
+                previousMatchStatus = currentStatus;
             }
         });
         
@@ -313,11 +381,14 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
         updatePlayerStatusDisplay(match);
         
         // Restore timer state on first load or when coming back to fragment
-        // Check if we need to restore timer state (elapsed time exists but timer not started locally)
-        if (match.getElapsedTimeMillis() > 0 && !matchStarted) {
+        // Check if we need to restore timer state (LIVE match with elapsed time that hasn't been restored yet)
+        String statusStr = match.getMatchStatus();
+        boolean isLiveOrCompleted = statusStr != null && (statusStr.equals("LIVE") || statusStr.equals("COMPLETED"));
+        if (match.getElapsedTimeMillis() > 0 && isLiveOrCompleted && !timerStateRestored) {
             android.util.Log.d("FootballLiveScore", "Restoring timer state - elapsed: " + match.getElapsedTimeMillis() + 
                 ", running: " + match.isTimerRunning());
             restoreTimerState();
+            timerStateRestored = true;
         }
         
         // Check if match is completed and disable inputs
@@ -432,6 +503,30 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
                 fm.getAwayScore(), 
                 currentTimerText
             );
+            
+            // Update match status display
+            String matchStatus = fm.getMatchStatus();
+            if (matchStatus != null) {
+                // Format status for display (e.g., "LIVE" -> "⚽ LIVE", "COMPLETED" -> "Full Time")
+                String displayStatus;
+                switch (matchStatus) {
+                    case "LIVE":
+                        displayStatus = "⚽ LIVE";
+                        break;
+                    case "COMPLETED":
+                        displayStatus = "Full Time";
+                        break;
+                    case "SCHEDULED":
+                        displayStatus = "Not Started";
+                        break;
+                    case "DRAFT":
+                        displayStatus = "Draft";
+                        break;
+                    default:
+                        displayStatus = matchStatus;
+                }
+                scoreboardView.setMatchStatus(displayStatus);
+            }
         }
     }
     
@@ -463,6 +558,15 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
                 // Check if match is already LIVE (restored from database)
                 if (matchViewModel.offlineMatch.getValue() instanceof FootballMatch) {
                     FootballMatch fm = (FootballMatch) matchViewModel.offlineMatch.getValue();
+                    
+                    // CRITICAL FIX: Validate that the loaded match is the correct one
+                    // This prevents race conditions where old match data is still in the ViewModel
+                    if (!fm.getEntityId().equals(matchId)) {
+                        android.util.Log.w("FootballTimer", "Match ID mismatch! Expected: " + matchId + 
+                            ", Got: " + fm.getEntityId() + ". Waiting for correct match to load...");
+                        Toast.makeText(getContext(), "Loading match data, please try again...", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     
                     // If match is already LIVE, just mark as started and resume timer
                     String statusString = fm.getMatchStatus();
@@ -561,6 +665,13 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
     private void endMatch() {
         if (matchViewModel.offlineMatch.getValue() instanceof FootballMatch) {
             FootballMatch match = (FootballMatch) matchViewModel.offlineMatch.getValue();
+            
+            // CRITICAL FIX: Validate that the loaded match is the correct one
+            if (!match.getEntityId().equals(matchId)) {
+                android.util.Log.w("FootballLiveScore", "Match ID mismatch in endMatch! Expected: " + matchId);
+                Toast.makeText(getContext(), "Loading match data, please wait...", Toast.LENGTH_SHORT).show();
+                return;
+            }
             
             // Check if already completed to avoid duplicate calls
             if (match.getMatchStatus().equals("COMPLETED")) {
@@ -678,6 +789,13 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
         // Validate match is in LIVE state
         if (matchViewModel.offlineMatch.getValue() instanceof FootballMatch) {
             FootballMatch fm = (FootballMatch) matchViewModel.offlineMatch.getValue();
+            
+            // CRITICAL FIX: Validate that the loaded match is the correct one
+            if (!fm.getEntityId().equals(matchId)) {
+                android.util.Log.w("FootballLiveScore", "Match ID mismatch in showEventDialog! Expected: " + matchId);
+                Toast.makeText(getContext(), "Loading match data, please wait...", Toast.LENGTH_SHORT).show();
+                return;
+            }
             
             // Handle DRAFT and ACTIVE status (fallback for legacy data)
             String statusString = fm.getMatchStatus();

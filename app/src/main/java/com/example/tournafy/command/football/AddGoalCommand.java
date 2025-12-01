@@ -41,4 +41,28 @@ public class AddGoalCommand implements MatchCommand {
             match.setAwayScore(match.getAwayScore() - 1);
         }
     }
+    
+    @Override
+    public String getEventId() {
+        return event != null ? event.getEventId() : null;
+    }
+    
+    @Override
+    public String getCommandType() {
+        return "GOAL";
+    }
+    
+    /**
+     * Returns the scorer's player ID for stat reversal.
+     */
+    public String getScorerId() {
+        return goalDetail != null ? goalDetail.getScorerId() : null;
+    }
+    
+    /**
+     * Returns the assister's player ID for stat reversal.
+     */
+    public String getAssisterId() {
+        return goalDetail != null ? goalDetail.getAssistPlayerId() : null;
+    }
 }

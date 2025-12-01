@@ -202,6 +202,15 @@ public class CricketLiveScoreFragment extends Fragment {
             
             CricketMatch cricketMatch = (CricketMatch) match;
             
+            // CRITICAL FIX: Validate that the loaded match is the correct one
+            // This prevents race conditions where old match data is still in the ViewModel
+            if (!cricketMatch.getEntityId().equals(matchId)) {
+                android.util.Log.w("CricketLiveScore", "Match ID mismatch! Expected: " + matchId + 
+                    ", Got: " + cricketMatch.getEntityId() + ". Waiting for correct match to load...");
+                Toast.makeText(getContext(), "Loading match data, please try again...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
             // Validate match can start
             if (cricketMatch.getTeams() == null || cricketMatch.getTeams().size() < 2) {
                 Toast.makeText(getContext(), "Need at least 2 teams to start", Toast.LENGTH_SHORT).show();

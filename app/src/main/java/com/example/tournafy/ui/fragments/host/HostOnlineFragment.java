@@ -43,7 +43,7 @@ public class HostOnlineFragment extends Fragment {
     private ProgressBar progressBar;
     private MaterialButton btnSignInGoogle;
     private TextView tvWelcome;
-    private MaterialCardView cardNewMatch, cardNewTournament, cardNewSeries;
+    private MaterialCardView cardNewMatch, cardNewTournament; // cardNewSeries commented out
 
     public HostOnlineFragment() {
         // Required empty public constructor
@@ -81,7 +81,7 @@ public class HostOnlineFragment extends Fragment {
         tvWelcome = view.findViewById(R.id.tvWelcome);
         cardNewMatch = view.findViewById(R.id.cardNewMatch);
         cardNewTournament = view.findViewById(R.id.cardNewTournament);
-        cardNewSeries = view.findViewById(R.id.cardNewSeries);
+        // cardNewSeries = view.findViewById(R.id.cardNewSeries); // commented out for future use
 
         // Setup Listeners
         btnSignInGoogle.setOnClickListener(v -> signIn());
@@ -103,11 +103,11 @@ public class HostOnlineFragment extends Fragment {
             navController.navigate(R.id.action_hostOnline_to_hostNewTournamentFragment);
         });
 
-        cardNewSeries.setOnClickListener(v -> {
-            NavController navController = Navigation.findNavController(v);
-            // Ensure this action exists in nav_graph
-            navController.navigate(R.id.action_hostOnline_to_hostNewSeriesFragment);
-        });
+        // cardNewSeries.setOnClickListener(v -> {
+        //     NavController navController = Navigation.findNavController(v);
+        //     // Ensure this action exists in nav_graph
+        //     navController.navigate(R.id.action_hostOnline_to_hostNewSeriesFragment);
+        // });
     }
 
     private void observeViewModel() {
@@ -132,7 +132,7 @@ public class HostOnlineFragment extends Fragment {
             // Disable cards if loading
             cardNewMatch.setEnabled(!isLoading);
             cardNewTournament.setEnabled(!isLoading);
-            cardNewSeries.setEnabled(!isLoading);
+            // cardNewSeries.setEnabled(!isLoading); // commented out for future use
         });
 
         // Observe Error Messages

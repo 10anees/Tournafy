@@ -1,17 +1,21 @@
 package com.example.tournafy.data.repository.online;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+
+import com.example.tournafy.domain.models.statistics.PlayerStatistics;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
-import com.example.tournafy.domain.models.statistics.PlayerStatistics;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -49,7 +53,7 @@ public class PlayerStatisticsFirebaseRepository extends FirebaseRepository<Playe
 
         query.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot snapshot) {
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
                 List<PlayerStatistics> statsList = new ArrayList<>();
                 for (DataSnapshot childSnapshot : snapshot.getChildren()) {
                     PlayerStatistics stats = childSnapshot.getValue(PlayerStatistics.class);
@@ -61,7 +65,7 @@ public class PlayerStatisticsFirebaseRepository extends FirebaseRepository<Playe
             }
 
             @Override
-            public void onCancelled(DatabaseError error) {
+            public void onCancelled(@NonNull DatabaseError error) {
                 liveData.setValue(null);
             }
         });
@@ -87,7 +91,7 @@ public class PlayerStatisticsFirebaseRepository extends FirebaseRepository<Playe
 
         query.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot snapshot) {
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
                 List<PlayerStatistics> statsList = new ArrayList<>();
                 for (DataSnapshot childSnapshot : snapshot.getChildren()) {
                     PlayerStatistics stats = childSnapshot.getValue(PlayerStatistics.class);
@@ -99,7 +103,7 @@ public class PlayerStatisticsFirebaseRepository extends FirebaseRepository<Playe
             }
 
             @Override
-            public void onCancelled(DatabaseError error) {
+            public void onCancelled(@NonNull DatabaseError error) {
                 liveData.setValue(null);
             }
         });
@@ -115,7 +119,7 @@ public class PlayerStatisticsFirebaseRepository extends FirebaseRepository<Playe
 
         query.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot snapshot) {
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
                 for (DataSnapshot childSnapshot : snapshot.getChildren()) {
                     PlayerStatistics stats = childSnapshot.getValue(PlayerStatistics.class);
                     // FIX: Check getEntityId() instead of getMatchId()
@@ -128,7 +132,7 @@ public class PlayerStatisticsFirebaseRepository extends FirebaseRepository<Playe
             }
 
             @Override
-            public void onCancelled(DatabaseError error) {
+            public void onCancelled(@NonNull DatabaseError error) {
                 liveData.setValue(null);
             }
         });
@@ -136,18 +140,18 @@ public class PlayerStatisticsFirebaseRepository extends FirebaseRepository<Playe
     }
 
     public Task<Void> updateStatField(String statsId, String fieldName, Object value) {
-        return updateField(statsId, "stats/" + fieldName, value);
+        return updateField(statsId, "footballStats/" + fieldName, value);
     }
 
     public Task<Void> incrementStat(String statsId, String fieldName, int incrementBy) {
         com.google.android.gms.tasks.TaskCompletionSource<Void> taskSource =
                 new com.google.android.gms.tasks.TaskCompletionSource<>();
 
-        databaseReference.child(statsId).child("stats").child(fieldName)
+        databaseReference.child(statsId).child("footballStats").child(fieldName)
                 .runTransaction(new com.google.firebase.database.Transaction.Handler() {
                     @Override
                     public com.google.firebase.database.Transaction.Result doTransaction(
-                            com.google.firebase.database.MutableData mutableData) {
+                            @NonNull com.google.firebase.database.MutableData mutableData) {
                         Integer currentValue = mutableData.getValue(Integer.class);
                         if (currentValue == null) {
                             mutableData.setValue(incrementBy);
@@ -170,5 +174,46 @@ public class PlayerStatisticsFirebaseRepository extends FirebaseRepository<Playe
                 });
 
         return taskSource.getTask();
+    }
+
+    public Task<Void> incrementStatForPlayerInMatch(String playerId, String matchId, String fieldName, int incrementBy) {
+        TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+        Query query = databaseReference.orderByChild("playerId").equalTo(playerId);
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String statId = null;
+                boolean found = false;
+                for (DataSnapshot childSnapshot : snapshot.getChildren()) {
+                    PlayerStatistics stats = childSnapshot.getValue(PlayerStatistics.class);
+                    if (stats != null && matchId.equals(stats.getEntityId())) {
+                        statId = stats.getStatId();
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found) {
+                    incrementStat(statId, fieldName, incrementBy).addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            tcs.setResult(null);
+                        } else {
+                            tcs.setException(Objects.requireNonNull(task.getException()));
+                        }
+                    });
+                } else {
+                    // If no stats document exists, we don't create one here.
+                    // This assumes they are pre-created when a player joins a match/tournament.
+                    // To be safe, we'll just complete the task successfully.
+                    tcs.setResult(null);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                tcs.setException(error.toException());
+            }
+        });
+        return tcs.getTask();
     }
 }

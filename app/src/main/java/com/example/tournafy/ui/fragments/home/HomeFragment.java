@@ -80,24 +80,36 @@ public class HomeFragment extends Fragment implements HomeAdapter.OnEntityClickL
             if (id == R.id.chipAll) homeViewModel.setFilter(HomeViewModel.EntityTypeFilter.ALL);
             else if (id == R.id.chipMatches) homeViewModel.setFilter(HomeViewModel.EntityTypeFilter.MATCH);
             else if (id == R.id.chipTournaments) homeViewModel.setFilter(HomeViewModel.EntityTypeFilter.TOURNAMENT);
-            else if (id == R.id.chipSeries) homeViewModel.setFilter(HomeViewModel.EntityTypeFilter.SERIES);
+            // else if (id == R.id.chipSeries) homeViewModel.setFilter(HomeViewModel.EntityTypeFilter.SERIES); // commented out for now
         });
     }
 
     private void setupFab() {
         fabCreate.setOnClickListener(v -> {
-            String[] options = {"Match", "Tournament", "Series"};
-            new AlertDialog.Builder(requireContext())
-                .setTitle("Host New Event")
-                .setItems(options, (dialog, which) -> {
-                    NavController nav = Navigation.findNavController(v);
-                    switch(which) {
-                        case 0: nav.navigate(R.id.action_homeFragment_to_hostNewMatchFragment); break;
-                        case 1: nav.navigate(R.id.action_home_to_hostNewTournamentFragment); break;
-                        case 2: nav.navigate(R.id.action_home_to_hostNewSeriesFragment); break;
-                    }
-                })
-                .show();
+            View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_host_new, null, false);
+            AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(dialogView)
+                .create();
+
+            dialogView.findViewById(R.id.btnHostMatch).setOnClickListener(view -> {
+                NavController nav = Navigation.findNavController(v);
+                nav.navigate(R.id.action_homeFragment_to_hostNewMatchFragment);
+                dialog.dismiss();
+            });
+
+            dialogView.findViewById(R.id.btnHostTournament).setOnClickListener(view -> {
+                NavController nav = Navigation.findNavController(v);
+                nav.navigate(R.id.action_home_to_hostNewTournamentFragment);
+                dialog.dismiss();
+            });
+
+            // dialogView.findViewById(R.id.btnHostSeries).setOnClickListener(view -> {
+            //     NavController nav = Navigation.findNavController(v);
+            //     nav.navigate(R.id.action_home_to_hostNewSeriesFragment);
+            //     dialog.dismiss();
+            // });
+
+            dialog.show();
         });
     }
 

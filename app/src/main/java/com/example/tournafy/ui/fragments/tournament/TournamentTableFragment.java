@@ -84,29 +84,29 @@ public class TournamentTableFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        
+
         tournamentViewModel = new ViewModelProvider(requireActivity()).get(TournamentViewModel.class);
-        
+
         initViews(view);
         setupAdapter();
         observeData();
     }
-    
+
     private void initViews(View view) {
         rvStandings = view.findViewById(R.id.rvPointsTable);
         layoutEmptyState = view.findViewById(R.id.layoutEmptyState);
         tvEmptyMessage = view.findViewById(R.id.tvEmptyMessage);
         cardLegend = view.findViewById(R.id.cardLegend);
-        
+
         rvStandings.setLayoutManager(new LinearLayoutManager(getContext()));
-        rvStandings.setHasFixedSize(true);
+        // FIX: Removed setHasFixedSize(true) to resolve Lint build error
     }
-    
+
     private void setupAdapter() {
         adapter = new PointsTableAdapter(this::onTeamClick, isCricket);
         rvStandings.setAdapter(adapter);
     }
-    
+
     private void observeData() {
         // Observe tournament to get sport type
         if (isOnline) {
@@ -114,43 +114,43 @@ public class TournamentTableFragment extends Fragment {
         } else {
             tournamentViewModel.offlineTournament.observe(getViewLifecycleOwner(), this::onTournamentLoaded);
         }
-        
+
         // Observe teams data
         tournamentViewModel.tournamentTeams.observe(getViewLifecycleOwner(), this::onTeamsLoaded);
-        
+
         // Observe loading state
         tournamentViewModel.isLoading.observe(getViewLifecycleOwner(), isLoading -> {
             // Could show loading indicator
         });
     }
-    
+
     private void onTournamentLoaded(Tournament tournament) {
         if (tournament == null) return;
-        
+
         currentTournament = tournament;
-        
+
         // Determine sport type
         String sportId = tournament.getSportId();
-        boolean newIsCricket = sportId != null && 
-            (sportId.equalsIgnoreCase("CRICKET") || sportId.equalsIgnoreCase("cricket"));
-        
+        boolean newIsCricket = sportId != null &&
+                (sportId.equalsIgnoreCase("CRICKET") || sportId.equalsIgnoreCase("cricket"));
+
         // If sport type changed, recreate adapter
         if (newIsCricket != isCricket) {
             isCricket = newIsCricket;
             adapter = new PointsTableAdapter(this::onTeamClick, isCricket);
             rvStandings.setAdapter(adapter);
         }
-        
+
         // Update legend visibility
         updateLegendVisibility();
     }
-    
+
     private void onTeamsLoaded(List<TournamentTeam> teams) {
         if (teams == null || teams.isEmpty()) {
             showEmptyState("No teams have been added to this tournament yet.");
             return;
         }
-        
+
         // Check if any matches have been played
         boolean anyMatchesPlayed = false;
         for (TournamentTeam team : teams) {
@@ -159,7 +159,7 @@ public class TournamentTableFragment extends Fragment {
                 break;
             }
         }
-        
+
         if (!anyMatchesPlayed) {
             showEmptyState("No matches have been played yet.\nStandings will appear once matches are completed.");
             // Still show teams with 0 points
@@ -167,13 +167,13 @@ public class TournamentTableFragment extends Fragment {
             adapter.submitList(sortedTeams);
             return;
         }
-        
+
         // Sort and display teams
         List<TournamentTeam> sortedTeams = sortTeams(teams);
         adapter.submitList(sortedTeams);
         showStandingsTable();
     }
-    
+
     /**
      * Sort teams by tournament standings rules:
      * 1. Points (descending)
@@ -184,7 +184,7 @@ public class TournamentTableFragment extends Fragment {
      */
     private List<TournamentTeam> sortTeams(List<TournamentTeam> teams) {
         List<TournamentTeam> sortedList = new ArrayList<>(teams);
-        
+
         Collections.sort(sortedList, new Comparator<TournamentTeam>() {
             @Override
             public int compare(TournamentTeam t1, TournamentTeam t2) {
@@ -192,12 +192,12 @@ public class TournamentTableFragment extends Fragment {
                 if (t1.getPoints() != t2.getPoints()) {
                     return Integer.compare(t2.getPoints(), t1.getPoints());
                 }
-                
+
                 // 2. Matches Won (higher is better)
                 if (t1.getMatchesWon() != t2.getMatchesWon()) {
                     return Integer.compare(t2.getMatchesWon(), t1.getMatchesWon());
                 }
-                
+
                 // 3. NRR or Goal Difference (higher is better)
                 if (isCricket) {
                     if (t1.getNetRunRate() != t2.getNetRunRate()) {
@@ -210,30 +210,30 @@ public class TournamentTableFragment extends Fragment {
                         return Integer.compare(gd2, gd1);
                     }
                 }
-                
+
                 // 4. Goals/Runs For (higher is better)
                 if (t1.getGoalsFor() != t2.getGoalsFor()) {
                     return Integer.compare(t2.getGoalsFor(), t1.getGoalsFor());
                 }
-                
+
                 // 5. Team Name (alphabetical)
                 String name1 = t1.getTeamName() != null ? t1.getTeamName() : "";
                 String name2 = t2.getTeamName() != null ? t2.getTeamName() : "";
                 return name1.compareToIgnoreCase(name2);
             }
         });
-        
+
         return sortedList;
     }
-    
+
     private void onTeamClick(TournamentTeam team) {
         // Show team details dialog
         showTeamDetailsDialog(team);
     }
-    
+
     private void showTeamDetailsDialog(TournamentTeam team) {
         if (team == null) return;
-        
+
         // Build detailed stats message
         StringBuilder message = new StringBuilder();
         message.append("Matches Played: ").append(team.getMatchesPlayed()).append("\n");
@@ -241,7 +241,7 @@ public class TournamentTableFragment extends Fragment {
         message.append("Matches Lost: ").append(team.getMatchesLost()).append("\n");
         message.append("Matches Drawn: ").append(team.getMatchesDrawn()).append("\n");
         message.append("Points: ").append(team.getPoints()).append("\n\n");
-        
+
         if (isCricket) {
             message.append("Net Run Rate: ").append(String.format("%.3f", team.getNetRunRate()));
         } else {
@@ -250,14 +250,14 @@ public class TournamentTableFragment extends Fragment {
             int gd = team.getGoalsFor() - team.getGoalsAgainst();
             message.append("Goal Difference: ").append(gd > 0 ? "+" : "").append(gd);
         }
-        
+
         new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle(team.getTeamName() != null ? team.getTeamName() : "Team Details")
-            .setMessage(message.toString())
-            .setPositiveButton("OK", null)
-            .show();
+                .setTitle(team.getTeamName() != null ? team.getTeamName() : "Team Details")
+                .setMessage(message.toString())
+                .setPositiveButton("OK", null)
+                .show();
     }
-    
+
     private void showEmptyState(String message) {
         rvStandings.setVisibility(View.GONE);
         if (cardLegend != null) {
@@ -268,19 +268,19 @@ public class TournamentTableFragment extends Fragment {
             tvEmptyMessage.setText(message);
         }
     }
-    
+
     private void showStandingsTable() {
         rvStandings.setVisibility(View.VISIBLE);
         layoutEmptyState.setVisibility(View.GONE);
         updateLegendVisibility();
     }
-    
+
     private void updateLegendVisibility() {
         // Show legend only if tournament is knockout or mixed
         if (cardLegend != null && currentTournament != null) {
             String type = currentTournament.getTournamentType();
-            boolean showLegend = type != null && 
-                (type.equalsIgnoreCase("KNOCKOUT") || type.equalsIgnoreCase("MIXED"));
+            boolean showLegend = type != null &&
+                    (type.equalsIgnoreCase("KNOCKOUT") || type.equalsIgnoreCase("MIXED"));
             cardLegend.setVisibility(showLegend ? View.VISIBLE : View.GONE);
         }
     }

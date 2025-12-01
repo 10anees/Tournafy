@@ -24,6 +24,11 @@ public class PlayerStatistics {
     // No-arg constructor for Firestore
     public PlayerStatistics() {}
 
+    public PlayerStatistics(String playerId, String entityId) {
+        this.playerId = playerId;
+        this.entityId = entityId;
+    }
+
     // Getters and Setters
     public String getStatId() {
         return statId;

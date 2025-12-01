@@ -68,4 +68,14 @@ public class AddExtrasCommand implements MatchCommand {
 
         match.removeMatchEvent(event);
     }
+    
+    @Override
+    public String getEventId() {
+        return event != null ? event.getEventId() : null;
+    }
+    
+    @Override
+    public String getCommandType() {
+        return "EXTRAS";
+    }
 }

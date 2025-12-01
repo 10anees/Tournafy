@@ -12,6 +12,25 @@ public class MatchCommandManager {
     
     // Stack to store history of executed commands
     private final Stack<MatchCommand> commandHistory = new Stack<>();
+        /**
+         * Returns the last command that was undone (top of redo stack), or null if none.
+         */
+        public MatchCommand getLastUndoneCommand() {
+            if (!redoStack.isEmpty()) {
+                return redoStack.peek();
+            }
+            return null;
+        }
+
+        /**
+         * Returns the last command that was executed (top of history stack), or null if none.
+         */
+        public MatchCommand getLastExecutedCommand() {
+            if (!commandHistory.isEmpty()) {
+                return commandHistory.peek();
+            }
+            return null;
+        }
     
     // Stack to store undone commands (for Redo functionality)
     private final Stack<MatchCommand> redoStack = new Stack<>();

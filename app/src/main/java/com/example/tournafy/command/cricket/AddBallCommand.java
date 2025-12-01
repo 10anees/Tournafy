@@ -62,4 +62,14 @@ public class AddBallCommand implements MatchCommand {
         // 3. Revert over runs
         match.getCurrentOver().setRunsInOver(match.getCurrentOver().getRunsInOver() - ball.getRunsScored());
     }
+    
+    @Override
+    public String getEventId() {
+        return ball != null ? ball.getBallId() : null;
+    }
+    
+    @Override
+    public String getCommandType() {
+        return "BALL";
+    }
 }

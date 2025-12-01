@@ -16,28 +16,32 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tournafy.R;
 import com.example.tournafy.domain.models.match.football.FootballMatch;
 import com.example.tournafy.domain.models.team.MatchTeam;
+import com.example.tournafy.domain.models.statistics.PlayerStatistics;
 import com.example.tournafy.ui.adapters.PlayingXIAdapter;
 import com.example.tournafy.ui.viewmodels.MatchViewModel;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
 /**
  * FootballLineupsFragment - Displays team lineups for a football match.
- * 
- * Features:
+ * * Features:
  * - Team A and Team B player lists
  * - Shows all players in each team
+ * - Integrates with MatchViewModel to fetch live stats
  */
 @AndroidEntryPoint
 public class FootballLineupsFragment extends Fragment {
 
     private MatchViewModel matchViewModel;
-    
+
     // Team A views
     private TextView tvTeamAName;
     private RecyclerView rvTeamAPlayers;
     private PlayingXIAdapter teamAAdapter;
-    
+
     // Team B views
     private TextView tvTeamBName;
     private RecyclerView rvTeamBPlayers;
@@ -52,9 +56,7 @@ public class FootballLineupsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         matchViewModel = new ViewModelProvider(requireActivity()).get(MatchViewModel.class);
-
         initViews(view);
         observeViewModel();
     }
@@ -63,27 +65,34 @@ public class FootballLineupsFragment extends Fragment {
         // Team A
         tvTeamAName = view.findViewById(R.id.tvTeamAName);
         rvTeamAPlayers = view.findViewById(R.id.rvTeamA);
-        
+
         // Team B
         tvTeamBName = view.findViewById(R.id.tvTeamBName);
         rvTeamBPlayers = view.findViewById(R.id.rvTeamB);
-        
+
         // Setup RecyclerViews
-        // For football, we don't need batting/bowling distinction - just show players
-        // Use false for showCricketStats to hide economy rate, strike rate, etc.
+        // For football, we disable cricket-specific stats
         teamAAdapter = new PlayingXIAdapter(false, false);
         rvTeamAPlayers.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvTeamAPlayers.setAdapter(teamAAdapter);
-        
+
         teamBAdapter = new PlayingXIAdapter(false, false);
         rvTeamBPlayers.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvTeamBPlayers.setAdapter(teamBAdapter);
     }
 
     private void observeViewModel() {
-        matchViewModel.offlineMatch.observe(getViewLifecycleOwner(), match -> {
+        // 1. Observe the current match details
+        matchViewModel.getCurrentMatch().observe(getViewLifecycleOwner(), match -> {
             if (match instanceof FootballMatch) {
                 updateLineups((FootballMatch) match);
+
+                // 2. Once we have the match, observe the stats for this match entity
+                matchViewModel.getPlayerStats(match.getEntityId()).observe(getViewLifecycleOwner(), stats -> {
+                    if (stats != null) {
+                        updatePlayerStats(stats);
+                    }
+                });
             }
         });
     }
@@ -106,5 +115,24 @@ public class FootballLineupsFragment extends Fragment {
         // Update Team B
         tvTeamBName.setText(teamB.getTeamName());
         teamBAdapter.setPlayers(teamB.getPlayers());
+    }
+
+    /**
+     * Maps the list of stats to the adapters.
+     */
+    private void updatePlayerStats(List<PlayerStatistics> stats) {
+        if (stats == null || stats.isEmpty()) return;
+
+        // Create a map for O(1) access inside the adapter
+        try {
+            var statsMap = stats.stream()
+                    .collect(Collectors.toMap(PlayerStatistics::getPlayerId, s -> s));
+
+            teamAAdapter.setPlayerStatistics(statsMap);
+            teamBAdapter.setPlayerStatistics(statsMap);
+        } catch (Exception e) {
+            // Handle duplicate keys or stream errors gracefully
+            e.printStackTrace();
+        }
     }
 }

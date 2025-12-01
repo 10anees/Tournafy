@@ -35,4 +35,14 @@ public class AddCardCommand implements MatchCommand {
         // 2. Revert player status if they were sent off
         // match.getPlayer(cardDetail.getPlayerId()).setSentOff(false);
     }
+    
+    @Override
+    public String getEventId() {
+        return event != null ? event.getEventId() : null;
+    }
+    
+    @Override
+    public String getCommandType() {
+        return "CARD";
+    }
 }
