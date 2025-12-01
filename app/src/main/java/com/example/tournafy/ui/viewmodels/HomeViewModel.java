@@ -13,6 +13,8 @@ import com.example.tournafy.domain.models.base.HostedEntity;
 import com.example.tournafy.domain.models.base.Match;
 import com.example.tournafy.domain.models.series.Series;
 import com.example.tournafy.domain.models.tournament.Tournament;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +35,11 @@ public class HomeViewModel extends ViewModel {
     public final LiveData<List<HostedEntity>> hostedEntities = _hostedEntities;
 
     private final MutableLiveData<EntityTypeFilter> _currentFilter = new MutableLiveData<>(EntityTypeFilter.ALL);
+    
+    // Track current data sources to remove when user changes
+    private LiveData<List<Match>> currentMatchSource;
+    private LiveData<List<Tournament>> currentTournamentSource;
+    private LiveData<List<Series>> currentSeriesSource;
 
     @Inject
     public HomeViewModel(
@@ -48,17 +55,33 @@ public class HomeViewModel extends ViewModel {
     }
 
     private void setupDataAggregation() {
-        _hostedEntities.addSource(matchRepo.getAll(), matches -> {
+        // Get current user ID - only show entities hosted by this user
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String currentUserId = currentUser != null ? currentUser.getUid() : null;
+        
+        if (currentUserId != null) {
+            // User is logged in - filter by hostUserId
+            currentMatchSource = matchRepo.getMatchesByHostId(currentUserId);
+            currentTournamentSource = tournamentRepo.getTournamentsByHostId(currentUserId);
+            currentSeriesSource = seriesRepo.getSeriesByHostId(currentUserId);
+        } else {
+            // User is not logged in - show all (for offline/local matches)
+            currentMatchSource = matchRepo.getAll();
+            currentTournamentSource = tournamentRepo.getAll();
+            currentSeriesSource = seriesRepo.getAll();
+        }
+        
+        _hostedEntities.addSource(currentMatchSource, matches -> {
             updateCache(matches, Match.class);
             applyFilter();
         });
 
-        _hostedEntities.addSource(tournamentRepo.getAll(), tournaments -> {
+        _hostedEntities.addSource(currentTournamentSource, tournaments -> {
             updateCache(tournaments, Tournament.class);
             applyFilter();
         });
 
-        _hostedEntities.addSource(seriesRepo.getAll(), seriesList -> {
+        _hostedEntities.addSource(currentSeriesSource, seriesList -> {
             updateCache(seriesList, Series.class);
             applyFilter();
         });

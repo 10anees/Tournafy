@@ -80,13 +80,27 @@ public class Ball {
 
     /**
      * Checks if this ball is a legal delivery (counts towards the 6-ball over).
-     * Legal deliveries are those without extras like WIDE or NO_BALL.
+     * 
+     * Legal deliveries:
+     * - Normal balls (no extras)
+     * - BYE - ball hit pad/body, batsman didn't hit it
+     * - LEG_BYE - similar to bye but off the legs
+     * 
+     * Illegal deliveries (don't count towards over):
+     * - WIDE - ball too wide to hit
+     * - NO_BALL - bowler overstepped or illegal action
+     * 
      * This is a calculated field and should not be serialized to Firestore.
      * 
      * @return true if the ball is legal, false otherwise
      */
     @com.google.firebase.firestore.Exclude
     public boolean isLegalDelivery() {
-        return extrasType == null || extrasType.equals("NONE") || extrasType.isEmpty();
+        // Wide and No-Ball are illegal deliveries (don't count towards over)
+        if (extrasType != null && (extrasType.equals("WIDE") || extrasType.equals("NO_BALL"))) {
+            return false;
+        }
+        // Everything else is legal (normal ball, bye, leg-bye)
+        return true;
     }
 }

@@ -1013,42 +1013,65 @@ public class FootballLiveScoreFragment extends Fragment implements EventInputDia
                 return;
             }
             
+            boolean isOwnGoal = "OWN_GOAL".equals(goalType);
+            
             // Resolve team ID and scorer ID
-            String teamId = null;
+            String benefitingTeamId = null;  // Team that gets the goal
+            String scorerTeamId = null;       // Team of the player who scored
             String scorerId = null;
             String assisterId = null;
             
+            // Find the benefiting team (the selected team in dialog)
             for (com.example.tournafy.domain.models.team.MatchTeam team : fm.getTeams()) {
                 if (team.getTeamName().equals(teamName)) {
-                    teamId = team.getTeamId();
+                    benefitingTeamId = team.getTeamId();
                     
+                    if (!isOwnGoal) {
+                        // Regular goal: scorer is from this team
+                        scorerTeamId = team.getTeamId();
+                        if (team.getPlayers() != null) {
+                            for (com.example.tournafy.domain.models.team.Player player : team.getPlayers()) {
+                                if (player.getPlayerName().equals(scorerName)) {
+                                    scorerId = player.getPlayerId();
+                                }
+                                if (!assisterName.isEmpty() && player.getPlayerName().equals(assisterName)) {
+                                    assisterId = player.getPlayerId();
+                                }
+                            }
+                        }
+                    }
+                } else if (isOwnGoal) {
+                    // Own goal: scorer is from the OTHER team
+                    scorerTeamId = team.getTeamId();
                     if (team.getPlayers() != null) {
                         for (com.example.tournafy.domain.models.team.Player player : team.getPlayers()) {
                             if (player.getPlayerName().equals(scorerName)) {
                                 scorerId = player.getPlayerId();
                             }
-                            if (!assisterName.isEmpty() && player.getPlayerName().equals(assisterName)) {
-                                assisterId = player.getPlayerId();
-                            }
                         }
                     }
-                    break;
                 }
             }
             
-            if (teamId == null || scorerId == null) {
+            if (benefitingTeamId == null || scorerId == null) {
                 Toast.makeText(getContext(), "Error: Team or player not found", Toast.LENGTH_SHORT).show();
                 return;
             }
             
-            // Call ViewModel with assister
-            matchViewModel.addFootballGoal(teamId, scorerId, assisterId, goalType, currentMinute);
+            // For own goals: pass the benefiting team (who gets the goal), but scorer is from opposite team
+            // The ViewModel/Match will handle the score correctly based on isOwnGoal flag in goalType
+            matchViewModel.addFootballGoal(benefitingTeamId, scorerId, assisterId, goalType, currentMinute);
             
-            String toastMsg = "⚽ Goal! " + scorerName;
-            if (assisterId != null) {
-                toastMsg += " (Assist: " + assisterName + ")";
+            String toastMsg;
+            if (isOwnGoal) {
+                toastMsg = "⚽ Own Goal by " + scorerName + "! (" + currentMinute + "')";
+            } else {
+                toastMsg = "⚽ Goal! " + scorerName;
+                if (assisterId != null) {
+                    toastMsg += " (Assist: " + assisterName + ")";
+                }
+                toastMsg += " (" + currentMinute + "')";
             }
-            toastMsg += " (" + currentMinute + "')";
             Toast.makeText(getContext(), toastMsg, Toast.LENGTH_SHORT).show();
         }
     }

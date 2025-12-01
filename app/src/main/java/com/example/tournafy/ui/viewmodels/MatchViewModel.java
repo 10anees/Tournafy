@@ -6,6 +6,9 @@ import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
 import com.example.tournafy.command.MatchCommandManager;
+import com.example.tournafy.command.cricket.AddBallCommand;
+import com.example.tournafy.command.cricket.AddExtrasCommand;
+import com.example.tournafy.command.cricket.AddWicketCommand;
 import com.example.tournafy.data.repository.offline.PlayerStatisticsFirestoreRepository;
 import com.example.tournafy.data.repository.online.BallFirebaseRepository;
 import com.example.tournafy.data.repository.online.FootballEventFirebaseRepository;
@@ -20,6 +23,7 @@ import com.example.tournafy.di.RepositoryQualifiers.OnlineRepo;
 import com.example.tournafy.domain.models.base.Match;
 import com.example.tournafy.domain.models.match.cricket.Ball;
 import com.example.tournafy.domain.models.match.cricket.CricketEvent;
+import com.example.tournafy.domain.models.match.cricket.CricketExtrasDetail;
 import com.example.tournafy.domain.models.match.cricket.CricketMatch;
 import com.example.tournafy.domain.models.match.cricket.CricketWicketDetail;
 import com.example.tournafy.domain.models.match.cricket.Innings;
@@ -55,7 +59,9 @@ public class MatchViewModel extends ViewModel {
     private final MutableLiveData<String> _onlineMatchId = new MutableLiveData<>();
     private final MutableLiveData<String> _onlineOverId = new MutableLiveData<>();
 
-    public final LiveData<Match> offlineMatch;
+    // MediatorLiveData allows us to update match state either from DB or manually
+    private final androidx.lifecycle.MediatorLiveData<Match> _offlineMatch = new androidx.lifecycle.MediatorLiveData<>();
+    public final LiveData<Match> offlineMatch = _offlineMatch;
     public final LiveData<List<Innings>> offlineInningsList;
 
     public final LiveData<Match> onlineMatch;
@@ -111,9 +117,15 @@ public class MatchViewModel extends ViewModel {
         this.eventService = eventService;
         this.commandManager = commandManager;
 
-        this.offlineMatch = Transformations.switchMap(_offlineMatchId,
+        // Set up MediatorLiveData to listen to database changes
+        // This allows us to also manually update _offlineMatch for undo/redo
+        LiveData<Match> dbMatch = Transformations.switchMap(_offlineMatchId,
                 matchId -> offlineMatchRepo.getById(matchId)
         );
+        _offlineMatch.addSource(dbMatch, match -> {
+            _offlineMatch.setValue(match);
+        });
+        
         this.offlineInningsList = Transformations.switchMap(_offlineMatchId,
                 matchId -> offlineInningsRepo.getInningsByMatchId(matchId)
         );
@@ -130,6 +142,18 @@ public class MatchViewModel extends ViewModel {
         this.onlineInningsList = Transformations.switchMap(_onlineMatchId,
                 matchId -> onlineInningsRepo.getInningsByMatchId(matchId)
         );
+    }
+    
+    /**
+     * Manually trigger a UI update with the current in-memory match state.
+     * This is used after undo/redo to update the UI without refetching from database.
+     */
+    private void notifyMatchChanged() {
+        Match currentMatch = _offlineMatch.getValue();
+        if (currentMatch != null) {
+            // Re-emit the same object to trigger observers
+            _offlineMatch.setValue(currentMatch);
+        }
     }
 
     /**
@@ -457,7 +481,8 @@ public class MatchViewModel extends ViewModel {
 
     /**
      * Adds a cricket ball (regular delivery) to the current match.
-     * CRITICAL: Creates both CricketEvent AND Ball entity, populates all FKs, and persists to DB.
+     * CRITICAL: Uses Command Pattern for undo/redo functionality.
+     * Creates both CricketEvent AND Ball entity, populates all FKs, and persists to DB.
      * 
      * @param runs The number of runs scored on this ball (0-6)
      */
@@ -484,7 +509,23 @@ public class MatchViewModel extends ViewModel {
             return;
         }
         
-        // --- STEP 1: Create CricketEvent with ALL Foreign Keys ---
+        // --- STEP 1: Create Ball entity ---
+        Ball ball = new Ball();
+        ball.setBallId(java.util.UUID.randomUUID().toString());
+        ball.setMatchId(cricketMatch.getEntityId());
+        ball.setInningsId(currentInnings.getInningsId());
+        ball.setOverId(currentOver != null ? currentOver.getOverId() : null);
+        ball.setInningsNumber(currentInnings.getInningsNumber());
+        ball.setOverNumber(currentOver != null ? currentOver.getOverNumber() : 0);
+        ball.setBallNumber(currentOver != null && currentOver.getBalls() != null ? currentOver.getBalls().size() + 1 : 1);
+        ball.setRunsScored(runs);
+        ball.setWicket(false);
+        ball.setBoundary(runs == 4 || runs == 6);
+        ball.setExtrasType("NONE"); // Ball.isLegalDelivery() computed from extrasType
+        ball.setBatsmanId(cricketMatch.getCurrentStrikerId());
+        ball.setBowlerId(cricketMatch.getCurrentBowlerId());
+        
+        // --- STEP 2: Create CricketEvent with ALL Foreign Keys ---
         CricketEvent event = new CricketEvent();
         event.setEventId(java.util.UUID.randomUUID().toString());
         event.setMatchId(cricketMatch.getEntityId());
@@ -507,13 +548,18 @@ public class MatchViewModel extends ViewModel {
         event.setBatsmanNonStrikerId(cricketMatch.getCurrentNonStrikerId());
         event.setBowlerId(cricketMatch.getCurrentBowlerId());
         
-        // --- STEP 2: Process event to update in-memory state (score) ---
-        cricketMatch.processEvent(event);
+        // --- STEP 3: Create and execute Command (updates state + undo stack) ---
+        AddBallCommand command = new AddBallCommand(cricketMatch, ball);
+        commandManager.executeCommand(command);
         
-        // --- STEP 2.5: Update player statistics ---
+        // --- STEP 3.5: Process post-ball logic (striker swap, over/innings completion) ---
+        // NOTE: Do NOT call processEvent - it would add the ball again!
+        cricketMatch.processPostBallLogic(event);
+        
+        // --- STEP 4: Update player statistics ---
         updatePlayerStatsAfterBall(cricketMatch, event, runs);
         
-        // --- Get current over AFTER processEvent (it may have created it) ---
+        // --- Get current over AFTER processPostBallLogic (it may have created it) ---
         Over finalCurrentOver = cricketMatch.getCurrentOver();
         if (finalCurrentOver == null) {
             _errorMessage.setValue("Failed to create over");
@@ -538,26 +584,21 @@ public class MatchViewModel extends ViewModel {
         
         offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
             if (matchTask.isSuccessful()) {
-                // Trigger LiveData update to refresh UI by re-fetching from database
-                // Add small delay to ensure Firestore write is fully committed
-                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                    String currentId = _offlineMatchId.getValue();
-                    if (currentId != null) {
-                        _offlineMatchId.setValue(currentId);
-                    }
+                // Notify UI that match state changed (without refetching from database)
+                // This preserves command references for undo/redo functionality
+                notifyMatchChanged();
                     
-                    // If innings just ended and we're moving to next innings, trigger match start event
-                    // This will show dialogs for batsman and bowler selection for the new innings
-                    if (inningsJustEnded && currentInningsNum == 1) {
-                        android.util.Log.d("MatchViewModel", "First innings ended - triggering match start event for second innings");
-                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                            _matchStartEvent.setValue(false);
-                            _matchStartEvent.setValue(true);
-                        }, 300);
-                    }
-                    
-                    _isLoading.setValue(false);
-                }, 100); // 100ms delay
+                // If innings just ended and we're moving to next innings, trigger match start event
+                // This will show dialogs for batsman and bowler selection for the new innings
+                if (inningsJustEnded && currentInningsNum == 1) {
+                    android.util.Log.d("MatchViewModel", "First innings ended - triggering match start event for second innings");
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                        _matchStartEvent.setValue(false);
+                        _matchStartEvent.setValue(true);
+                    }, 300);
+                }
+                
+                _isLoading.setValue(false);
             } else {
                 _errorMessage.setValue("Failed to save match update");
                 _isLoading.setValue(false);
@@ -567,7 +608,8 @@ public class MatchViewModel extends ViewModel {
 
     /**
      * Adds a cricket wicket to the current match.
-     * CRITICAL: Creates both CricketEvent AND Ball entity with wicket data.
+     * CRITICAL: Uses Command Pattern for undo/redo functionality.
+     * Creates both CricketEvent AND Ball entity with wicket data.
      * 
      * @param wicketType The type of wicket (e.g., "BOWLED", "CAUGHT", "LBW")
      */
@@ -592,7 +634,23 @@ public class MatchViewModel extends ViewModel {
             return;
         }
         
-        // --- Create CricketEvent with ALL FKs ---
+        // --- STEP 1: Create Ball entity for wicket ---
+        Ball ball = new Ball();
+        ball.setBallId(java.util.UUID.randomUUID().toString());
+        ball.setMatchId(cricketMatch.getEntityId());
+        ball.setInningsId(currentInnings.getInningsId());
+        ball.setOverId(currentOver != null ? currentOver.getOverId() : null);
+        ball.setInningsNumber(currentInnings.getInningsNumber());
+        ball.setOverNumber(currentOver != null ? currentOver.getOverNumber() : 0);
+        ball.setBallNumber(currentOver != null && currentOver.getBalls() != null ? currentOver.getBalls().size() + 1 : 1);
+        ball.setRunsScored(0); // Wickets usually score 0 runs unless run out
+        ball.setWicket(true);
+        ball.setBoundary(false);
+        ball.setExtrasType("NONE"); // Ball.isLegalDelivery() computed from extrasType
+        ball.setBatsmanId(cricketMatch.getCurrentStrikerId());
+        ball.setBowlerId(cricketMatch.getCurrentBowlerId());
+        
+        // --- STEP 2: Create CricketEvent with ALL FKs ---
         CricketEvent event = new CricketEvent();
         event.setEventId(java.util.UUID.randomUUID().toString());
         event.setMatchId(cricketMatch.getEntityId());
@@ -620,13 +678,18 @@ public class MatchViewModel extends ViewModel {
         wicketDetail.setWicketType(wicketType);
         event.setWicketDetail(wicketDetail);
         
-        // --- Process event ---
-        cricketMatch.processEvent(event);
+        // --- STEP 3: Create and execute Command (updates state + undo stack) ---
+        AddWicketCommand command = new AddWicketCommand(cricketMatch, ball, event, wicketDetail);
+        commandManager.executeCommand(command);
         
-        // --- Update stats for wicket ---
+        // --- STEP 3.5: Process post-ball logic (over/innings completion) ---
+        // NOTE: Do NOT call processEvent - it would add the ball again!
+        cricketMatch.processPostBallLogic(event);
+        
+        // --- STEP 4: Update stats for wicket ---
         updatePlayerStatsAfterWicket(cricketMatch, event, wicketType);
         
-        // --- Get current over AFTER processEvent ---
+        // --- Get current over AFTER processPostBallLogic ---
         Over finalCurrentOver = cricketMatch.getCurrentOver();
         if (finalCurrentOver == null) {
             _errorMessage.setValue("Failed to create over");
@@ -639,17 +702,12 @@ public class MatchViewModel extends ViewModel {
         
         offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
             if (matchTask.isSuccessful()) {
-                // Trigger LiveData update to refresh UI by re-fetching from database
-                // Add small delay to ensure Firestore write is fully committed
-                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                    String currentId = _offlineMatchId.getValue();
-                    if (currentId != null) {
-                        _offlineMatchId.setValue(currentId);
-                    }
-                    // Trigger wicket fall event for fragment to handle
-                    _wicketFallEvent.setValue(true);
-                    _isLoading.setValue(false);
-                }, 100); // 100ms delay
+                // Notify UI that match state changed (without refetching from database)
+                // This preserves command references for undo/redo functionality
+                notifyMatchChanged();
+                // Trigger wicket fall event for fragment to handle
+                _wicketFallEvent.setValue(true);
+                _isLoading.setValue(false);
             } else {
                 _errorMessage.setValue("Failed to save match update");
                 _isLoading.setValue(false);
@@ -659,11 +717,33 @@ public class MatchViewModel extends ViewModel {
 
     /**
      * Adds a cricket extra (wide, no-ball, bye, leg-bye) to the current match.
-     * CRITICAL: Creates both CricketEvent AND Ball entity with extras data.
+     * CRITICAL: Uses Command Pattern for undo/redo functionality.
+     * Creates both CricketEvent AND Ball entity with extras data.
+     * 
+     * For NO_BALL and WIDE: Calls overload with 0 additional runs.
+     * For BYE and LEG_BYE: Adds 1 run and counts as legal ball.
      * 
      * @param extrasType The type of extra ("WIDE", "NO_BALL", "BYE", "LEG_BYE")
      */
     public void addCricketExtra(String extrasType) {
+        // For bye and leg-bye, default to 1 run
+        int defaultRuns = (extrasType.equals("BYE") || extrasType.equals("LEG_BYE")) ? 1 : 0;
+        addCricketExtra(extrasType, defaultRuns);
+    }
+    
+    /**
+     * Adds a cricket extra with specified additional runs.
+     * CRITICAL: Uses Command Pattern for undo/redo functionality.
+     * 
+     * NO_BALL: 1 penalty run + additionalRuns (runs scored by batsman), NOT a legal ball
+     * WIDE: 1 penalty run + additionalRuns (extras), NOT a legal ball  
+     * BYE: additionalRuns (extras), IS a legal ball
+     * LEG_BYE: additionalRuns (extras), IS a legal ball
+     * 
+     * @param extrasType The type of extra ("WIDE", "NO_BALL", "BYE", "LEG_BYE")
+     * @param additionalRuns The additional runs scored on this delivery (beyond penalty run)
+     */
+    public void addCricketExtra(String extrasType, int additionalRuns) {
         _isLoading.setValue(true);
         
         Match currentMatch = offlineMatch.getValue();
@@ -684,11 +764,34 @@ public class MatchViewModel extends ViewModel {
             return;
         }
         
-        // Determine runs (Wide and No-Ball typically add 1 run automatically)
-        int extrasRuns = (extrasType.equals("WIDE") || extrasType.equals("NO_BALL")) ? 1 : 0;
+        // Determine if this is a legal delivery
+        // Wide and No-Ball are ILLEGAL (don't count in over) 
+        // Bye and Leg-Bye are LEGAL (count as ball in over)
         boolean isLegal = extrasType.equals("BYE") || extrasType.equals("LEG_BYE");
         
-        // --- Create CricketEvent ---
+        // Calculate total runs
+        // Wide/No-Ball: 1 penalty + additionalRuns
+        // Bye/Leg-Bye: just additionalRuns (no penalty)
+        int penaltyRun = (extrasType.equals("WIDE") || extrasType.equals("NO_BALL")) ? 1 : 0;
+        int extrasRuns = penaltyRun + additionalRuns;
+        
+        // --- STEP 1: Create Ball entity ---
+        Ball ball = new Ball();
+        ball.setBallId(java.util.UUID.randomUUID().toString());
+        ball.setMatchId(cricketMatch.getEntityId());
+        ball.setInningsId(currentInnings.getInningsId());
+        ball.setOverId(currentOver != null ? currentOver.getOverId() : null);
+        ball.setInningsNumber(currentInnings.getInningsNumber());
+        ball.setOverNumber(currentOver != null ? currentOver.getOverNumber() : 0);
+        ball.setBallNumber(currentOver != null && currentOver.getBalls() != null ? currentOver.getBalls().size() + 1 : 1);
+        ball.setRunsScored(extrasRuns);
+        ball.setWicket(false);
+        ball.setBoundary(false);
+        ball.setExtrasType(extrasType); // Ball.isLegalDelivery() computed from extrasType
+        ball.setBatsmanId(cricketMatch.getCurrentStrikerId());
+        ball.setBowlerId(cricketMatch.getCurrentBowlerId());
+        
+        // --- STEP 2: Create CricketEvent ---
         CricketEvent event = new CricketEvent();
         event.setEventId(java.util.UUID.randomUUID().toString());
         event.setMatchId(cricketMatch.getEntityId());
@@ -698,7 +801,7 @@ public class MatchViewModel extends ViewModel {
         event.setOverNumber(currentOver != null ? currentOver.getOverNumber() : 0);
         event.setBallNumber(currentOver != null && currentOver.getBalls() != null ? currentOver.getBalls().size() + 1 : 0);
         event.setTotalRuns(extrasRuns);
-        event.setRunsScoredBat(0);
+        event.setRunsScoredBat(0); // Extras don't count as batsman runs
         event.setRunsScoredExtras(extrasRuns);
         event.setLegalDelivery(isLegal);
         event.setWicket(false);
@@ -711,13 +814,25 @@ public class MatchViewModel extends ViewModel {
         event.setBatsmanNonStrikerId(cricketMatch.getCurrentNonStrikerId());
         event.setBowlerId(cricketMatch.getCurrentBowlerId());
         
-        // --- Process event ---
-        cricketMatch.processEvent(event);
+        // --- STEP 3: Create ExtrasDetail ---
+        CricketExtrasDetail extrasDetail = new CricketExtrasDetail();
+        extrasDetail.setExtrasCategory(extrasType);
+        extrasDetail.setExtrasRuns(extrasRuns);
+        extrasDetail.setRunsAlsoScored(additionalRuns > 0);
+        event.setExtrasDetail(extrasDetail);
         
-        // --- Update stats for extras ---
+        // --- STEP 4: Create and execute Command (updates state + undo stack) ---
+        AddExtrasCommand command = new AddExtrasCommand(cricketMatch, ball, event, extrasDetail);
+        commandManager.executeCommand(command);
+        
+        // --- STEP 4.5: Process post-ball logic (striker swap, over/innings completion) ---
+        // NOTE: Do NOT call processEvent - it would add the ball again!
+        cricketMatch.processPostBallLogic(event);
+        
+        // --- STEP 5: Update stats for extras ---
         updatePlayerStatsAfterExtra(cricketMatch, event, extrasType, isLegal);
         
-        // --- Get current over AFTER processEvent ---
+        // --- Get current over AFTER processPostBallLogic ---
         Over finalCurrentOver = cricketMatch.getCurrentOver();
         if (finalCurrentOver == null) {
             _errorMessage.setValue("Failed to create over");
@@ -725,37 +840,15 @@ public class MatchViewModel extends ViewModel {
             return;
         }
         
-        // --- Create Ball entity ---
-        Ball ball = new Ball();
-        ball.setBallId(java.util.UUID.randomUUID().toString());
-        ball.setMatchId(cricketMatch.getEntityId());
-        ball.setInningsId(currentInnings.getInningsId());
-        ball.setOverId(finalCurrentOver.getOverId());
-        ball.setInningsNumber(currentInnings.getInningsNumber());
-        ball.setOverNumber(finalCurrentOver.getOverNumber());
-        ball.setBallNumber(event.getBallNumber());
-        ball.setRunsScored(extrasRuns);
-        ball.setWicket(false);
-        ball.setBoundary(false);
-        ball.setExtrasType(extrasType);
-        // Set player IDs from match state
-        ball.setBatsmanId(cricketMatch.getCurrentStrikerId());
-        ball.setBowlerId(cricketMatch.getCurrentBowlerId());
-        
         // --- SIMPLIFIED PERSISTENCE: Only update Match document ---
         // All nested data (innings, overs, balls) is stored within the match document
         
         offlineMatchRepo.update(cricketMatch).addOnCompleteListener(matchTask -> {
             if (matchTask.isSuccessful()) {
-                // Trigger LiveData update to refresh UI by re-fetching from database
-                // Add small delay to ensure Firestore write is fully committed
-                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                    String currentId = _offlineMatchId.getValue();
-                    if (currentId != null) {
-                        _offlineMatchId.setValue(currentId);
-                    }
-                    _isLoading.setValue(false);
-                }, 100); // 100ms delay
+                // Notify UI that match state changed (without refetching from database)
+                // This preserves command references for undo/redo functionality
+                notifyMatchChanged();
+                _isLoading.setValue(false);
             } else {
                 _errorMessage.setValue("Failed to save match update");
                 _isLoading.setValue(false);
@@ -1202,11 +1295,13 @@ public class MatchViewModel extends ViewModel {
         goalDetail.setGoalType(goalType);
         goalDetail.setMinuteScored(minute);
         goalDetail.setPenalty(goalType.equals("PENALTY"));
-        goalDetail.setOwnGoal(false);
+        goalDetail.setOwnGoal(goalType.equals("OWN_GOAL"));
         
         // Build description for event display
         String description = getPlayerNameById(footballMatch, scorerId);
-        if (assisterId != null) {
+        if (goalType.equals("OWN_GOAL")) {
+            description += " (OG)";
+        } else if (assisterId != null) {
             description += " (Assist: " + getPlayerNameById(footballMatch, assisterId) + ")";
         }
         event.setDescription(description);
@@ -1492,7 +1587,11 @@ public class MatchViewModel extends ViewModel {
             // After undo, persist the reverted state
             Match match = offlineMatch.getValue();
             if (match != null) {
-                persistOfflineMatch(match);
+                // Use update with completion callback to ensure data is saved before refreshing UI
+                offlineMatchRepo.update(match).addOnCompleteListener(task -> {
+                    // Notify UI of change without refetching (preserves command references)
+                    notifyMatchChanged();
+                });
             }
 
             // Delete the event from Firestore if possible
@@ -1500,14 +1599,16 @@ public class MatchViewModel extends ViewModel {
                 String eventId = lastCommand.getEventId();
                 String commandType = lastCommand.getCommandType();
                 if (eventId != null) {
-                    if (commandType.equals("GOAL") || commandType.equals("CARD") || commandType.equals("SUBSTITUTION")) {
+                    // Handle football events
+                    if (commandType != null && (commandType.equals("GOAL") || commandType.equals("CARD") || commandType.equals("SUBSTITUTION"))) {
                         offlineFootballEventRepo.delete(eventId);
                     }
-                    // TODO: Add cricket event deletion if needed
+                    // Cricket events are stored within the match document (nested), 
+                    // so they're already handled by persistOfflineMatch
                 }
 
                 // Revert player statistics for football goals/assists
-                if (commandType.equals("GOAL") && lastCommand instanceof com.example.tournafy.command.football.AddGoalCommand) {
+                if (commandType != null && commandType.equals("GOAL") && lastCommand instanceof com.example.tournafy.command.football.AddGoalCommand) {
                     com.example.tournafy.command.football.AddGoalCommand goalCmd = (com.example.tournafy.command.football.AddGoalCommand) lastCommand;
                     String scorerId = goalCmd.getScorerId();
                     String assisterId = goalCmd.getAssisterId();
@@ -1521,7 +1622,20 @@ public class MatchViewModel extends ViewModel {
                         }
                     }
                 }
-                // TODO: Add cricket stat reversal if needed
+                
+                // Handle cricket commands - revert stats
+                if (commandType != null) {
+                    if (commandType.equals("BALL") && lastCommand instanceof AddBallCommand) {
+                        // Ball undo - stats already reverted by command.undo()
+                        android.util.Log.d("MatchViewModel", "Undid cricket ball");
+                    } else if (commandType.equals("EXTRAS") && lastCommand instanceof AddExtrasCommand) {
+                        // Extras undo - stats already reverted by command.undo()
+                        android.util.Log.d("MatchViewModel", "Undid cricket extras");
+                    } else if (commandType.equals("WICKET") && lastCommand instanceof AddWicketCommand) {
+                        // Wicket undo - stats already reverted by command.undo()
+                        android.util.Log.d("MatchViewModel", "Undid cricket wicket");
+                    }
+                }
             }
         }
     }
@@ -1532,7 +1646,10 @@ public class MatchViewModel extends ViewModel {
             // After redo, persist the new state
             Match match = offlineMatch.getValue();
             if (match != null) {
-                persistOfflineMatch(match);
+                offlineMatchRepo.update(match).addOnCompleteListener(task -> {
+                    // Notify UI of change without refetching (preserves command references)
+                    notifyMatchChanged();
+                });
             }
         }
     }

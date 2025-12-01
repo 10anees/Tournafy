@@ -171,22 +171,32 @@ public class FootballEventAdapter extends RecyclerView.Adapter<FootballEventAdap
 
             switch (category) {
                 case GOAL:
-                    title = "⚽ GOAL";
-                    if (event.getGoalDetail() != null && event.getGoalDetail().getGoalType() != null) {
-                        try {
-                            GoalType goalType = GoalType.valueOf(event.getGoalDetail().getGoalType());
-                            title += " - " + formatGoalType(goalType);
-                        } catch (IllegalArgumentException e) {
-                            // Invalid goal type, just show GOAL
+                    boolean isOwnGoal = event.getGoalDetail() != null && event.getGoalDetail().isOwnGoal();
+                    
+                    if (isOwnGoal) {
+                        title = "⚽ OWN GOAL";
+                        // For own goals, the badge shows the BENEFITING team, but we clarify it's an own goal
+                        teamColor = Color.parseColor("#FF5722"); // Orange for own goal
+                    } else {
+                        title = "⚽ GOAL";
+                        if (event.getGoalDetail() != null && event.getGoalDetail().getGoalType() != null) {
+                            try {
+                                GoalType goalType = GoalType.valueOf(event.getGoalDetail().getGoalType());
+                                if (goalType != GoalType.OPEN_PLAY) {
+                                    title += " - " + formatGoalType(goalType);
+                                }
+                            } catch (IllegalArgumentException e) {
+                                // Invalid goal type, just show GOAL
+                            }
                         }
                     }
                     
                     // Build detailed description with scorer and assister
                     if (event.getDescription() != null) {
-                        // Description format: "Scorer (Assist: Assister)" or just "Scorer"
+                        // Description format: "Scorer (Assist: Assister)" or "Scorer (OG)"
                         details = event.getDescription() + "\n" + teamName + " • " + scoreAtEvent;
                     } else {
-                        details = "Goal scored • " + teamName + " • " + scoreAtEvent;
+                        details = (isOwnGoal ? "Own goal" : "Goal scored") + " • " + teamName + " • " + scoreAtEvent;
                     }
                     break;
 

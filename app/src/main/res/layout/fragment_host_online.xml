@@ -189,6 +189,7 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <!--
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardNewSeries"
         android:layout_width="match_parent"
@@ -241,6 +242,7 @@
                 app:tint="?android:attr/textColorSecondary" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
+    -->
 
     <androidx.constraintlayout.widget.Group
         android:id="@+id/grpAuthenticated"

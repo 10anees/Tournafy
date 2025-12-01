@@ -255,11 +255,12 @@ public class CricketLiveScoreFragment extends Fragment {
         btnFive.setOnClickListener(v -> matchViewModel.addCricketBall(5));
         btnSix.setOnClickListener(v -> matchViewModel.addCricketBall(6));
 
-        // Extras
-        btnWide.setOnClickListener(v -> matchViewModel.addCricketExtra("WIDE"));
-        btnNoBall.setOnClickListener(v -> matchViewModel.addCricketExtra("NO_BALL"));
-        btnBye.setOnClickListener(v -> matchViewModel.addCricketExtra("BYE"));
-        btnLegBye.setOnClickListener(v -> matchViewModel.addCricketExtra("LEG_BYE"));
+        // Extras - No-Ball and Wide now show dialog for additional runs
+        btnWide.setOnClickListener(v -> showExtrasRunsDialog("WIDE"));
+        btnNoBall.setOnClickListener(v -> showExtrasRunsDialog("NO_BALL"));
+        // Bye and Leg-Bye add 1 run directly (counted as legal ball)
+        btnBye.setOnClickListener(v -> matchViewModel.addCricketExtra("BYE", 1));
+        btnLegBye.setOnClickListener(v -> matchViewModel.addCricketExtra("LEG_BYE", 1));
 
         // Wicket
         btnWicket.setOnClickListener(v -> {
@@ -884,6 +885,43 @@ public class CricketLiveScoreFragment extends Fragment {
                 })
                 .setCancelable(false)
                 .show();
+    }
+    
+    /**
+     * Shows a dialog for selecting additional runs on No-Ball or Wide.
+     * These extras are illegal deliveries (don't count as a ball in the over).
+     * 
+     * @param extrasType "NO_BALL" or "WIDE"
+     */
+    private void showExtrasRunsDialog(String extrasType) {
+        android.util.Log.d("CricketLiveScore", "showExtrasRunsDialog called for: " + extrasType);
+        
+        // Check if fragment is added to activity
+        if (!isAdded()) {
+            android.util.Log.e("CricketLiveScore", "Fragment not added, cannot show dialog");
+            return;
+        }
+        
+        com.example.tournafy.ui.dialogs.SelectExtrasRunsDialog dialog =
+                com.example.tournafy.ui.dialogs.SelectExtrasRunsDialog.newInstance(
+                        extrasType,
+                        additionalRuns -> {
+                            android.util.Log.d("CricketLiveScore", extrasType + " with " + additionalRuns + " additional runs");
+                            matchViewModel.addCricketExtra(extrasType, additionalRuns);
+                            
+                            // Show toast with total runs
+                            int totalRuns = 1 + additionalRuns; // 1 penalty + additional
+                            String message = extrasType.equals("NO_BALL") ? "No Ball" : "Wide";
+                            message += " - " + totalRuns + " run" + (totalRuns > 1 ? "s" : "");
+                            Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                        }
+                );
+        
+        try {
+            dialog.showNow(getParentFragmentManager(), "SelectExtrasRunsDialog");
+        } catch (Exception e) {
+            android.util.Log.e("CricketLiveScore", "Error showing extras dialog: " + e.getMessage(), e);
+        }
     }
     
     /**

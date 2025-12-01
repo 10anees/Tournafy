@@ -58,6 +58,9 @@ public class EventInputDialog extends BottomSheetDialogFragment {
     private com.google.android.material.textfield.TextInputLayout tilAssister;
     private AutoCompleteTextView actvAssister;
     
+    // Track if Own Goal is selected (swaps team for player selection)
+    private boolean isOwnGoalSelected = false;
+    
     // UI - Card specific
     private TextView tvCardTypeLabel;
     private ChipGroup chipGroupCardType;
@@ -172,6 +175,27 @@ public class EventInputDialog extends BottomSheetDialogFragment {
     }
 
     private void setupListeners() {
+        // Listen for goal type changes to handle Own Goal special case
+        if (chipGroupGoalType != null && eventType == EventType.GOAL) {
+            chipGroupGoalType.setOnCheckedStateChangeListener((group, checkedIds) -> {
+                if (checkedIds.isEmpty()) return;
+                int id = checkedIds.get(0);
+                
+                boolean wasOwnGoal = isOwnGoalSelected;
+                isOwnGoalSelected = (id == R.id.chipOwnGoal);
+                
+                // If own goal state changed, update player dropdown to show opposite team
+                if (wasOwnGoal != isOwnGoalSelected) {
+                    updatePlayerDropdownForOwnGoal();
+                }
+                
+                // Hide assister field for own goals (no assist on own goal)
+                if (tilAssister != null) {
+                    tilAssister.setVisibility(isOwnGoalSelected ? View.GONE : View.VISIBLE);
+                }
+            });
+        }
+        
         chipGroupTeam.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (checkedIds.isEmpty()) return;
             int id = checkedIds.get(0);
@@ -196,8 +220,16 @@ public class EventInputDialog extends BottomSheetDialogFragment {
                     actvPlayerIn.setAdapter(subsAdapter);
                     actvPlayerIn.setText("", false);
                 }
+            } else if (eventType == EventType.GOAL && isOwnGoalSelected) {
+                // For OWN GOAL: Show OPPOSITE team's players (they scored in their own net)
+                List<String> oppositeTeamPlayers = isTeamA ? teamBPlayers : teamAPlayers;
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), 
+                        android.R.layout.simple_dropdown_item_1line, oppositeTeamPlayers);
+                actvPlayer.setAdapter(adapter);
+                actvPlayer.setText("", false);
+                // No assister for own goal
             } else {
-                // For GOAL and CARD: Use all players (already filtered)
+                // For GOAL (non-own) and CARD: Use selected team's players
                 List<String> currentPlayers = isTeamA ? teamAPlayers : teamBPlayers;
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), 
                         android.R.layout.simple_dropdown_item_1line, currentPlayers);
@@ -212,7 +244,7 @@ public class EventInputDialog extends BottomSheetDialogFragment {
                 }
             }
         });
-
+        
         btnSaveEvent.setOnClickListener(v -> {
             if (listener != null) {
                 // Validate team selection
@@ -297,5 +329,51 @@ public class EventInputDialog extends BottomSheetDialogFragment {
             }
             dismiss();
         });
+    }
+    
+    /**
+     * Updates player dropdown when Own Goal is toggled.
+     * For Own Goal: Shows opposite team's players (they scored in their own net)
+     * For regular goals: Shows selected team's players
+     */
+    private void updatePlayerDropdownForOwnGoal() {
+        // Update player label to clarify which player to select
+        if (tvPlayerLabel != null) {
+            if (isOwnGoalSelected) {
+                tvPlayerLabel.setText("🔴 Own Goal Scorer (from opposing team)");
+            } else {
+                tvPlayerLabel.setText("⚽ Goal Scorer");
+            }
+        }
+        
+        // Update player dropdown
+        boolean isTeamA = chipTeamA.isChecked();
+        if (!isTeamA && !chipTeamB.isChecked()) {
+            // No team selected yet
+            return;
+        }
+        
+        List<String> players;
+        if (isOwnGoalSelected) {
+            // Show OPPOSITE team's players for own goal
+            players = isTeamA ? teamBPlayers : teamAPlayers;
+        } else {
+            // Show selected team's players for regular goal
+            players = isTeamA ? teamAPlayers : teamBPlayers;
+        }
+        
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), 
+                android.R.layout.simple_dropdown_item_1line, players);
+        actvPlayer.setAdapter(adapter);
+        actvPlayer.setText("", false);
+        
+        // Also update assister dropdown for regular goals
+        if (!isOwnGoalSelected && actvAssister != null) {
+            List<String> assisterPlayers = isTeamA ? teamAPlayers : teamBPlayers;
+            ArrayAdapter<String> assisterAdapter = new ArrayAdapter<>(requireContext(), 
+                    android.R.layout.simple_dropdown_item_1line, assisterPlayers);
+            actvAssister.setAdapter(assisterAdapter);
+            actvAssister.setText("", false);
+        }
     }
 }

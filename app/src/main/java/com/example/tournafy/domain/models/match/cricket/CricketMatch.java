@@ -180,6 +180,83 @@ public class CricketMatch extends Match {
         notifyObservers();
         notifyEventAdded(cricketEvent);
     }
+    
+    /**
+     * Process post-ball logic without adding the ball (for use with Command pattern).
+     * The command already adds the ball, updates scores, and updates wicket counts.
+     * This method only handles:
+     * - Striker swap on odd runs
+     * - Over completion check (6 legal balls)
+     * - Innings completion check (all out, overs complete, target reached)
+     * 
+     * NOTE: This does NOT update wicket counts - commands already handle that!
+     * 
+     * @param event The cricket event containing ball details
+     */
+    public void processPostBallLogic(CricketEvent event) {
+        Innings currentInnings = getCurrentInnings();
+        if (currentInnings == null) {
+            return;
+        }
+
+        Over currentOver = getCurrentOver();
+        if (currentOver == null) {
+            // Create a new over if needed (shouldn't happen if command executed properly)
+            currentOver = createNewOver(currentInnings);
+        }
+
+        // Swap strikers on odd runs (1, 3, 5) for legal deliveries
+        if (event.isLegalDelivery() && !event.isWicket()) {
+            int batRuns = event.getRunsScoredBat();
+            if (batRuns % 2 == 1) {  // Odd runs (1, 3, 5)
+                swapStrikers();
+            }
+        }
+
+        // NOTE: Wicket count is already updated by AddWicketCommand - do NOT update here!
+
+        // Check for over completion
+        if (event.isLegalDelivery()) {
+            int legalBallsInOver = countLegalBalls(currentOver);
+            if (legalBallsInOver >= 6) {
+                endOver(currentInnings, currentOver);
+                // Swap strikers at end of over
+                swapStrikers();
+            }
+        }
+
+        // Check for innings completion
+        CricketMatchConfig config = (CricketMatchConfig) this.matchConfig;
+        if (config == null) {
+            return;
+        }
+        
+        boolean inningsComplete = false;
+
+        CricketMatchConfig cricketConfig = (CricketMatchConfig) this.matchConfig;
+        int playersPerSide = cricketConfig.getPlayersPerSide();
+        int maxWickets;
+        
+        if (cricketConfig.isLastManStanding()) {
+            maxWickets = Math.min(10, playersPerSide);
+        } else {
+            maxWickets = Math.min(10, Math.max(1, playersPerSide - 1));
+        }
+        
+        if (currentInnings.getWicketsFallen() >= maxWickets) inningsComplete = true;
+        if (currentInnings.getOversCompleted() >= config.getNumberOfOvers()) inningsComplete = true;
+
+        if (currentInningsNumber == 2 && targetScore > 0) {
+            if (currentInnings.getTotalRuns() >= targetScore) inningsComplete = true;
+            else if (currentInnings.getWicketsFallen() >= maxWickets) inningsComplete = true;
+        }
+
+        if (inningsComplete) {
+            endInnings(currentInnings);
+        }
+
+        notifyObservers();
+    }
 
     // --- STATE METHODS (createNewOver, endOver, endInnings, determineWinner) ---
 
